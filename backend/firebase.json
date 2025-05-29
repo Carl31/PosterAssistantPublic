@@ -1,0 +1,23 @@
+{
+  "functions": [
+    {
+      "runtime": "nodejs20",
+      "generatePoster": {
+        "serviceAccount": "593744548923-compute@developer.gserviceaccounts.com"
+      },
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ],
+      "predeploy": [
+        "npm --prefix \"$RESOURCE_DIR\" run lint",
+        "npm --prefix \"$RESOURCE_DIR\" run build"
+      ]
+    }
+  ]
+}
