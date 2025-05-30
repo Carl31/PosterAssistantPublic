@@ -46,6 +46,7 @@ export const generatePoster = functions.https.onRequest((req, res) => {
   corsHandler(req, res, async () => {
     console.log("Function received a request:", req.method, req.url); // Testing
 
+    // Don't have to manually set headers when using cors package.
     // ✅ Handle CORS Preflight (OPTIONS)
     // if (req.method === "OPTIONS") {
     //   res.set("Access-Control-Allow-Origin", "*");
@@ -69,15 +70,12 @@ export const generatePoster = functions.https.onRequest((req, res) => {
       console.log("generatePoster called");
       console.log("Car Details:", carDetails);
 
-      // res.set("Access-Control-Allow-Origin", "*"); // ✅ set for every valid response
-
       // Simulated output
       return res.status(200).json({
         imageUrl: "https://example.com/mock.png",
       });
     } catch (err) {
       console.error("Rendering error:", err);
-      // res.set("Access-Control-Allow-Origin", "*"); // ✅ even for errors
       return res.status(500).send("Failed to generate poster");
     }
   });

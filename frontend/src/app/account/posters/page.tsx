@@ -1,0 +1,78 @@
+// src/app/account/posters/page.tsx
+
+'use client'
+
+import { useEffect, useState } from 'react'
+import { getAuth } from 'firebase/auth'
+import { collection, getDocs, orderBy, query } from 'firebase/firestore'
+import { db } from '@/firebase/client'
+import { Timestamp } from 'firebase/firestore'
+import { onAuthStateChanged } from 'firebase/auth'
+
+type Poster = {
+    imageUrl: string
+    createdAt: Timestamp
+    templateId: string
+    carDetails: {
+        year: string
+        make: string
+        model: string
+    }
+}
+
+export default function PosterHistoryPage() {
+    const [posters, setPosters] = useState<Poster[]>([])
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(getAuth(), async (user) => {
+            if (!user) {
+                setLoading(false)
+                return
+            }
+
+            const postersRef = collection(db, 'users', user.uid, 'posters')
+            const q = query(postersRef, orderBy('createdAt', 'desc'))
+            const snapshot = await getDocs(q)
+
+            const data = snapshot.docs.map(doc => doc.data() as Poster)
+            setPosters(data)
+            setLoading(false)
+        })
+
+        return () => unsubscribe()
+    }, [])
+
+    return (
+        <div className="p-4">
+            <h1 className="text-2xl font-bold mb-4">My Posters</h1>
+            {loading ? (
+                <p>Loading posters...</p>
+            ) : posters.length === 0 ? (
+                <p>No posters found. Go generate one!</p>
+            ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    {posters.map((poster, index) => (
+                        <div key={index} className="border rounded-xl p-3 shadow-md bg-white">
+                            <img src={poster.imageUrl} alt="Poster" className="rounded-md mb-2" />
+                            <p className="text-sm text-gray-600">Created: {poster.createdAt.toDate().toLocaleDateString()}</p>
+                            <p className="text-sm font-medium">Template: {poster.templateId}</p>
+                            <p className="text-sm italic text-gray-700">
+                                {poster.carDetails?.year} {poster.carDetails?.make} {poster.carDetails?.model}
+                            </p>
+
+                            {/* ✅ Add download link */}
+                            <a
+                                href={poster.imageUrl}
+                                download
+                                className="mt-2 inline-block text-blue-600 underline text-sm"
+                            >
+                                Download Poster
+                            </a>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    )
+}
