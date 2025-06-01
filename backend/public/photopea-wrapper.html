@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Photopea Wrapper</title>
+  </head>
+  <body>
+    <iframe
+      id="pp"
+      src="https://www.photopea.com/#"
+      style="width: 1000px; height: 800px; border: none"
+    ></iframe>
+
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      const psdUrl = params.get("psd");
+      const delay = (ms) => new Promise((r) => setTimeout(r, ms));
+      const iframe = document.getElementById("pp");
+      const ppWindow = iframe.contentWindow;
+
+      // Wait for export and send result back to Puppeteer
+      window.addEventListener("message", function (e) {
+  if (e.data instanceof ArrayBuffer) {
+    // ✅ Only accept the first image export
+    if (!window._exportedPoster) {
+      console.log("[Wrapper] Received PNG ArrayBuffer");
+      window._exportedPoster = Array.from(new Uint8Array(e.data));
+    } else {
+      console.log("[Wrapper] ⚠️ Duplicate PNG ignored");
+    }
+  } else {
+    // Optional: log unexpected non-ArrayBuffer messages
+    console.log("[Wrapper] Ignored message:", typeof e.data, e.data);
+  }
+});
+
+
+      // Trigger Photopea commands
+      async function runScript() {
+        console.log("[Wrapper] Waiting for iframe to settle...");
+        await delay(4000);
+
+        console.log("[Wrapper] Loading PSD...");
+        ppWindow.postMessage(`app.open("${psdUrl}", null, true);`, "*");
+
+        await delay(8000);
+
+        console.log("[Wrapper] Exporting...");
+        ppWindow.postMessage(`app.activeDocument.saveToOE("png");`, "*");
+      }
+
+      runScript();
+    </script>
+  </body>
+</html>

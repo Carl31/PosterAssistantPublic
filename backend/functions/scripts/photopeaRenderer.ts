@@ -3,7 +3,8 @@
 // Runs a scripted editor flow via Photopea's scripting API
 
 // photopeaRenderer.ts
-import puppeteer from "puppeteer";
+import chromium from "chrome-aws-lambda";
+import puppeteer from "puppeteer-core";
 
 type CarDetails = {
     make: string
@@ -11,7 +12,7 @@ type CarDetails = {
     year: string
 }
 
-type RenderInput = {
+type PosterRenderInput = {
     psdUrl: string
     userImageUrl: string
     carDetails: CarDetails
@@ -19,43 +20,144 @@ type RenderInput = {
     instagramHandle: string
 }
 
-export async function renderPoster({
+const psdUrlTest = "https://storage.googleapis.com/posterassistant-aebf0.firebasestorage.app/Preset_simple_white_ONLYTEXT_RED.psd?GoogleAccessId=gigabyte-laptop%40posterassistant.iam.gserviceaccount.com&Expires=1751976000&Signature=TrHw8DN8L6yFzWgcIO6Zh0%2ForX0NDOrXECbrwNf%2BHdTjcpDSXAGD78WBzuBxp5OH%2FprPoixL3bcWz1PcStynU11wQKoExgqskj616vzmVBdxMExNl3KHo5XzN8S1nC9FbxJz1LUx%2BLJht5e3rV9tdCwkrQ4%2B1him%2BJYAKt5WtV0Yi%2FdUlkEMAyY495mYBER2rK5jRdg6635cJfUizEHMEB9eOMFjlOj6lceVET%2B1kSpCUjETRkntPgWRWgvPlRS1tshnticUkJd3PwZ34WGRcq3jkuqxj850cAC53G%2Foz0BiC7BdqQi24VA2%2BOejW9TvLmQvpj0SqORS9uKsP1VLLA%3D%3D";
+
+export const renderPoster = async ({
   psdUrl,
   userImageUrl,
   carDetails,
   description,
   instagramHandle,
-}: RenderInput): Promise<Buffer> {
-  const browser = await puppeteer.launch({headless: true}); // Note: used to be ".launch({ headless: 'new' })" but had to downgrade due to incompatability.
+}: PosterRenderInput): Promise<Buffer> => {
+  const browser = await puppeteer.launch({
+    args: chromium.args,
+    defaultViewport: chromium.defaultViewport,
+    executablePath: await chromium.executablePath,
+    headless: chromium.headless,
+  });
   const page = await browser.newPage();
 
-  await page.goto("https://www.photopea.com");
+  await page.goto(`https://posterassistant-aebf0.web.app/photopea-wrapper.html?psd=${encodeURIComponent(psdUrlTest)}`);
 
-  // Compose a script to run inside Photopea
-  const renderScript = `
-    async function run() {
-      let psd = await app.open("${psdUrl}");
+  page.on('console', async (msg) => {
+    const text = msg.text();
+    console.log('[Photopea Console]', text);
+  });
 
-      await app.insertImage("${userImageUrl}", "user_img");
+  // Wait for buffer to be written to window
+  const timeoutMs = 30000;
+  const start = Date.now();
+  let exportedBuffer: Buffer | null = null;
 
-      app.setLayerText("VAR_TEXTS/make", "${carDetails.make}");
-      app.setLayerText("VAR_TEXTS/model", "${carDetails.model}");
-      app.setLayerText("VAR_TEXTS/year", "${carDetails.year}");
-      app.setLayerText("VAR_TEXTS/description", "${description}");
-      app.setLayerText("VAR_TEXTS/Instagram", "${instagramHandle}");
-      app.setLayerText("VAR_TEXTS/date", "${new Date().toLocaleDateString()}");
+  while (!exportedBuffer && Date.now() - start < timeoutMs) {
+    const result = await page.evaluate(() => {
+      return (window as any)._exportedPoster || null;
+    });
 
-      let buffer = await app.saveToBuffer("png");
-      return buffer;
+    if (result) {
+      exportedBuffer = Buffer.from(result);
     }
-    run();
-  `;
 
-  const result = await page.evaluate(renderScript);
-  await browser.close();
-
-  if (typeof result !== "string") {
-    throw new Error("Photopea did not return a valid image string.");
+    await new Promise((r) => setTimeout(r, 200));
   }
-  return Buffer.from(result, "base64");
-}
+
+  if (!exportedBuffer) {
+    throw new Error("Photopea export failed or timed out.");
+  }
+
+  return exportedBuffer;
+};
+
+// Old method: trying to runn Photopea headless
+// export const renderPoster = async ({
+//   psdUrl,
+//   userImageUrl,
+//   carDetails,
+//   description,
+//   instagramHandle,
+// }: PosterRenderInput): Promise<Buffer> => {
+//   const browser = await puppeteer.launch({
+//     args: chromium.args,
+//     defaultViewport: chromium.defaultViewport,
+//     executablePath: await chromium.executablePath,
+//     headless: chromium.headless,
+//   });
+//   const page = await browser.newPage();
+
+//   let exportedBuffer: Buffer | null = null;
+//   // console.log("Using Chrome path:", await chromium.executablePath); // for testing
+
+//   // Hook into browser console to catch exported data
+//   page.on("console", async (msg) => {
+//     const text = msg.text();
+//     if (text.includes('uniconsent.com')) return; // skip noise
+
+//     console.log("[Photopea Console]", text);
+//     console.log("[Photopea Console]", msg);
+
+//     // Doesnt capture image as Photopea doesnt send it through the console:
+//     for (const arg of msg.args()) {
+//       const val = await arg.jsonValue();
+//       if (val instanceof Uint8Array || val instanceof ArrayBuffer) {
+//         exportedBuffer = Buffer.from(val);
+//       }
+//     }
+//   });
+
+//   await page.goto("https://www.photopea.com/#", {waitUntil: "networkidle0"});
+
+//   // Load PSD file
+//   await page.evaluate((psdUrlTest) => {
+//     console.log("[Inject] Loading PSD from:", psdUrlTest);
+//     window.postMessage(`app.echoToOE("Loaded PSD3"), null, true;`, "*");
+//     window.postMessage(`app.open("${psdUrlTest}", null, true);`, "*");
+//   }, psdUrlTest);
+
+//   await page.evaluate(() => {
+//     console.log("[Inject] test1");
+//   });
+
+//   // Give Photopea time to load the PSD
+//   await new Promise((resolve) => setTimeout(resolve, 15000)); // TODO: Find a better way to wait for the console to return "done" for example
+
+//   await page.evaluate(() => {
+//     console.log("[Inject] test2");
+//   });
+
+//   // Optional: Insert user image or update text layers here if needed
+//   // You can dynamically inject text into layers if layer names are known
+
+//   await page.evaluate(() => {
+//     console.log('[Inject] Checking if document is loaded...');
+//     window.postMessage(`app.echoToOE("Doc count: " + app.documents.length), null, true`, "*");
+//   });
+
+//   // Export to PNG
+//   await page.evaluate(() => {
+//     console.log("[Inject] Starting export...");
+//     window.postMessage(`app.activeDocument.saveToOE("png");`, "*");
+//   });
+
+//   await page.evaluate(() => {
+//     console.log("[Inject] test3");
+//   });
+
+//   // Wait up to 10 seconds for PNG to be caught from console
+//   const timeoutMs = 10000;
+//   const start = Date.now();
+//   while (!exportedBuffer && Date.now() - start < timeoutMs) {
+//     await new Promise((r) => setTimeout(r, 200));
+//   }
+
+//   await page.evaluate(() => {
+//     console.log("[Inject] test4");
+//   });
+
+//   await browser.close();
+
+//   if (!exportedBuffer) {
+//     throw new Error("Photopea export failed or timed out.");
+//   }
+
+//   return exportedBuffer;
+// };

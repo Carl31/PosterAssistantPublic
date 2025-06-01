@@ -53,6 +53,7 @@ export default function GeneratePage() {
 
     // For generating poster
     const [loading, setLoading] = useState(false)
+     
     const [posterUrl, setPosterUrl] = useState<string | null>(null)
 
 
@@ -158,6 +159,7 @@ export default function GeneratePage() {
         )
     }
 
+     
     const savePosterMetadata = async (uid: string, imageUrl: string) => {
         const posterId = crypto.randomUUID()
 
@@ -196,14 +198,18 @@ export default function GeneratePage() {
 
     // Generating poster using fetch
     const handleGeneratePoster = async () => {
+
         if (!user) return
+        // For sending request to backnend with authorisation:
+        const token = user && (await user.getIdToken())
 
         setLoading(true)
         try {
             const response = await fetch('https://us-central1-posterassistant-aebf0.cloudfunctions.net/generatePoster', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
                 },
                 body: JSON.stringify({
                     psdUrl: selectedTemplate?.psdFileUrl,
@@ -217,6 +223,8 @@ export default function GeneratePage() {
             if (!response.ok) {
                 throw new Error(`Server responded with ${response.status}`)
             }
+
+            console.log("Response:", response)
 
             const { imageUrl } = await response.json()
             setPosterUrl(imageUrl)
@@ -352,7 +360,7 @@ export default function GeneratePage() {
                             download
                             className="mt-2 inline-block text-blue-600 underline"
                         >
-                            Download Poster
+                            Preview Poster
                         </a>
                     </div>
                 )}

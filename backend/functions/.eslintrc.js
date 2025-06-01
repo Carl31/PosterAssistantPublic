@@ -27,11 +27,12 @@ module.exports = {
     "import",
   ],
   rules: {
-    "quotes": ["error", "double"],
+    "quotes": "off",
     "import/no-unresolved": 0,
     "indent": ["error", 2],
     'require-jsdoc': 'off',
     'max-len': 'off',
     "@typescript-eslint/no-explicit-any": "off",
+    "no-useless-escape": "off",
   },
 };
