@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Photopea Mockup Wrapper</title>
+</head>
+
+<body>
+    <iframe id="pp" src="https://www.photopea.com/#" style="width: 1000px; height: 800px; border: none"></iframe>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const psdUrl = params.get("psd");
+        const userImageUrl = params.get("userImageUrl");
+        const delay = (ms) => new Promise((r) => setTimeout(r, ms));
+        const iframe = document.getElementById("pp");
+        const ppWindow = iframe.contentWindow;
+
+        // Wait for export and send result back to Puppeteer
+        window.addEventListener("message", function (e) {
+            if (e.data instanceof ArrayBuffer) {
+                // ✅ Only accept the first image export
+                if (!window._exportedPoster) {
+                    console.log("[Mockup Wrapper] Received PNG ArrayBuffer");
+                    window._exportedPoster = Array.from(new Uint8Array(e.data));
+                } else {
+                    console.log("[Mockup Wrapper] ⚠️ Duplicate PNG ignored");
+                }
+            } else {
+                // Optional: log unexpected non-ArrayBuffer messages
+                // console.log("[Mockup Wrapper] Ignored message:", typeof e.data, e.data); // note necessary
+                if (e.data === "done") {
+                    console.log("done");
+                }
+            }
+        });
+
+
+
+        // Functions:
+        function sendToPhotopea(line) {
+            ppWindow.postMessage(line, "*");
+        }
+
+        function waitForDone(doneLimit, timeoutMs = 10000) {
+            return new Promise((resolve, reject) => {
+                let doneCount = 0;
+                let timeoutId;
+
+                window.addEventListener("message", function listener(e) {
+                    if (typeof event.data !== "string") return;
+
+                    if (event.data.includes("done")) {
+                        doneCount++;
+                        if (doneCount === doneLimit) {
+                            clearTimeout(timeoutId);
+                            console.log(`Received "done" ${doneCount} times`);
+                            window.removeEventListener("message", listener);
+                            resolve();
+                        }
+                    }
+                });
+
+                // Timeout fallback
+                timeoutId = setTimeout(() => {
+                    window.removeEventListener("message", listener);
+                    //reject(new Error('"done" was not received ${doneLimit} times within the timeout.'));
+                    console.log(`"done" was not received ${doneLimit} times within the timeout.`);
+                }, timeoutMs);
+            });
+        }
+
+
+
+
+        // Trigger Photopea commands
+        async function runScript() {
+            console.log("[Mockup Wrapper] Waiting for iframe to settle...");
+            await delay(3000);
+
+            // Stage 1: Open psd
+            console.log("[Mockup Wrapper] Loading PSD...");
+            ppWindow.postMessage(`app.open("${psdUrl}", null, true);`, "*");
+            await waitForDone(2);
+            console.log("[Mockup Wrapper] PSD loaded and ready");
+            //await delay(8000);
+
+
+            // Stage 2: Place user image
+            // sendToPhotopea(`app.open("${userImageUrl}", null, true);`); // aparently doesnt work.
+
+            //const dataUrl = bufferToDataURL(userImageUrl); // posterDataBuffer is your ArrayBuffer
+
+            // Now send to Photopea
+            sendToPhotopea(`
+        app.open("${userImageUrl}");
+        `);
+
+            await delay(2000);
+            console.log("[Mockup Wrapper] Opened buffer image! Continuing...");
+            sendToPhotopea(`
+          var mockup = app.activeDocument;
+        var frameLayer = null;
+
+        for (var i = 0; i < mockup.layers.length; i++) {
+          if (mockup.layers[i].name === "frame") {
+            frameLayer = mockup.layers[i];
+            break;
+          }
+        }
+
+        if (frameLayer) {
+          // Open poster from separate document (assumes it's opened before script runs)
+          var imageDoc = app.documents[1]; // assumes opened second
+          // console.log("Image document: ", imageDoc); // for debugging
+
+          app.activeDocument = imageDoc;
+
+          // Ensure the layer is visible and selected
+          var srcLayer = imageDoc.layers[0];
+          srcLayer.visible = true;
+          imageDoc.activeLayer = srcLayer;
+
+          // Duplicate the layer into the mockup document
+          srcLayer.duplicate(mockup, ElementPlacement.PLACEATBEGINNING);
+
+          // Close the source image
+          imageDoc.close(SaveOptions.DONOTSAVECHANGES);
+
+          app.activeDocument = mockup;
+          var pastedLayer = mockup.activeLayer;
+          //mockup.paste();
+
+          // --- RESIZING TO COVER FRAME LAYER WHILE KEEPING ASPECT RATIO ---
+
+  // Known correct frame bounds
+var frameLeft = frameLayer.bounds[0];
+var frameTop = frameLayer.bounds[1];
+var frameRight = frameLayer.bounds[2];
+var frameBottom = frameLayer.bounds[3];
+
+
+
+// Log frame center
+var frameCenterX = (frameLeft + frameRight) / 2;
+var frameCenterY = (frameTop + frameBottom) / 2;
+console.log("Frame center:", frameCenterX, frameCenterY);
+
+
+
+
+var frameWidth = frameRight - frameLeft;
+var frameHeight = frameBottom - frameTop;
+
+// Get pasted layer bounds
+var pastedBounds = pastedLayer.bounds;
+var pastedWidth = pastedBounds[2] - pastedBounds[0];
+var pastedHeight = pastedBounds[3] - pastedBounds[1];
+
+
+
+// Log pasted layer center
+var pastedCenterX = (pastedBounds[0] + pastedBounds[2]) / 2;
+var pastedCenterY = (pastedBounds[1] + pastedBounds[3]) / 2;
+console.log("Pasted center before move:", pastedCenterX, pastedCenterY);
+
+console.log("Frame ratio:", frameWidth / frameHeight);
+console.log("Pasted ratio:", pastedWidth / pastedHeight);
+
+
+var paddingPercent = 1; // (0.9) 90% of the frame size, leaving 10% padding
+
+// Scale to cover frame while maintaining aspect ratio
+var scaleFactorW = (frameWidth * paddingPercent) / pastedWidth;
+var scaleFactorH = (frameHeight * paddingPercent) / pastedHeight;
+var scaleFactor = Math.max(scaleFactorW, scaleFactorH);
+pastedLayer.resize(scaleFactor * 100, scaleFactor * 100, AnchorPosition.MIDDLECENTER);
+
+// Recalculate bounds after resizing
+pastedBounds = pastedLayer.bounds;
+var pastedLeft = pastedBounds[0];
+var pastedTop = pastedBounds[1];
+var pastedRight = pastedBounds[2];
+var pastedBottom = pastedBounds[3];
+
+// Translate to center over frame
+var deltaX = ((frameLeft + frameRight) - (pastedLeft + pastedRight)) / 2;
+var deltaY = ((frameTop + frameBottom) - (pastedTop + pastedBottom)) / 2;
+pastedLayer.translate(deltaX, deltaY);
+
+
+// Log center after move
+var finalBounds = pastedLayer.bounds;
+var finalCenterX = (finalBounds[0] + finalBounds[2]) / 2;
+var finalCenterY = (finalBounds[1] + finalBounds[3]) / 2;
+console.log("Pasted center after move:", finalCenterX, finalCenterY);
+
+
+  pastedLayer.moveAbove(frameLayer);
+
+
+        } else {
+          alert("Frame layer not found.");
+        }
+      `);
+            await waitForDone(1);
+            console.log("[Mockup Wrapper] Placed image in frame! Continuing...");
+
+            // Export poster:
+            console.log("[Mockup Wrapper] Exporting...");
+            ppWindow.postMessage(`app.activeDocument.saveToOE("png");`, "*");
+
+        }
+
+        runScript();
+    </script>
+</body>
+
+</html>

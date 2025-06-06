@@ -35,37 +35,67 @@ export const renderPoster = async ({
     executablePath: await chromium.executablePath,
     headless: chromium.headless,
   });
-  const page = await browser.newPage();
 
-  await page.goto(`https://posterassistant-aebf0.web.app/photopea-wrapper.html?psd=${encodeURIComponent(psdUrlTest)}`);
+  let page;
 
-  page.on('console', async (msg) => {
-    const text = msg.text();
-    console.log('[Photopea Console]', text);
-  });
+  try {
+    page = await browser.newPage();
 
-  // Wait for buffer to be written to window
-  const timeoutMs = 30000;
-  const start = Date.now();
-  let exportedBuffer: Buffer | null = null;
 
-  while (!exportedBuffer && Date.now() - start < timeoutMs) {
-    const result = await page.evaluate(() => {
-      return (window as any)._exportedPoster || null;
+    const now = new Date();
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are zero-indexed
+    const year = String(now.getFullYear()).slice(-2); // Get last two digits
+    const formattedDate = `${day}/${month}/${year}`;
+
+    // Send to hosted html page
+    // await page.goto(`https://posterassistant-aebf0.web.app/photopea-wrapper.html?psd=${encodeURIComponent(psdUrl)}&userImageUrl=${encodeURIComponent(userImageUrl)}&description=${encodeURIComponent(description)}&instagramHandle=${encodeURIComponent(instagramHandle)}&carMake=${encodeURIComponent(carDetails.make)}&carModel=${encodeURIComponent(carDetails.model)}&carYear=${encodeURIComponent(carDetails.year)}&date=${encodeURIComponent(formattedDate)}`);
+    const params = new URLSearchParams({
+      psd: psdUrl,
+      userImageUrl: userImageUrl,
+      description: description,
+      instagramHandle: instagramHandle,
+      carMake: carDetails.make,
+      carModel: carDetails.model,
+      carYear: carDetails.year,
+      date: formattedDate,
     });
 
-    if (result) {
-      exportedBuffer = Buffer.from(result);
+    const fullUrl = `https://posterassistant-aebf0.web.app/photopea-wrapper.html?${params.toString()}`;
+    await page.goto(fullUrl);
+
+    page.on('console', async (msg) => {
+      const text = msg.text();
+      console.log('[Photopea Console] ', text);
+    // console.log('[Photopea Console text]', text);
+    });
+
+    // Wait for buffer to be written to window
+    const timeoutMs = 90000;
+    const start = Date.now();
+    let exportedBuffer: Buffer | null = null;
+
+    while (!exportedBuffer && Date.now() - start < timeoutMs) {
+      const result = await page.evaluate(() => {
+        return (window as any)._exportedPoster || null;
+      });
+
+      if (result) {
+        exportedBuffer = Buffer.from(result);
+      }
+
+      await new Promise((r) => setTimeout(r, 1000));
     }
 
-    await new Promise((r) => setTimeout(r, 200));
-  }
+    if (!exportedBuffer) {
+      throw new Error("Photopea export failed or timed out.");
+    }
 
-  if (!exportedBuffer) {
-    throw new Error("Photopea export failed or timed out.");
+    return exportedBuffer;
+  } finally {
+    if (page) await page.close(); // ✅ Clean up the page
+    await browser.close(); // ✅ Clean up the browser
   }
-
-  return exportedBuffer;
 };
 
 // Old method: trying to runn Photopea headless

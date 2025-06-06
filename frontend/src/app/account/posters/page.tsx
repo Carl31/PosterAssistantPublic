@@ -10,6 +10,7 @@ import { Timestamp } from 'firebase/firestore'
 import { onAuthStateChanged } from 'firebase/auth'
 
 type Poster = {
+    id: string;
     imageUrl: string
     createdAt: Timestamp
     templateId: string
@@ -19,6 +20,27 @@ type Poster = {
         model: string
     }
 }
+
+const handleDownload = async (url: string) => {
+    try {
+    const response = await fetch(url, { mode: 'cors' });
+    if (!response.ok) throw new Error('Network response was not ok');
+
+    const blob = await response.blob();
+    const blobUrl = URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = 'poster.png';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    URL.revokeObjectURL(blobUrl); // clean up
+  } catch (error) {
+    console.error('Download failed:', error);
+  }
+};
 
 export default function PosterHistoryPage() {
     const [posters, setPosters] = useState<Poster[]>([])
@@ -35,7 +57,10 @@ export default function PosterHistoryPage() {
             const q = query(postersRef, orderBy('createdAt', 'desc'))
             const snapshot = await getDocs(q)
 
-            const data = snapshot.docs.map(doc => doc.data() as Poster)
+            const data = snapshot.docs.map((doc): Poster => ({
+                id: doc.id,
+                ...(doc.data() as Omit<Poster, 'id'>)
+            }));
             setPosters(data)
             setLoading(false)
         })
@@ -62,13 +87,54 @@ export default function PosterHistoryPage() {
                             </p>
 
                             {/* ✅ Add download link */}
-                            <a
+                            {/* <a
                                 href={poster.imageUrl}
                                 download
                                 className="mt-2 inline-block text-blue-600 underline text-sm"
                             >
                                 Download Poster
-                            </a>
+                            </a> */}
+                            <div className="mt-2 flex gap-2">
+                                {/* View button */}
+                                <a
+                                    href={poster.imageUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-sm px-3 py-1 rounded bg-blue-500 text-white hover:bg-blue-600"
+                                >
+                                    View
+                                </a>
+
+                                {/* Download button */}
+                                <button
+                                    onClick={() => handleDownload(poster.imageUrl)}
+                                    className="text-sm px-3 py-1 rounded bg-green-500 text-white hover:bg-green-600"
+                                >
+                                    Download
+                                </button>
+
+                                {/* Share button */}
+                                <button
+                                    onClick={async () => {
+                                        if (navigator.share) {
+                                            try {
+                                                await navigator.share({
+                                                    title: "Check out my car poster!",
+                                                    url: poster.imageUrl,
+                                                });
+                                            } catch (err) {
+                                                console.error("Share failed:", err);
+                                            }
+                                        } else {
+                                            await navigator.clipboard.writeText(poster.imageUrl);
+                                            alert("Link copied to clipboard!");
+                                        }
+                                    }}
+                                    className="text-sm px-3 py-1 rounded bg-purple-500 text-white hover:bg-purple-600"
+                                >
+                                    Share
+                                </button>
+                            </div>
                         </div>
                     ))}
                 </div>

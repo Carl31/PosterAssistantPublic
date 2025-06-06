@@ -10,6 +10,7 @@ import { db } from '@/firebase/client'
 import TemplateCard from '@/components/TemplateCard'
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { auth } from '@/firebase/client'
+import { useRouter } from 'next/navigation';
 
 // Below for using httpsCallable function (not currently in use)
 //import { functions } from '@/firebase/client'
@@ -25,6 +26,8 @@ type Template = {
 }
 
 export default function GeneratePage() {
+    const router = useRouter();
+
     // For uploading image
     const [image, setImage] = useState<File | null>(null)
     const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -53,8 +56,9 @@ export default function GeneratePage() {
 
     // For generating poster
     const [loading, setLoading] = useState(false)
-     
+
     const [posterUrl, setPosterUrl] = useState<string | null>(null)
+
 
 
 
@@ -67,6 +71,7 @@ export default function GeneratePage() {
             setTemplates(data)
         }
         fetchTemplates()
+
     }, [])
 
     // Fetch favorites when user is loaded
@@ -82,8 +87,15 @@ export default function GeneratePage() {
         fetchFavorites()
     }, [user])
 
-    // For uploading user image to Firestore (for Photopea to access later) and setting it in the UI
+    // For changing pages if posterUrl is detected (i.e. poster is finished generating)
+    useEffect(() => {
+        if (posterUrl) {
+            const encoded = encodeURIComponent(posterUrl);
+            router.push(`/mockup?url=${encoded}`);
+        }
+    }, [posterUrl, router]);
 
+    // For uploading user image to Firestore (for Photopea to access later) and setting it in the UI
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         const user = auth.currentUser
@@ -159,7 +171,7 @@ export default function GeneratePage() {
         )
     }
 
-     
+
     const savePosterMetadata = async (uid: string, imageUrl: string) => {
         const posterId = crypto.randomUUID()
 

@@ -8,6 +8,7 @@
     "shell": "npm run build && firebase functions:shell",
     "start": "npm run shell",
     "deploy": "npx eslint . --fix && npm run build && firebase deploy --only functions:generatePoster",
+    "deployhosting": "cd .. && firebase deploy --only hosting",
     "logs": "firebase functions:log"
   },
   "engines": {
