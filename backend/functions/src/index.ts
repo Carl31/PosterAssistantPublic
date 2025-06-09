@@ -22,16 +22,17 @@
 // Above code is default code.
 
 
-// WHAT THIS FILE DOES:
+// WHAT generatePoster FUNCTION DOES:
 // Validates auth
 // Receives all poster input fields
 // Renders the final poster image using renderPoster()
 // Uploads to Storage: posters/{uid}/{uuid}.png
 // Returns a signed URL for immediate access
 
+// This file also exports other firebase functions (see last line of file)
+
 
 import {renderPoster} from "../scripts/photopeaRenderer";
-import {renderMockup} from "../scripts/photopeaMockuper";
 import {v4 as uuidv4} from "uuid";
 import {getStorage} from "firebase-admin/storage";
 
@@ -102,7 +103,7 @@ export const generatePoster = functions .runWith({memory: "8GB", timeoutSeconds:
         // Step 2: Upload to 'posters/...'
         // Upload the image to Firebase Storage
         console.log("Uploading poster...");
-        const fileName = `posters/${uid}/${uuidv4()}.png`;
+        const fileName = `user_posters/${uid}/${uuidv4()}.png`;
         const file = bucket.file(fileName);
 
         await file.save(imageBuffer, {
@@ -219,5 +220,5 @@ export const generatePoster = functions .runWith({memory: "8GB", timeoutSeconds:
 //   });
 
 // How to export other functions:
-// export {photopeaReceiver} from '../scripts/photopeaReceiver';
-
+export {detectCarDetailsWithGemini} from '../scripts/carAnalyzer';
+export {generateCarDescriptionWithGemini} from '../scripts/carDescriptor';

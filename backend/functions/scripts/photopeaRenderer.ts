@@ -66,12 +66,33 @@ export const renderPoster = async ({
 
     page.on('console', async (msg) => {
       const text = msg.text();
-      console.log('[Photopea Console] ', text);
-    // console.log('[Photopea Console text]', text);
+      console.log('[Photopea Console] ', text.toString());
     });
 
+    // page.on('console', async (msg) => {
+    //   for (let i = 0; i < msg.args().length; ++i) {
+    //     msg.args()[i].jsonValue().then((val) => {
+    //       console.log(`[Photopea Console JSON ] ${JSON.stringify(val, null, 2)}`);
+    //     }).catch((err) => {
+    //       console.log(`[Photopea Console Error]`, err);
+    //     });
+    //   }
+    // });
+
+
+    page.on('error', async (event) => {
+      console.log(`[Photopea Event] ${event.name}:`, event);
+    });
+
+    const listener = (event: { data: any }) => {
+      console.log("Received message from Photopea:", event.data);
+    };
+
+    (page as any).on('message', listener);
+
+
     // Wait for buffer to be written to window
-    const timeoutMs = 90000;
+    const timeoutMs = 120000; // 2min
     const start = Date.now();
     let exportedBuffer: Buffer | null = null;
 

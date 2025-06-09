@@ -35,11 +35,15 @@
         }
       } else {
         // Optional: log unexpected non-ArrayBuffer messages
-        // console.log("[Wrapper] Ignored message:", typeof e.data, e.data); // note necessary
+        // console.log("[Wrapper] Ignored message:", typeof e.data, e.data); // not necessary
         if (e.data === "done") {
           console.log("done");
         }
       }
+    });
+
+    window.addEventListener("event", function (e) {
+      console.log("[Wrapper EVENT] Received message from Photopea:", e.data);
     });
 
 
@@ -90,61 +94,98 @@
       ppWindow.postMessage(`app.open("${psdUrl}", null, true);`, "*");
       await waitForDone(2);
       console.log("[Wrapper] PSD loaded and ready");
-      //await delay(8000);
+      await delay(1000);
+
+
+//       const waitUntilPSDLoaded = `
+//   new Promise((resolve) => {
+//     let checkReady = setInterval(() => {
+//       if (app.documents.length > 0 && app.activeDocument.layers.length > 0) {
+//         clearInterval(checkReady);
+//         resolve("READY");
+//       }
+//     }, 800);
+//   })
+// `;
+
+//       // Evaluate that first
+//       await page.evaluate(waitUntilPSDLoaded);
+
+const checkScript = `
+var names = [];
+var q=[app.activeDocument];
+console.log("q= " + q);
+while(q.length){
+  var g=q.pop();
+  for(var i=0;i<g.layers.length;i++){
+    var l=g.layers[i];
+    if(l.name=="make"){l.textItem.contents="${carMake}"; console.log("Updated make!");}
+    if(l.name=="model"){l.textItem.contents="${carModel}"; console.log("Updated model!");}
+    if(l.name=="year"){l.textItem.contents="${carYear}"; console.log("Updated year!");}
+    if(l.name=="date"){l.textItem.contents="${date}"; console.log("Updated date!");}
+    if(l.name=="instagram"){l.textItem.contents="${instagram}"; console.log("Updated instagram!");}
+
+    names.push(l.name);
+    if(l.layers) q.push(l);
+  }
+}
+console.log("[PP_LOG] All layer names: " + names.join(", "));
+`;
+
+try {
+  ppWindow.postMessage(checkScript, "*");
+  await waitForDone(1);
+  await delay(2000);
+} catch (e) {
+  console.log("[Wrapper] Error:");
+  console.log(e.toString());
+}
+
+
 
 
       // Stage 2: Update variables:
-      const updateVariables = [
-        `var q=[app.activeDocument];while(q.length){var g=q.pop();for(var i=0;i<g.layers.length;i++){var l=g.layers[i];if(l.name=="make"){l.textItem.contents="${carMake}"; console.log("Updated make!"); q=[];break;}if(l.layers)q.push(l);}}`,
-        `var q=[app.activeDocument];while(q.length){var g=q.pop();for(var i=0;i<g.layers.length;i++){var l=g.layers[i];if(l.name=="model"){l.textItem.contents="${carModel}"; console.log("Updated model!"); q=[];break;}if(l.layers)q.push(l);}}`,
-        `var q=[app.activeDocument];while(q.length){var g=q.pop();for(var i=0;i<g.layers.length;i++){var l=g.layers[i];if(l.name=="year"){l.textItem.contents="${carYear}"; console.log("Updated year!"); q=[];break;}if(l.layers)q.push(l);}}`,
-        `var q=[app.activeDocument];while(q.length){var g=q.pop();for(var i=0;i<g.layers.length;i++){var l=g.layers[i];if(l.name=="description"){l.textItem.contents="${description}"; console.log("Updated description!"); q=[];break;}if(l.layers)q.push(l);}}`,
-        `var q=[app.activeDocument];while(q.length){var g=q.pop();for(var i=0;i<g.layers.length;i++){var l=g.layers[i];if(l.name=="date"){l.textItem.contents="${date}"; console.log("Updated date!"); q=[];break;}if(l.layers)q.push(l);}}`,
-        `var q=[app.activeDocument];while(q.length){var g=q.pop();for(var i=0;i<g.layers.length;i++){var l=g.layers[i];if(l.name=="instagram"){l.textItem.contents="${instagram}"; console.log("Updated instagram!"); q=[];break;}if(l.layers)q.push(l);}}`,
-      ];
+      // const updateVariables = [
+      //   `var q=[app.activeDocument];while(q.length){var g=q.pop();for(var i=0;i<g.layers.length;i++){var l=g.layers[i];if(l.name=="make"){l.textItem.contents="${carMake}"; console.log("Updated make!"); q=[];break;}if(l.layers)q.push(l);}}`,
+      //   `var q=[app.activeDocument];while(q.length){var g=q.pop();for(var i=0;i<g.layers.length;i++){var l=g.layers[i];if(l.name=="model"){l.textItem.contents="${carModel}"; console.log("Updated model!"); q=[];break;}if(l.layers)q.push(l);}}`,
+      //   `var q=[app.activeDocument];while(q.length){var g=q.pop();for(var i=0;i<g.layers.length;i++){var l=g.layers[i];if(l.name=="year"){l.textItem.contents="${carYear}"; console.log("Updated year!"); q=[];break;}if(l.layers)q.push(l);}}`,
+      //   `var q=[app.activeDocument];while(q.length){var g=q.pop();for(var i=0;i<g.layers.length;i++){var l=g.layers[i];if(l.name=="description"){l.textItem.contents="${description}"; console.log("Updated description!"); q=[];break;}if(l.layers)q.push(l);}}`,
+      //   `var q=[app.activeDocument];while(q.length){var g=q.pop();for(var i=0;i<g.layers.length;i++){var l=g.layers[i];if(l.name=="date"){l.textItem.contents="${date}"; console.log("Updated date!"); q=[];break;}if(l.layers)q.push(l);}}`,
+      //   `var q=[app.activeDocument];while(q.length){var g=q.pop();for(var i=0;i<g.layers.length;i++){var l=g.layers[i];if(l.name=="instagram"){l.textItem.contents="${instagram}"; console.log("Updated instagram!"); q=[];break;}if(l.layers)q.push(l);}}`,
+      // ];
 
-      const combinedScript = updateVariables.join("\n");
-      console.log("[Wrapper] Updating variables...");
-      ppWindow.postMessage(combinedScript, "*");
-      await waitForDone(1);
+      // const combinedScript = updateVariables.join("\n");
+      // console.log("[Wrapper] Updating variables...");
+      // ppWindow.postMessage(combinedScript, "*");
+      //await waitForDone(1);
+      // await delay(1000);
       console.log("[Wrapper] Updated variables! Continuing...");
 
 
       // Stage 3: Place user image
       sendToPhotopea(`app.open("${userImageUrl}", null, true);`);
-      await delay(1500);
+      await waitForDone(1);
+      await delay(2000);
       console.log("[Wrapper] Pasted image! Continuing...");
-      sendToPhotopea(`
-          // Step 1: Get the most recent document (user image)
+          sendToPhotopea(`
           var imageDoc = app.activeDocument;
-          //console.log("Documents: " + app.documents.length); // testing
           console.log("Image document: " + imageDoc.name);
 
-          // Step 2: Capture the main (template) document
           var mainDoc = app.documents[0];
-          //console.log("Main document: " + mainDoc.name); // testing
-          //console.log("Active document: " + app.activeDocument.name); // testing
 
-          // Step 3: Make sure the layer is visible and unlocked
           imageDoc.activeLayer.visible = true;
           imageDoc.activeLayer.locked = false;
 
-          // Step 4: Select all and copy
           imageDoc.selection.selectAll();
-          imageDoc.selection.copy(true); // 'true' forces the copy, but still needs something selected
 
-          // Step 5: Close image document
-          imageDoc.close(SaveOptions.DONOTSAVECHANGES);
+          imageDoc.close();
           console.log("Image copied and imageDoc closed!");
 
-          // Step 6: Switch back to the template and paste
           app.activeDocument = mainDoc;
           mainDoc.paste();
           var pastedLayer = mainDoc.activeLayer;
           console.log("Image pasted!");
 
-
-          // Find bottom layer
           var bottomLayer = null;
           for (var i = mainDoc.layers.length - 1; i >= 0; i--) {
             if (mainDoc.layers[i].name === "Layer 0") {
@@ -154,7 +195,6 @@
           }
           console.log("Layer found:", bottomLayer.name);
 
-          // Resize to fit
           var bl = bottomLayer.bounds;
           var pl = pastedLayer.bounds;
 
@@ -170,19 +210,18 @@
           var blX = (bl[0] + bl[2]) / 2;
           var blY = (bl[1] + bl[3]) / 2;
 
-          pl = pastedLayer.bounds; // refresh bounds after resize
+          pl = pastedLayer.bounds;
           var plX = (pl[0] + pl[2]) / 2;
           var plY = (pl[1] + pl[3]) / 2;
 
-          // Compute offset needed to center
           var dx = blX - plX;
           var dy = blY - plY;
           pastedLayer.translate(dx, dy);
 
-          // Move above bottom layer
           pastedLayer.move(bottomLayer, ElementPlacement.PLACEBEFORE);
 
           console.log("Image moved!");
+
       `);
       await waitForDone(1);
       await delay(2000);

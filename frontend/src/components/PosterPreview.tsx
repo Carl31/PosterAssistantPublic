@@ -24,7 +24,7 @@ export default function PosterPreview({ posterUrl }: { posterUrl: string }) {
     canvas.width = 1149;
     canvas.height = 1920;
 
-    mockupFrame.src = '/mockup_frame_light.png';
+    mockupFrame.src = '/mockup_frame_light2.png';
     posterImg.src = posterUrl;
 
     mockupFrame.onload = () => {

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // This is the main entry point for poster creation.
 
@@ -137,7 +138,7 @@ export default function GeneratePage() {
     }
 
     // Simulate AI vehicle identification
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
     const mockDetectCarDetails = async (imageFile: File) => {
         return new Promise(resolve =>
             setTimeout(() => {
@@ -150,25 +151,137 @@ export default function GeneratePage() {
         )
     }
 
-    // Detect car image before identifying
+    // Detect car details in image using cloud function
     const detectCar = async () => {
         if (!image) return
         setLoadingDetection(true)
-        const result = await mockDetectCarDetails(image)
-        setCarDetails(result as any)
-        setLoadingDetection(false)
+
+        // Below 2 lines for dummy data
+        // const result = await mockDetectCarDetails(image) // dummy data
+        // setCarDetails(result as any); // dummy data set
+
+
+        if (!user) {
+            console.error('User is not authenticated.')
+            return
+        }
+        // For sending request to backnend with authorisation:
+        const token = user && (await user.getIdToken())
+
+        try {
+            // 1. Convert the image file to a Base64 string
+            const base64Image = await fileToBase64(image);
+            const mimeType = image.type;
+
+            // 2. Prepare the data to send in the request body
+            const requestBody = {
+                base64Image: base64Image,
+                mimeType: mimeType,
+            };
+
+            // 3. Make the HTTP POST request using fetch
+            const response = await fetch("https://us-central1-posterassistant-aebf0.cloudfunctions.net/detectCarDetailsWithGemini", {
+                method: 'POST', // We configured the function to accept POST
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify(requestBody), // Send the data as a JSON string
+            });
+
+            // 4. Handle the response
+            if (!response.ok) {
+                // If the server responded with an error status (e.g., 400, 500)
+                const errorText = await response.text(); // Get the error message from the body
+                console.error(`HTTP error! status: ${response.status}`, errorText);
+                throw new Error(`Function returned error: ${response.status} - ${errorText}`);
+            }
+
+            // 5. Parse the JSON response from the function
+            const result = await response.json(); // The function sends back JSON
+
+            // console.log("Received result from Cloud Function:", result);
+
+            updateCarDetailsFromApiResponse(result);
+            setLoadingDetection(false)
+
+        } catch (error) {
+            console.error("Error calling Cloud Function:", error);
+            // Propagate the error or return a default value/structure as needed
+            throw error; // Or return { make: "", model: "", year: "", warning: "Client-side error calling function." };
+        }
     }
 
 
     // Generate description
     const mockGenerateDescription = async (make: string, model: string, year: string) => {
-        return new Promise(resolve =>
-            setTimeout(() => {
-                resolve(
-                    `The ${year} ${make} ${model} combines performance, style, and engineering excellence in a timeless design.`
-                )
-            }, 1000)
-        )
+        // return new Promise(resolve =>
+        //     setTimeout(() => {
+        //         resolve(
+        //             `The ${year} ${make} ${model} combines performance, style, and engineering excellence in a timeless design.`
+        //         )
+        //     }, 1000)
+        // )
+        //return generateCarDescriptionWithGemini(make, model, year)
+    }
+
+    // Uses cloud function to generate description
+    const generateDescription = async () => {
+        if (!carDetails) return
+        setLoadingDescription(true)
+        // const result = await mockDetectCarDetails(image) // dummy data
+
+
+        if (!user) {
+            console.error('User is not authenticated.')
+            return
+        }
+        // For sending request to backnend with authorisation:
+        const token = user && (await user.getIdToken())
+
+        try {
+
+            // 1. Prepare the data to send in the request body
+            const requestBody = {
+                make: carDetails.make,
+                model: carDetails.model,
+                year: carDetails.year
+            };
+
+            // 2. Make the HTTP POST request using fetch
+            const response = await fetch("https://us-central1-posterassistant-aebf0.cloudfunctions.net/generateCarDescriptionWithGemini", {
+                method: 'POST', // We configured the function to accept POST
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify(requestBody), // Send the data as a JSON string
+            });
+
+            // 3. Handle the response
+            if (!response.ok) {
+                // If the server responded with an error status (e.g., 400, 500)
+                const errorText = await response.text(); // Get the error message from the body
+                console.error(`HTTP error! status: ${response.status}`, errorText);
+                throw new Error(`Function returned error: ${response.status} - ${errorText}`);
+            }
+
+            // 4. Parse the JSON response from the function
+            const result = await response.json(); // The function sends back JSON
+
+            // console.log("Received result from Cloud Function:", result);
+            console.log("Car description state updated successfully:", result.text);
+            setDescription(result.text);
+
+            // The function is designed to return a JSON object { make, model, year }
+
+        } catch (error) {
+            console.error("Error calling Cloud Function:", error);
+            // Propagate the error or return a default value/structure as needed
+            throw error; // Or return { make: "", model: "", year: "", warning: "Client-side error calling function." };
+        } finally {
+            setLoadingDescription(false)
+        }
     }
 
 
@@ -211,7 +324,10 @@ export default function GeneratePage() {
     // Generating poster using fetch
     const handleGeneratePoster = async () => {
 
-        if (!user) return
+        if (!user) {
+            console.error('User is not authenticated.')
+            return
+        }
         // For sending request to backnend with authorisation:
         const token = user && (await user.getIdToken())
 
@@ -289,7 +405,6 @@ export default function GeneratePage() {
                 />
 
                 {previewUrl && (
-                    // eslint-disable-next-line @next/next/no-img-element
                     <img src={previewUrl} alt="Preview" className="w-full rounded-xl shadow-lg" />
                 )}
             </section>
@@ -303,6 +418,7 @@ export default function GeneratePage() {
                     {loadingDetection ? 'Detecting...' : 'Detect Car Info'}
                 </button>
 
+{/* TODO: Uhh will probably have to change the carDetails.make check below to something else - incase Gemini doesnt recognise the make. */}
                 {carDetails.make && (
                     <div className="mt-4 space-y-2">
                         <label className="block">Make</label>
@@ -310,18 +426,21 @@ export default function GeneratePage() {
                             value={carDetails.make}
                             onChange={(e) => setCarDetails({ ...carDetails, make: e.target.value })}
                             className="border p-2 w-full"
+                            placeholder="Add make"
                         />
                         <label className="block">Model</label>
                         <input
                             value={carDetails.model}
                             onChange={(e) => setCarDetails({ ...carDetails, model: e.target.value })}
                             className="border p-2 w-full"
+                            placeholder="Add model"
                         />
                         <label className="block">Year</label>
                         <input
                             value={carDetails.year}
                             onChange={(e) => setCarDetails({ ...carDetails, year: e.target.value })}
                             className="border p-2 w-full"
+                            placeholder="Add year"
                         />
                     </div>
                 )}
@@ -332,10 +451,7 @@ export default function GeneratePage() {
                 <button
                     disabled={!carDetails.make || !carDetails.model || !carDetails.year || loadingDescription}
                     onClick={async () => {
-                        setLoadingDescription(true)
-                        const desc = await mockGenerateDescription(carDetails.make, carDetails.model, carDetails.year)
-                        setDescription(desc as string)
-                        setLoadingDescription(false)
+                        generateDescription()
                     }}
                     className="mt-4 bg-green-600 text-white px-4 py-2 rounded-md"
                 >
@@ -382,4 +498,50 @@ export default function GeneratePage() {
 
         </div>
     )
+
+
+
+    // UTLITY FUNCTIONS:
+
+    // --- Utility function to convert File/Blob to Base64 ---
+    function fileToBase64(file: File | Blob): Promise<string> {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve((reader.result as string).split(',')[1]); // Get base64 string after "base64,"
+            reader.onerror = error => reject(error);
+        });
+    }
+
+    function updateCarDetailsFromApiResponse(
+        responseData: any) { // Use a more specific type if you have one for the full response
+        {
+            // Check if the responseData has the expected structure
+            if (!responseData) {
+                console.error("API response is missing:", responseData);
+                return;
+            }
+
+            const responseObject = responseData.json;
+
+            try {
+                // Attempt to parse the string value of the 'message' property
+                //const parsedDetails = JSON.parse(jsonString);
+
+                // Basic validation to ensure the parsed object looks like car details
+                if (typeof responseObject === 'object' && responseObject !== null) {
+                    // Update the state with the parsed JSON object
+                    setCarDetails(responseObject);
+                    console.log("Car details state updated successfully:", responseObject);
+                } else {
+                    console.error("Parsed content from 'message' is not an object:", responseObject);
+                }
+
+
+            } catch (error) {
+                // Handle cases where JSON.parse fails (e.g., the string isn't valid JSON)
+                console.error("Failed to set car details from API response:", error, "Object received:", responseObject);
+            }
+        };
+    }
 }

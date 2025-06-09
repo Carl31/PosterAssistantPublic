@@ -15,6 +15,7 @@ type TemplateProps = {
 }
 
 export default function TemplateCard({
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     id,
     name,
     createdBy,
@@ -31,7 +32,7 @@ export default function TemplateCard({
             className={`border p-4 rounded-xl shadow-md cursor-pointer transition hover:scale-105 ${isSelected ? 'border-blue-600 ring-2 ring-blue-300' : 'border-gray-300'
                 }`}
         >
-            <img src={previewImageUrl} alt={name} className="rounded-md mb-2" />
+            <img src={previewImageUrl} alt={name} className="rounded-md mb-2" width="600" height="800" />
             <h2 className="font-bold">{name}</h2>
             <p className="text-xs text-gray-600">Created by: {createdBy}</p>
             <p className="text-xs text-gray-600">Fonts: {fontsUsed.join(', ')}</p>
