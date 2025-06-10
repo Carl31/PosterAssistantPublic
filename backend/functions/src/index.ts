@@ -114,7 +114,7 @@ export const generatePoster = functions .runWith({memory: "8GB", timeoutSeconds:
 
         const [posterUrl] = await file.getSignedUrl({
           action: "read",
-          expires: "03-01-2030",
+          expires: "03-01-3030",
         });
 
         // // Step 3: Generate the mockup from the poster URL
@@ -124,7 +124,7 @@ export const generatePoster = functions .runWith({memory: "8GB", timeoutSeconds:
         // console.log("Uploading mockup...");
         // const mockupFile = bucket.file(`mockups/${uid}/${uuidv4()}.png`);
         // await mockupFile.save(mockupBuffer, {metadata: {contentType: 'image/png'}});
-        // const [mockupUrl] = await mockupFile.getSignedUrl({action: 'read', expires: '03-01-2030'});
+        // const [mockupUrl] = await mockupFile.getSignedUrl({action: 'read', expires: '03-01-3030'});
 
         // Return the signed URL as a JSON response
         // Step 5: Return both

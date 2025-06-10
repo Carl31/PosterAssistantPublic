@@ -50,6 +50,7 @@ export default function GeneratePage() {
         year: ''
     })
     const [loadingDetection, setLoadingDetection] = useState(false)
+    const [geminiChecked, setGeminiChecked] = useState(false); // to check if gemini has attempted to recognise the vehicle yet or not
 
     // For generating description of vehicle
     const [description, setDescription] = useState('')
@@ -203,12 +204,14 @@ export default function GeneratePage() {
             // console.log("Received result from Cloud Function:", result);
 
             updateCarDetailsFromApiResponse(result);
-            setLoadingDetection(false)
 
         } catch (error) {
             console.error("Error calling Cloud Function:", error);
             // Propagate the error or return a default value/structure as needed
             throw error; // Or return { make: "", model: "", year: "", warning: "Client-side error calling function." };
+        } finally {
+            setLoadingDetection(false)
+            setGeminiChecked(true)
         }
     }
 
@@ -418,8 +421,7 @@ export default function GeneratePage() {
                     {loadingDetection ? 'Detecting...' : 'Detect Car Info'}
                 </button>
 
-{/* TODO: Uhh will probably have to change the carDetails.make check below to something else - incase Gemini doesnt recognise the make. */}
-                {carDetails.make && (
+                {geminiChecked && (
                     <div className="mt-4 space-y-2">
                         <label className="block">Make</label>
                         <input

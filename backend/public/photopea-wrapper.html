@@ -13,7 +13,7 @@
     const params = new URLSearchParams(window.location.search);
     const psdUrl = params.get("psd");
     const userImageUrl = params.get("userImageUrl");
-    const description = params.get("description");
+    let description = params.get("description");
     const instagram = params.get("instagramHandle");
     const carMake = params.get("carMake").toUpperCase();
     const carModel = params.get("carModel").toUpperCase();
@@ -97,28 +97,28 @@
       await delay(1000);
 
 
-//       const waitUntilPSDLoaded = `
-//   new Promise((resolve) => {
-//     let checkReady = setInterval(() => {
-//       if (app.documents.length > 0 && app.activeDocument.layers.length > 0) {
-//         clearInterval(checkReady);
-//         resolve("READY");
-//       }
-//     }, 800);
-//   })
-// `;
+      //       const waitUntilPSDLoaded = `
+      //   new Promise((resolve) => {
+      //     let checkReady = setInterval(() => {
+      //       if (app.documents.length > 0 && app.activeDocument.layers.length > 0) {
+      //         clearInterval(checkReady);
+      //         resolve("READY");
+      //       }
+      //     }, 800);
+      //   })
+      // `;
 
-//       // Evaluate that first
-//       await page.evaluate(waitUntilPSDLoaded);
+      //       // Evaluate that first
+      //       await page.evaluate(waitUntilPSDLoaded);
 
-const checkScript = `
+      const updateVarScript = `
 var names = [];
 var q=[app.activeDocument];
-console.log("q= " + q);
 while(q.length){
   var g=q.pop();
   for(var i=0;i<g.layers.length;i++){
     var l=g.layers[i];
+
     if(l.name=="make"){l.textItem.contents="${carMake}"; console.log("Updated make!");}
     if(l.name=="model"){l.textItem.contents="${carModel}"; console.log("Updated model!");}
     if(l.name=="year"){l.textItem.contents="${carYear}"; console.log("Updated year!");}
@@ -129,17 +129,47 @@ while(q.length){
     if(l.layers) q.push(l);
   }
 }
-console.log("[PP_LOG] All layer names: " + names.join(", "));
 `;
 
-try {
-  ppWindow.postMessage(checkScript, "*");
+// Add for listing all layers: console.log("[PP_LOG] All layer names: " + names.join(", "));
+
+
+
+description = description.trim();
+console.log("Final desc: " + description);
+
+// If desciption is set, assume that psd has desciption layer visible and ready to be updated
+if (description != "Unknown make/model" || description != "") {
+  console.log("[Wrapper] Updating description...");
+  const updateDescriptionScript = `
+  var q=[app.activeDocument];
+  var descriptionLayer = null;
+  for (var i = q[0].layers.length - 1; i >= 0; i--) {
+          if (q[0].layers[i].name === "VAR_TEXTS") {
+            for (var j = 0; j < q[0].layers[i].layers.length; j++) {
+              if (q[0].layers[i].layers[j].name === "description") {
+                console.log("Found description layer! : " + q[0].layers[i].layers[j]);
+                q[0].layers[i].layers[j].textItem.contents="${description}";
+              }
+            }
+          }
+    }
+  `;
+  ppWindow.postMessage(updateDescriptionScript, "*");
   await waitForDone(1);
-  await delay(2000);
-} catch (e) {
-  console.log("[Wrapper] Error:");
-  console.log(e.toString());
+
+  // console.log("Layer found:", q.layers[i].name);
+  // q[0].layers[i].layers[j].paragraphs[0].ranges[0].text="${description}";
+
 }
+
+      try {
+        ppWindow.postMessage(updateVarScript, "*");
+        await waitForDone(1);
+      } catch (e) {
+        console.log("[Wrapper] Error:");
+        console.log(e.toString());
+      }
 
 
 
@@ -167,7 +197,7 @@ try {
       await waitForDone(1);
       await delay(2000);
       console.log("[Wrapper] Pasted image! Continuing...");
-          sendToPhotopea(`
+      sendToPhotopea(`
           var imageDoc = app.activeDocument;
           console.log("Image document: " + imageDoc.name);
 
