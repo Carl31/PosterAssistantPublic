@@ -7,7 +7,7 @@
 </head>
 
 <body>
-  <iframe id="pp" src="https://www.photopea.com/#" style="width: 1000px; height: 800px; border: none"></iframe>
+  <iframe id="pp" src="" style="width: 1000px; height: 800px; border: none"></iframe>
 
   <script>
     const params = new URLSearchParams(window.location.search);
@@ -19,9 +19,42 @@
     const carModel = params.get("carModel").toUpperCase();
     const carYear = params.get("carYear");
     const date = params.get("date");
+
+    const fontsUsed = params.get("fontsUsed");
+    const fontsUsedArray = fontsUsed.split(',');
+
     const delay = (ms) => new Promise((r) => setTimeout(r, ms));
     const iframe = document.getElementById("pp");
     const ppWindow = iframe.contentWindow;
+
+    // Loading the page with a payload to initialise all required fonts for the PSD:
+    // "https://cdn.jsdelivr.net/gh/Carl31/PosterAssistant@main/fonts/AkiraExpanded-SuperBold.otf",
+    //     "https://cdn.jsdelivr.net/gh/Carl31/PosterAssistant@main/fonts/AlternateGothicNo2BT-Regular.otf",
+    //     "https://cdn.jsdelivr.net/gh/Carl31/PosterAssistant@main/fonts/AvenirLTStd-Black.otf",
+    //     "https://cdn.jsdelivr.net/gh/Carl31/PosterAssistant@main/fonts/HGSoeiPresenceEB.ttf",
+    //     "https://cdn.jsdelivr.net/gh/Carl31/PosterAssistant@main/fonts/Tahoma.ttf",
+
+    const payload = {
+      files: [],
+      resources: [],
+      environment: {},
+      apis: {},
+      script: `
+        app.echoToOE("Loaded with Payload!");
+      `
+    };
+
+    for (let i = 0; i < fontsUsedArray.length; i++) {
+      payload.resources.push(`https://cdn.jsdelivr.net/gh/Carl31/PosterAssistant@main/fonts/${fontsUsedArray[i]}`);	
+    }
+    console.log("Payload:", payload);
+
+
+    const encodedPayload = encodeURIComponent(JSON.stringify(payload));
+    const url = "https://www.photopea.com#" + encodedPayload;
+    console.log("Setting iframe.src to Photopea URL:", url);
+    document.getElementById("pp").src = url;
+    console.log("Loaded Photopea with Payload");
 
     // Wait for export and send result back to Puppeteer
     window.addEventListener("message", function (e) {
@@ -86,8 +119,8 @@
 
     // Trigger Photopea commands
     async function runScript() {
-      console.log("[Wrapper] Waiting for iframe to settle...");
-      await delay(3000);
+      console.log("[Wrapper] Waiting for iframe to settle..."); // and fonts to load.
+      await delay(5000);
 
       // Stage 1: Open psd
       console.log("[Wrapper] Loading PSD...");
@@ -131,17 +164,17 @@ while(q.length){
 }
 `;
 
-// Add for listing all layers: console.log("[PP_LOG] All layer names: " + names.join(", "));
+      // Add for listing all layers: console.log("[PP_LOG] All layer names: " + names.join(", "));
 
 
 
-description = description.trim();
-console.log("Final desc: " + description);
+      description = description.trim();
+      console.log("Final desc: " + description);
 
-// If desciption is set, assume that psd has desciption layer visible and ready to be updated
-if (description != "Unknown make/model" || description != "") {
-  console.log("[Wrapper] Updating description...");
-  const updateDescriptionScript = `
+      // If desciption is set, assume that psd has desciption layer visible and ready to be updated
+      if (description != "Unknown make/model" || description != "") {
+        console.log("[Wrapper] Updating description...");
+        const updateDescriptionScript = `
   var q=[app.activeDocument];
   var descriptionLayer = null;
   for (var i = q[0].layers.length - 1; i >= 0; i--) {
@@ -155,13 +188,13 @@ if (description != "Unknown make/model" || description != "") {
           }
     }
   `;
-  ppWindow.postMessage(updateDescriptionScript, "*");
-  await waitForDone(1);
+        ppWindow.postMessage(updateDescriptionScript, "*");
+        await waitForDone(1);
 
-  // console.log("Layer found:", q.layers[i].name);
-  // q[0].layers[i].layers[j].paragraphs[0].ranges[0].text="${description}";
+        // console.log("Layer found:", q.layers[i].name);
+        // q[0].layers[i].layers[j].paragraphs[0].ranges[0].text="${description}";
 
-}
+      }
 
       try {
         ppWindow.postMessage(updateVarScript, "*");

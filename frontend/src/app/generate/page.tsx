@@ -12,6 +12,7 @@ import TemplateCard from '@/components/TemplateCard'
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { auth } from '@/firebase/client'
 import { useRouter } from 'next/navigation';
+import imageCompression from 'browser-image-compression';
 
 // Below for using httpsCallable function (not currently in use)
 //import { functions } from '@/firebase/client'
@@ -99,25 +100,99 @@ export default function GeneratePage() {
 
     // For uploading user image to Firestore (for Photopea to access later) and setting it in the UI
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0]
+        let file = e.target.files?.[0]
         const user = auth.currentUser
+        let valid = true;
+        let compressed = false;
+        let compressedFile = null;
 
         if (!file || !user) return
 
-        setImage(file) // Optional: keep original for crop/edit later
 
-        const storage = getStorage()
-        const storageRef = ref(storage, `user_uploads/${user.uid}/${file.name}`)
+        // validates file
+        if (file) {
 
-        try {
-            const snapshot = await uploadBytes(storageRef, file)
-            const downloadURL = await getDownloadURL(snapshot.ref)
+            // Check file type is an image
+            if (!file.type.startsWith('image/')) {
+                alert('Please select an image file. The file you selected is not an image.');
+                const imageInput = document.getElementById("imageInput") as HTMLInputElement;
+                imageInput.value = "";
+                valid = false;
+                return;
+            } else {
+                // File is an image, proceed with upload or other actions
+                console.log('File is an image. Proceeding...');
+            }
 
-            setPreviewUrl(downloadURL) // ✅ Use downloadURL instead of in-memory blob
-        } catch (err) {
-            console.error('Image upload failed:', err)
-            alert('Failed to upload image. Please try again.')
+            // Check file size is below 5mb
+            const fileSizeInMB = file.size / (1024 * 1024); // Convert bytes to MB
+            if (fileSizeInMB > 5 && fileSizeInMB <= 25) { // Compresses file
+                // For simply showing an alert
+                // alert('File size exceeds 5MB. Please select a smaller file.');
+                // const imageInput = document.getElementById("imageInput") as HTMLInputElement;
+                // imageInput.value = "";
+                // valid = false;
+                // return;
+
+                // Compress image
+                const options = {
+                    maxSizeMB: 4, // Try to get it well under 5MB
+                    maxWidthOrHeight: 7000, // Prevent huge resolutions
+                    useWebWorker: true,
+                    fileType: 'image/jpeg',
+                    initialQuality: 0.9,
+                };
+
+                try {
+                    compressedFile = await imageCompression(file, options);
+                    console.log('Size of original file:', file.size / (1024 * 1024), 'MB');
+                    // print size of compressed file
+                    console.log('Size of compressed file:', compressedFile.size / (1024 * 1024), 'MB');
+                    compressed = true;
+                } catch (error) {
+                    console.error('Image compression failed:', error);
+                    const imageInput = document.getElementById("imageInput") as HTMLInputElement;
+                    imageInput.value = "";
+                    valid = false;
+                    return;
+                }
+            } else if (fileSizeInMB <= 5) { // uploads file.
+                // File is within the size limit, proceed with upload or other actions
+                // console.log('File size is acceptable.');
+
+            } else { // File is too large
+                alert('File size exceeds 25MB. Please select a smaller file.');
+                const imageInput = document.getElementById("imageInput") as HTMLInputElement;
+                imageInput.value = "";
+                valid = false;
+                return;
+            }
+
         }
+
+
+
+        if (valid) {
+            if (compressed) {
+                file = compressedFile!;
+            }
+
+            setImage(file);
+            const storage = getStorage()
+            const storageRef = ref(storage, `user_uploads/${user.uid}/${file.name}`)
+
+            try {
+                const snapshot = await uploadBytes(storageRef, file)
+                const downloadURL = await getDownloadURL(snapshot.ref)
+
+                setPreviewUrl(downloadURL) // ✅ Use downloadURL instead of in-memory blob
+            } catch (err) {
+                console.error('Image upload failed:', err)
+                alert('Failed to upload image. Please try again.')
+            }
+
+        }
+
     }
 
 
@@ -347,7 +422,8 @@ export default function GeneratePage() {
                     userImageUrl: previewUrl, // Must be publicly accessible
                     carDetails,
                     description,
-                    instagramHandle
+                    instagramHandle,
+                    fontsUsed: selectedTemplate?.fontsUsed
                 })
             })
 
@@ -401,6 +477,7 @@ export default function GeneratePage() {
                 <h1 className="text-2xl font-bold mb-4">Upload Your Image</h1>
 
                 <input
+                    id="imageInput"
                     type="file"
                     accept="image/*"
                     onChange={handleImageUpload}

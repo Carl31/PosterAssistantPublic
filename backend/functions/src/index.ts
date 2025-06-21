@@ -41,6 +41,8 @@ import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import cors from "cors";
 
+import sharp from 'sharp';
+
 admin.initializeApp();
 
 const corsHandler = cors({origin: true}); // Allow all origins — adjust for production
@@ -71,6 +73,10 @@ export const generatePoster = functions .runWith({memory: "8GB", timeoutSeconds:
       //   return res.status(405).send("Method Not Allowed");
       // }
 
+      if (req.method !== 'POST') {
+        return res.status(405).send('Method Not Allowed');
+      }
+
       // Handle authenticated POST from frontend with poster generation data
       try {
         // Auth
@@ -87,7 +93,7 @@ export const generatePoster = functions .runWith({memory: "8GB", timeoutSeconds:
         console.log("User ID:", uid);
         // End auth
 
-        const {psdUrl, userImageUrl, carDetails, description, instagramHandle} = req.body;
+        const {psdUrl, userImageUrl, carDetails, description, instagramHandle, fontsUsed = []} = req.body;
 
         // Step 1: Generate the original poster
         console.log("Generating poster...");
@@ -98,7 +104,15 @@ export const generatePoster = functions .runWith({memory: "8GB", timeoutSeconds:
           carDetails,
           description,
           instagramHandle,
+          fontsUsed,
         });
+
+        // Step 1.5: Compress image
+        // TODO: FOR FUTURE - If user is on paid version, do not compress!!
+        console.log("Compressing image...");
+        const compressedBuffer = await sharp(imageBuffer)
+          .jpeg({quality: 75}) // Adjust this as needed
+          .toBuffer();
 
         // Step 2: Upload to 'posters/...'
         // Upload the image to Firebase Storage
@@ -106,7 +120,7 @@ export const generatePoster = functions .runWith({memory: "8GB", timeoutSeconds:
         const fileName = `user_posters/${uid}/${uuidv4()}.png`;
         const file = bucket.file(fileName);
 
-        await file.save(imageBuffer, {
+        await file.save(compressedBuffer, {
           metadata: {
             contentType: "image/png",
           },
@@ -117,6 +131,7 @@ export const generatePoster = functions .runWith({memory: "8GB", timeoutSeconds:
           expires: "03-01-3030",
         });
 
+        // Not generating mockup with Photopea as takes too long:
         // // Step 3: Generate the mockup from the poster URL
         // console.log("Generating mockup...");
         // const mockupBuffer = await renderMockup(posterUrl); // if wanting to change mockup type, add it as an argument here
@@ -149,75 +164,6 @@ export const generatePoster = functions .runWith({memory: "8GB", timeoutSeconds:
     });
   });
 
-// Frontend calls this to download a poster file: (not required anyymore since I allow any origin to download frrom storage bucket)
-// export const downloadPoster = functions .runWith({memory: "2GB", timeoutSeconds: 30})
-//   .https.onRequest(async (req, res) => {
-//     console.log("Function received a request:", req.method, req.url); // Testing
-
-//     corsHandler(req, res, async () => {
-//       try {
-//         // Auth
-//         const authHeader = req.headers.authorization || "";
-//         const match = authHeader.match(/^Bearer (.+)$/);
-//         const idToken = match?.[1];
-
-//         if (!idToken) {
-//           return res.status(401).send("Unauthorized: No token provided");
-//         }
-
-//         const decodedToken = await admin.auth().verifyIdToken(idToken);
-//         const uid = decodedToken.uid;
-//         console.log("User ID:", uid);
-//         // End auth
-
-
-//         const posterId = req.query.posterId as string;
-
-//         if (!posterId) {
-//           console.log("Missing posterId");
-//           return res.status(400).send("Missing posterId");
-//         }
-
-//         console.log("Using UID:", uid); // Make sure uid has a value and is correct
-//         console.log("Using posterId:", posterId); // Make sure posterId has a value and is correct
-
-//         const posterRef = db.doc(`users/${uid}/posters/${posterId}`);
-//         console.log("Poster ref:", posterRef);
-//         const posterSnap = await posterRef.get();
-
-//         if (!posterSnap.exists) {
-//           console.log("Poster not found");
-//           return res.status(404).send("Poster not found");
-//         }
-
-//        const posterData = posterSnap.data();
-//     const imageUrl = posterData?.imageUrl;
-
-//     if (!imageUrl) {
-//       console.log("No imageUrl found in poster document");
-//       return res.status(404).send("Poster image URL not found");
-//     }
-
-//     // Fetch the image from the signed URL
-//     const response = await fetch(imageUrl);
-
-//     if (!response.ok) {
-//       console.error("Failed to fetch image from signed URL", response.statusText);
-//       return res.status(500).send("Failed to retrieve image from storage");
-//     }
-
-//     // Set headers for file download
-//     res.setHeader("Content-Type", "image/png");
-//     res.setHeader("Content-Disposition", "attachment; filename=poster.png");
-
-//     // This line sends the successful response (streams the file)
-//     return res.redirect(imageUrl);
-//       } catch (err) {
-//         console.error("Error in downloadPoster:", err);
-//         return res.status(500).send("Internal server error");
-//       }
-//     });
-//   });
 
 // How to export other functions:
 export {detectCarDetailsWithGemini} from '../scripts/carAnalyzer';
