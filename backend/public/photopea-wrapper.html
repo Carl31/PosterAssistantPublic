@@ -124,6 +124,7 @@
 
       // Stage 1: Open psd
       console.log("[Wrapper] Loading PSD...");
+      console.log("[Photopea Progress] Opening template");
       ppWindow.postMessage(`app.open("${psdUrl}", null, true);`, "*");
       await waitForDone(2);
       console.log("[Wrapper] PSD loaded and ready");
@@ -169,7 +170,7 @@ while(q.length){
 
 
       description = description.trim();
-      console.log("Final desc: " + description);
+      // console.log("Trimmed description: " + description); // For testing
 
       // If desciption is set, assume that psd has desciption layer visible and ready to be updated
       if (description != "Unknown make/model" || description != "") {
@@ -188,6 +189,7 @@ while(q.length){
           }
     }
   `;
+        console.log("[Photopea Progress] Inserting car details");
         ppWindow.postMessage(updateDescriptionScript, "*");
         await waitForDone(1);
 
@@ -226,6 +228,7 @@ while(q.length){
 
 
       // Stage 3: Place user image
+      console.log("[Photopea Progress] Carefully inserting your image");
       sendToPhotopea(`app.open("${userImageUrl}", null, true);`);
       await waitForDone(1);
       await delay(2000);
@@ -291,9 +294,13 @@ while(q.length){
       console.log("[Wrapper] Placed image! Continuing...");
 
       // Export poster:
+      console.log("[Photopea Progress] Cleaning up the edges");
       console.log("[Wrapper] Exporting...");
-      ppWindow.postMessage(`app.activeDocument.saveToOE("png");`, "*");
+      // For lower quality version:
+      ppWindow.postMessage(`app.activeDocument.saveToOE("jpg:0.8");`, "*");
 
+      // For full quality verion:
+      // ppWindow.postMessage(`app.activeDocument.saveToOE("png");`, "*");
 
 
     }

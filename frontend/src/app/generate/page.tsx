@@ -13,6 +13,8 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { auth } from '@/firebase/client'
 import { useRouter } from 'next/navigation';
 import imageCompression from 'browser-image-compression';
+import { getFirestore, onSnapshot } from "firebase/firestore";
+import Spinner from '@/components/Spinner';
 
 // Below for using httpsCallable function (not currently in use)
 //import { functions } from '@/firebase/client'
@@ -62,7 +64,8 @@ export default function GeneratePage() {
 
     const [posterUrl, setPosterUrl] = useState<string | null>(null)
 
-
+    // For progress updates
+    const [progress, setProgress] = useState<string | null>(null);
 
 
 
@@ -399,6 +402,25 @@ export default function GeneratePage() {
     //     }
     // }
 
+    // For progress updates
+    function listenToPosterProgress(jobId: string, onUpdate: (progress: string) => void) {
+        const db = getFirestore();
+        const jobRef = doc(db, "jobs", jobId);
+
+        const unsubscribe = onSnapshot(jobRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                onUpdate(data.progress || "");
+
+                if (data.status === "complete" || data.status === "error") {
+                    unsubscribe();
+                }
+            }
+        });
+
+        return unsubscribe;
+    }
+
     // Generating poster using fetch
     const handleGeneratePoster = async () => {
 
@@ -408,6 +430,14 @@ export default function GeneratePage() {
         }
         // For sending request to backnend with authorisation:
         const token = user && (await user.getIdToken())
+
+        const jobId = crypto.randomUUID();
+
+        setProgress("Starting...");
+        const unsubscribe = listenToPosterProgress(jobId, (progress) => {
+            setProgress(progress);
+        });
+
 
         setLoading(true)
         try {
@@ -423,7 +453,8 @@ export default function GeneratePage() {
                     carDetails,
                     description,
                     instagramHandle,
-                    fontsUsed: selectedTemplate?.fontsUsed
+                    fontsUsed: selectedTemplate?.fontsUsed,
+                    jobId
                 })
             })
 
@@ -442,6 +473,7 @@ export default function GeneratePage() {
             console.error('Poster generation failed:', err)
             alert('Poster generation failed.')
         } finally {
+            unsubscribe();
             setLoading(false)
         }
     }
@@ -555,6 +587,12 @@ export default function GeneratePage() {
                 >
                     {loading ? 'Generating Poster...' : 'Generate Final Poster'}
                 </button>
+                {loading && (
+                    <div className="text-center mt-4">
+                        <Spinner />
+                        <p className="mt-2 text-sm text-gray-500">{progress}</p>
+                    </div>
+                )}
 
                 {posterUrl && (
                     <div className="mt-4">

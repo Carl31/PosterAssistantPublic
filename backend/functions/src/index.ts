@@ -41,7 +41,7 @@ import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import cors from "cors";
 
-import sharp from 'sharp';
+import sharp from 'sharp'; // For image compression
 
 admin.initializeApp();
 
@@ -49,6 +49,10 @@ const corsHandler = cors({origin: true}); // Allow all origins — adjust for pr
 
 const bucket = getStorage().bucket();
 const db = admin.firestore();
+
+async function updateJobStatus(jobId: string, status: { progress: string; status: 'in-progress' | 'complete' | 'error' }) {
+  await db.collection('jobs').doc(jobId).set(status, {merge: true});
+}
 
 export const generatePoster = functions .runWith({memory: "8GB", timeoutSeconds: 120})
   .https.onRequest(async (req, res) => {
@@ -93,10 +97,11 @@ export const generatePoster = functions .runWith({memory: "8GB", timeoutSeconds:
         console.log("User ID:", uid);
         // End auth
 
-        const {psdUrl, userImageUrl, carDetails, description, instagramHandle, fontsUsed = []} = req.body;
+        const {psdUrl, userImageUrl, carDetails, description, instagramHandle, fontsUsed = [], jobId} = req.body;
 
         // Step 1: Generate the original poster
         console.log("Generating poster...");
+        await updateJobStatus(jobId, {progress: "Preparing canvas", status: 'in-progress'});
         // Render the poster
         const imageBuffer = await renderPoster({
           psdUrl,
@@ -105,7 +110,10 @@ export const generatePoster = functions .runWith({memory: "8GB", timeoutSeconds:
           description,
           instagramHandle,
           fontsUsed,
+          onProgress: (status) => updateJobStatus(jobId, status),
         });
+
+        await updateJobStatus(jobId, {progress: "Compressing image", status: 'in-progress'});
 
         // Step 1.5: Compress image
         // TODO: FOR FUTURE - If user is on paid version, do not compress!!
@@ -116,6 +124,7 @@ export const generatePoster = functions .runWith({memory: "8GB", timeoutSeconds:
 
         // Step 2: Upload to 'posters/...'
         // Upload the image to Firebase Storage
+        await updateJobStatus(jobId, {progress: "Uploading poster", status: 'in-progress'});
         console.log("Uploading poster...");
         const fileName = `user_posters/${uid}/${uuidv4()}.png`;
         const file = bucket.file(fileName);
@@ -143,6 +152,7 @@ export const generatePoster = functions .runWith({memory: "8GB", timeoutSeconds:
 
         // Return the signed URL as a JSON response
         // Step 5: Return both
+        await updateJobStatus(jobId, {progress: "Complete", status: 'complete'});
         console.log("Returning response...");
         return res.status(200).json({
           imageUrl: posterUrl,

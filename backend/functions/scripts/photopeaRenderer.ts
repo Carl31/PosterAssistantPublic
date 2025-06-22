@@ -19,6 +19,7 @@ type PosterRenderInput = {
     description: string
     instagramHandle: string
     fontsUsed: string[]
+    onProgress: (status: { progress: string; status: 'in-progress' | 'complete' | 'error' }) => void
 }
 
 const psdUrlTest = "https://storage.googleapis.com/posterassistant-aebf0.firebasestorage.app/Preset_simple_white_ONLYTEXT_RED.psd?GoogleAccessId=gigabyte-laptop%40posterassistant.iam.gserviceaccount.com&Expires=1751976000&Signature=TrHw8DN8L6yFzWgcIO6Zh0%2ForX0NDOrXECbrwNf%2BHdTjcpDSXAGD78WBzuBxp5OH%2FprPoixL3bcWz1PcStynU11wQKoExgqskj616vzmVBdxMExNl3KHo5XzN8S1nC9FbxJz1LUx%2BLJht5e3rV9tdCwkrQ4%2B1him%2BJYAKt5WtV0Yi%2FdUlkEMAyY495mYBER2rK5jRdg6635cJfUizEHMEB9eOMFjlOj6lceVET%2B1kSpCUjETRkntPgWRWgvPlRS1tshnticUkJd3PwZ34WGRcq3jkuqxj850cAC53G%2Foz0BiC7BdqQi24VA2%2BOejW9TvLmQvpj0SqORS9uKsP1VLLA%3D%3D";
@@ -30,6 +31,7 @@ export const renderPoster = async ({
   description,
   instagramHandle,
   fontsUsed,
+  onProgress,
 }: PosterRenderInput): Promise<Buffer> => {
   const browser = await puppeteer.launch({
     args: chromium.args,
@@ -72,6 +74,11 @@ export const renderPoster = async ({
     page.on('console', async (msg) => {
       const text = msg.text();
       console.log('[Photopea Console] ', text.toString());
+
+      if (text.startsWith("[Photopea Progress]")) {
+        const progress = text.replace("[Photopea Progress] ", "");
+        onProgress({progress, status: 'in-progress'});
+      }
     });
 
     // page.on('console', async (msg) => {
