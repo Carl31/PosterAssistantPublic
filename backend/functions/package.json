@@ -8,7 +8,7 @@
     "shell": "npm run build && firebase functions:shell",
     "start": "npm run shell",
     "lintbuild": "npx eslint . --fix  && npm run build",
-    "deployGeneratePoster": "npx eslint . --fix && npm run build && firebase deploy --only functions:generatePoster",
+    "deployGeneratePoster": "npx eslint . --fix && npm run build && firebase deploy --only functions:generatePosterOnJobCreate",
     "deployGemini": "npx eslint . --fix && npm run build && firebase deploy --only functions:detectCarDetailsWithGemini && firebase deploy --only functions:generateCarDescriptionWithGemini",
     "deployhosting": "cd .. && firebase deploy --only hosting",
     "logs": "firebase functions:log"
