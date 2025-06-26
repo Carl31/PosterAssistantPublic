@@ -1,5 +1,5 @@
-/* eslint-disable @next/next/no-img-element */
- 
+
+
 
 
 // Page is for uploading user image
@@ -8,27 +8,47 @@
 
 import { motion } from 'framer-motion'
 import { usePosterWizard, isStepAccessible } from '@/context/PosterWizardContext'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { auth } from '@/firebase/client'
 import { useRouter } from 'next/navigation';
 import imageCompression from 'browser-image-compression';
 import Spinner from '@/components/Spinner';
+import Cropper from 'react-easy-crop'
+import { Area } from 'react-easy-crop';
+import { getCroppedImg } from '@/utils/cropImage'
 
 
 export default function UploadImageStep() {
     const {
-        setImage,
-        previewUrl, setPreviewUrl
+        setPreviewUrl
     } = usePosterWizard()
     const { state } = usePosterWizard();
+    const [image, setImage] = useState<File | null>(null);
 
     const [loading, setLoading] = useState(false)
     const router = useRouter()
 
-    const handleNext = () => {
-        router.push('/generate/identify')
+    const [crop, setCrop] = useState({ x: 0, y: 0 })
+    const [zoom, setZoom] = useState(1)
+    const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+    const onSelectFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+
+        if (!file) return
+
+        if (!file.type.startsWith('image/')) {
+            alert('Please select an image file.')
+            const imageInput = document.getElementById("imageInput") as HTMLInputElement;
+            imageInput.value = "";
+            return
+        }
+        if (file) setImage(file)
     }
+
+   const onCropComplete = useCallback((_croppedArea: Area, croppedAreaPixels: Area) => {
+        setCroppedAreaPixels(croppedAreaPixels);
+    }, []);
 
     const handleBack = () => {
         setImage(null)
@@ -37,29 +57,26 @@ export default function UploadImageStep() {
     }
 
     useEffect(() => {
-    if (!isStepAccessible("upload", state)) {
-      console.log("No template selected. Redirecting.");
-      router.push("/generate/select");
-    }
-  }, [state, router]);
+        if (!isStepAccessible("upload", state)) {
+            console.log("No template selected. Redirecting.");
+            router.push("/generate/select");
+        }
+    }, [state, router]);
 
     // For uploading user image to Firestore (for Photopea to access later) and setting it in the UI
-    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageUpload = async () => {
         setLoading(true)
-        let file = e.target.files?.[0]
         const user = auth.currentUser
         let valid = true;
-        let compressed = false;
         let compressedFile = null;
 
-        if (!file || !user) return
-
+        if (!image || !user || !croppedAreaPixels) return
 
         // validates file
-        if (file) {
+        if (image) {
 
             // Check file type is an image
-            if (!file.type.startsWith('image/')) {
+            if (!image.type.startsWith('image/')) {
                 alert('Please select an image file. The file you selected is not an image.');
                 const imageInput = document.getElementById("imageInput") as HTMLInputElement;
                 imageInput.value = "";
@@ -71,14 +88,8 @@ export default function UploadImageStep() {
             }
 
             // Check file size is below 5mb
-            const fileSizeInMB = file.size / (1024 * 1024); // Convert bytes to MB
+            const fileSizeInMB = image.size / (1024 * 1024); // Convert bytes to MB
             if (fileSizeInMB > 5 && fileSizeInMB <= 25) { // Compresses file
-                // For simply showing an alert
-                // alert('File size exceeds 5MB. Please select a smaller file.');
-                // const imageInput = document.getElementById("imageInput") as HTMLInputElement;
-                // imageInput.value = "";
-                // valid = false;
-                // return;
 
                 // Compress image
                 const options = {
@@ -90,11 +101,10 @@ export default function UploadImageStep() {
                 };
 
                 try {
-                    compressedFile = await imageCompression(file, options);
-                    console.log('Size of original file:', file.size / (1024 * 1024), 'MB');
+                    compressedFile = await imageCompression(image, options);
+                    console.log('Size of original file:', image.size / (1024 * 1024), 'MB');
                     // print size of compressed file
                     console.log('Size of compressed file:', compressedFile.size / (1024 * 1024), 'MB');
-                    compressed = true;
                 } catch (error) {
                     console.error('Image compression failed:', error);
                     const imageInput = document.getElementById("imageInput") as HTMLInputElement;
@@ -104,7 +114,8 @@ export default function UploadImageStep() {
                 }
             } else if (fileSizeInMB <= 5) { // uploads file.
                 // File is within the size limit, proceed with upload or other actions
-                // console.log('File size is acceptable.');
+                console.log('File size is acceptable.');
+                compressedFile = image;
 
             } else { // File is too large
                 alert('File size exceeds 25MB. Please select a smaller file.');
@@ -119,28 +130,36 @@ export default function UploadImageStep() {
 
 
         if (valid) {
-            if (compressed) {
-                file = compressedFile!;
-            }
+            if (compressedFile) {
 
-            setImage(file);
-            const storage = getStorage()
-            const storageRef = ref(storage, `user_uploads/${user.uid}/${file.name}`)
+                try {
+                    console.log("croppedAreaPixels", croppedAreaPixels)
 
-            try {
-                const snapshot = await uploadBytes(storageRef, file)
-                const downloadURL = await getDownloadURL(snapshot.ref)
 
-                setPreviewUrl(downloadURL) // ✅ Use downloadURL instead of in-memory blob
-            } catch (err) {
-                console.error('Image upload failed:', err)
-                alert('Failed to upload image. Please try again.')
+                    // ✅ 1. Crop the image BEFORE uploading
+                    const croppedFile = await getCroppedImg(
+                        URL.createObjectURL(image),
+                        croppedAreaPixels
+                    )
+
+                    // ✅ 2. Upload the cropped image
+                    const storage = getStorage()
+                    const storageRef = ref(storage, `user_uploads/${user.uid}/${image.name}`)
+                    const snapshot = await uploadBytes(storageRef, croppedFile)
+                    const downloadURL = await getDownloadURL(snapshot.ref)
+
+                    // ✅ 3. Save preview and clear loading
+                    setPreviewUrl(downloadURL)
+                    router.push('/generate/identify')
+                } catch (err) {
+                    setLoading(false)
+                    console.error('Image crop/upload failed:', err)
+                    alert('Image processing failed.')
+                }
+
             }
 
         }
-
-        setLoading(false)
-
     }
 
 
@@ -155,30 +174,43 @@ export default function UploadImageStep() {
                 <section id='upload image'>
                     <h1 className="text-2xl font-bold mb-4">Upload Your Image</h1>
 
-                    <input
-                        id="imageInput"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                        className="mb-4"
-                    />
-
-                    {loading ? <Spinner /> : (
-                        (previewUrl != null) && (
-                            <div className="w-full aspect-[3/4] relative rounded-xl shadow-lg overflow-hidden">
-                                <img
-                                    src={previewUrl!}
-                                    alt="Preview"
-                                    className="absolute inset-0 w-full h-full object-cover"
+                    {!image ? (
+                        <input
+                            id="imageInput"
+                            type="file"
+                            accept="image/*"
+                            onChange={onSelectFile}
+                            className="mb-4"
+                        />
+                    ) : (
+                        <>
+                            <div className="relative w-full h-140 bg-gray-100">
+                                <Cropper
+                                    image={URL.createObjectURL(image)}
+                                    crop={crop}
+                                    zoom={zoom}
+                                    aspect={5 / 7}
+                                    onCropChange={setCrop}
+                                    onZoomChange={setZoom}
+                                    onCropComplete={onCropComplete}
                                 />
                             </div>
-                        )
+
+                            {!loading && (
+                                <button onClick={handleImageUpload} disabled={loading} className="mt-4 bg-purple-600 text-white px-4 py-2 rounded">
+                                    Confirm and Upload
+                                </button>
+                            )}
+
+                        </>
                     )}
+
+                    {loading && <Spinner />}
                 </section>
 
-                <button onClick={handleNext} className="mt-6 bg-blue-600 text-white px-4 py-2 rounded-md">
+                {/* <button onClick={handleNext} className="mt-6 bg-blue-600 text-white px-4 py-2 rounded-md">
                     Next Step
-                </button>
+                </button> */}
                 <button onClick={handleBack} className="mt-6 bg-red-600 text-white px-4 py-2 rounded-md">
                     Back
                 </button>

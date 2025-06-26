@@ -1,5 +1,8 @@
 'use client'
 
+// Used to share state between all generate/... pages.
+// Also includes PosterWizardState to check if the state for each page is valid. If not, redirect to the previous page.
+
 import React, { createContext, useContext, useState } from 'react'
 import { Template } from '@/types/template'
 import { useEffect } from 'react';
@@ -15,8 +18,6 @@ type PosterWizardContextType = {
   setState: React.Dispatch<React.SetStateAction<PosterWizardState>>
   selectedTemplate: Template | null
   setSelectedTemplate: (template: Template | null) => void
-  image: File | null
-  setImage: (file: File | null) => void
   previewUrl: string | null
   setPreviewUrl: (url: string | null) => void
   carDetails: CarDetails
@@ -48,7 +49,6 @@ export const PosterWizardProvider = ({ children }: { children: React.ReactNode }
 
   const [state, setState] = useState<PosterWizardState>({});
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null)
-  const [image, setImage] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [carDetails, setCarDetails] = useState<CarDetails>({ make: '', model: '', year: '' })
   const [description, setDescription] = useState('')
@@ -72,8 +72,6 @@ return (
     setState,
     selectedTemplate,
     setSelectedTemplate,
-    image,
-    setImage,
     previewUrl,
     setPreviewUrl,
     carDetails,

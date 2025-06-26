@@ -231,31 +231,34 @@ while(q.length){
       console.log("[Photopea Progress] Carefully inserting your image");
       sendToPhotopea(`app.open("${userImageUrl}", null, true);`);
       await waitForDone(1);
-      await delay(2000);
+      await delay(4000);
       console.log("[Wrapper] Pasted image! Continuing...");
       sendToPhotopea(`
-          var imageDoc = app.activeDocument;
-          console.log("Image document: " + imageDoc.name);
-
-          var mainDoc = app.documents[0];
-
-          imageDoc.activeLayer.visible = true;
-          imageDoc.activeLayer.locked = false;
-
-          imageDoc.selection.selectAll();
-
-          imageDoc.close();
-          console.log("Image copied and imageDoc closed!");
-
-          app.activeDocument = mainDoc;
-          mainDoc.paste();
-          var pastedLayer = mainDoc.activeLayer;
-          console.log("Image pasted!");
+          var q=[app.activeDocument];
+  var newLayer = null;
+if (q[0].layers.length > 0) {
+  for (var i = q[0].layers.length - 1; i >= 0; i--) {
+    console.log(q[0].layers[i].name);
+    if (q[0].layers[i].name === "VAR_TEXTS") {
+      if (q[0].layers[i].layers.length > 0) {
+        for (var j = 0; j < q[0].layers[i].layers.length - 1; j++) {
+          if (q[0].layers[i].layers[j].name === "user_uploads%2FzZU7cspNSibPPgUXt4uKpq6In313%2Fuser") {
+            newLayer = q[0].layers[i].layers[j];
+            console.log("New layer found:", newLayer.name);
+            break;
+          }
+            console.log(q[0].layers[i].layers[j].name);
+        }
+      }
+    }
+  }
+}
+  var pastedLayer = newLayer;
 
           var bottomLayer = null;
-          for (var i = mainDoc.layers.length - 1; i >= 0; i--) {
-            if (mainDoc.layers[i].name === "Layer 0") {
-              bottomLayer = mainDoc.layers[i];
+          for (var i = q[0].layers.length - 1; i >= 0; i--) {
+            if (q[0].layers[i].name === "Layer 0") {
+              bottomLayer = q[0].layers[i];
               break;
             }
           }
@@ -263,6 +266,8 @@ while(q.length){
 
           var bl = bottomLayer.bounds;
           var pl = pastedLayer.bounds;
+          console.log("Bottome layer name: " + bottomLayer.name);
+          console.log("Pasted layer name: " + pastedLayer.name);
 
           var blW = bl[2] - bl[0];
           var blH = bl[3] - bl[1];
@@ -270,9 +275,9 @@ while(q.length){
           var plH = pl[3] - pl[1];
 
           var scale = Math.max(blW / plW, blH / plH);
+          pastedLayer.rasterize();
           pastedLayer.resize(scale * 100, scale * 100);
 
-          // Center the pasted image
           var blX = (bl[0] + bl[2]) / 2;
           var blY = (bl[1] + bl[3]) / 2;
 
@@ -310,3 +315,63 @@ while(q.length){
 </body>
 
 </html>
+
+<!-- sendToPhotopea(`
+          var imageDoc = app.activeDocument;
+          console.log("Image document: " + imageDoc.name);
+
+          var mainDoc = app.documents[0];
+
+          imageDoc.activeLayer.visible = true;
+          imageDoc.activeLayer.locked = false;
+
+          imageDoc.selection.selectAll();
+
+          imageDoc.close();
+          console.log("Image copied and imageDoc closed!");
+
+          app.activeDocument = mainDoc;
+          mainDoc.paste();
+          var pastedLayer = mainDoc.activeLayer;
+          console.log("Image pasted!");
+
+          var bottomLayer = null;
+          for (var i = mainDoc.layers.length - 1; i >= 0; i--) {
+            if (mainDoc.layers[i].name === "Layer 0") {
+              bottomLayer = mainDoc.layers[i];
+              break;
+            }
+          }
+          console.log("Layer found:", bottomLayer.name);
+
+          var bl = bottomLayer.bounds;
+          var pl = pastedLayer.bounds;
+          console.log("Bottome layer name: " + bottomLayer.name);
+          console.log("Pasted layer name: " + pastedLayer.name);
+
+          var blW = bl[2] - bl[0];
+          var blH = bl[3] - bl[1];
+          var plW = pl[2] - pl[0];
+          var plH = pl[3] - pl[1];
+
+          var scale = Math.max(blW / plW, blH / plH);
+          pastedLayer.rasterize();
+          pastedLayer.resize(scale * 100, scale * 100);
+
+          var blX = (bl[0] + bl[2]) / 2;
+          var blY = (bl[1] + bl[3]) / 2;
+
+          pl = pastedLayer.bounds;
+          var plX = (pl[0] + pl[2]) / 2;
+          var plY = (pl[1] + pl[3]) / 2;
+
+          var dx = blX - plX;
+          var dy = blY - plY;
+          pastedLayer.translate(dx, dy);
+
+          pastedLayer.move(bottomLayer, ElementPlacement.PLACEBEFORE);
+
+          console.log("Image moved!");
+
+      `);
+      await waitForDone(1); -->

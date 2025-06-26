@@ -21,7 +21,6 @@ export default function IdentifyVehicleStep() {
         carDetails, setCarDetails,
         previewUrl,
         geminiChecked, setGeminiChecked,
-        image
     } = usePosterWizard()
     const { state } = usePosterWizard();
 
@@ -34,11 +33,11 @@ export default function IdentifyVehicleStep() {
     }
 
     useEffect(() => {
-    if (!isStepAccessible("identify", state)) {
-      console.log("No image selected. Redirecting.");
-      router.replace("/generate/upload");
-    }
-  }, [state, router]);
+        if (!isStepAccessible("identify", state)) {
+            console.log("No image selected. Redirecting.");
+            router.replace("/generate/upload");
+        }
+    }, [state, router]);
 
     const handleBack = () => {
         setCarDetails({ make: '', model: '', year: '' })
@@ -48,7 +47,7 @@ export default function IdentifyVehicleStep() {
 
     // Detect car details in image using cloud function
     const detectCar = async () => {
-        if (!image) return
+        if (!previewUrl) return
         setloading(true)
 
         // Below 2 lines for dummy data
@@ -65,9 +64,10 @@ export default function IdentifyVehicleStep() {
 
         try {
             // 1. Convert the image file to a Base64 string
-            const base64Image = await fileToBase64(image);
-            const mimeType = image.type;
+            // const base64Image = await fileToBase64(image);
+            // const mimeType = image.type;
 
+            const { base64Image, mimeType } = await convertImageUrlToBase64(previewUrl);
             // 2. Prepare the data to send in the request body
             const requestBody = {
                 base64Image: base64Image,
@@ -120,7 +120,7 @@ export default function IdentifyVehicleStep() {
             <div className="p-8 max-w-xl mx-auto">
                 <section id='identify vehicle'>
                     {previewUrl && (
-                        <div className="w-full aspect-[3/4] relative rounded-xl shadow-lg overflow-hidden">
+                        <div className="w-full aspect-[3/4] relative shadow-lg overflow-hidden">
                             <img
                                 src={previewUrl!}
                                 alt="Preview"
@@ -130,7 +130,7 @@ export default function IdentifyVehicleStep() {
                     )}
 
                     <button
-                        disabled={!image || !selectedTemplate || loading}
+                        disabled={!previewUrl || !selectedTemplate || loading}
                         onClick={detectCar}
                         className="mt-6 bg-blue-600 text-white px-4 py-2 rounded-md"
                     >
@@ -169,7 +169,7 @@ export default function IdentifyVehicleStep() {
                     Next Step
                 </button>
                 <button onClick={handleBack} className="mt-6 bg-red-600 text-white px-4 py-2 rounded-md">
-                    Back
+                    Choose a different image
                 </button>
             </div>
         </motion.div>
@@ -184,6 +184,22 @@ export default function IdentifyVehicleStep() {
             reader.readAsDataURL(file);
             reader.onload = () => resolve((reader.result as string).split(',')[1]); // Get base64 string after "base64,"
             reader.onerror = error => reject(error);
+        });
+    }
+
+    async function convertImageUrlToBase64(imageUrl: string): Promise<{ base64Image: string; mimeType: string }> {
+        const response = await fetch(imageUrl);
+        const blob = await response.blob();
+
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const base64data = reader.result as string;
+                const mimeType = blob.type;
+                resolve({ base64Image: base64data.split(',')[1], mimeType }); // strip data URI prefix
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
         });
     }
 
