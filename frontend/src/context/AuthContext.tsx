@@ -5,14 +5,20 @@ import { onAuthStateChanged, User } from 'firebase/auth'
 import { auth, db } from '@/firebase/client'
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
 
-const AuthContext = createContext<{ user: User | null }>({ user: null })
+const AuthContext = createContext<{ user: User | null, isAuthChecked: boolean }>({
+  user: null,
+  isAuthChecked: false,
+});
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [user, setUser] = useState<User | null>(null)
+    const [isAuthChecked, setIsAuthChecked] = useState(false)
+    
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             setUser(firebaseUser)
+            setIsAuthChecked(true)
 
             if (firebaseUser) {
                 const userRef = doc(db, 'users', firebaseUser.uid)
@@ -42,7 +48,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return () => unsubscribe()
     }, [])
 
-    return <AuthContext.Provider value={{ user }}>{children}</AuthContext.Provider>
+    return <AuthContext.Provider value={{ user, isAuthChecked }}>{children}</AuthContext.Provider>
 }
 
 export const useAuth = () => useContext(AuthContext)

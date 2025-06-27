@@ -25,10 +25,19 @@ export default function IdentifyVehicleStep() {
     const { state } = usePosterWizard();
 
     const [loading, setloading] = useState(false)
+    const [pendingValidation, setpendingValidation] = useState(false)
 
     const router = useRouter()
 
-    const handleNext = () => {
+    const handleNext = async () => {
+        setpendingValidation(true);
+        const { valid, reason } = await validateCarDetails(carDetails.make, carDetails.model, carDetails.year);
+
+        if (!valid) {
+            setpendingValidation(false);
+            alert(reason); // or show in UI
+            return;
+        }
         router.push('/generate/overview')
     }
 
@@ -117,6 +126,7 @@ export default function IdentifyVehicleStep() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
         >
+            {pendingValidation ? <Spinner /> : (
             <div className="p-8 max-w-xl mx-auto">
                 <section id='identify vehicle'>
                     {previewUrl && (
@@ -172,10 +182,51 @@ export default function IdentifyVehicleStep() {
                     Choose a different image
                 </button>
             </div>
+            )}
         </motion.div>
     )
 
     // UTLITY FUNCTIONS:
+
+    // For validating car data
+    // Validate car make, model, and year using NHTSA API
+    async function validateCarDetails(make: string, model: string, year: string | number): Promise<{ valid: boolean; reason?: string }> {
+        try {
+            // Normalize inputs
+            make = make.trim().toLowerCase();
+            model = model.split(' ')[0].trim().toLowerCase();
+
+            // 1. Validate Make
+            const makeRes = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/GetAllMakes?format=json`);
+            const makesData = await makeRes.json();
+            const validMakes = makesData.Results.map((m: any) => m.Make_Name.toLowerCase());
+            if (!validMakes.includes(make)) {
+                return { valid: false, reason: `Unrecognized make: "${make}"` };
+            }
+
+            // 2. Validate Model for Make
+            const modelRes = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/GetModelsForMake/${make}?format=json`);
+            const modelData = await modelRes.json();
+            const validModels = modelData.Results.map((m: any) => m.Model_Name.toLowerCase());
+            if (!validModels.includes(model)) {
+                return { valid: false, reason: `Model "${model}" is not valid for make "${make}"` };
+            }
+
+            // 3. Validate Year for Make+Model
+            const yearRes = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/GetModelsForMakeYear/make/${make}/modelyear/${year}?format=json`);
+            const yearData = await yearRes.json();
+            const modelsThisYear = yearData.Results.map((m: any) => m.Model_Name.toLowerCase());
+            if (!modelsThisYear.includes(model)) {
+                return { valid: false, reason: `Model "${model}" was not produced in year ${year}` };
+            }
+
+            return { valid: true };            
+        } catch (error) {
+            console.error("Validation error:", error);
+            return { valid: false, reason: "Failed to validate vehicle details. Please try again." };
+        }
+    }
+
 
     // --- Utility function to convert File/Blob to Base64 ---
     function fileToBase64(file: File | Blob): Promise<string> {
@@ -203,6 +254,7 @@ export default function IdentifyVehicleStep() {
         });
     }
 
+    // Necessary for formatting and setting car details with no errors
     function updateCarDetailsFromApiResponse(
         responseData: any) { // Use a more specific type if you have one for the full response
         {

@@ -11,7 +11,7 @@ import { onAuthStateChanged } from 'firebase/auth'
 
 type Poster = {
     id: string;
-    imageUrl: string
+    posterUrl: string
     createdAt: Timestamp
     templateId: string
     carDetails: {
@@ -79,7 +79,7 @@ export default function PosterHistoryPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                     {posters.map((poster, index) => (
                         <div key={index} className="border rounded-xl p-3 shadow-md bg-white">
-                            <img src={poster.imageUrl} alt="Poster" className="rounded-md mb-2" />
+                            <img src={poster.posterUrl} alt="Poster" className="rounded-md mb-2" />
                             <p className="text-sm text-gray-600">Created: {poster.createdAt.toDate().toLocaleDateString()}</p>
                             <p className="text-sm font-medium">Template: {poster.templateId}</p>
                             <p className="text-sm italic text-gray-700">
@@ -97,7 +97,7 @@ export default function PosterHistoryPage() {
                             <div className="mt-2 flex gap-2">
                                 {/* View button */}
                                 <a
-                                    href={poster.imageUrl}
+                                    href={poster.posterUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-sm px-3 py-1 rounded bg-blue-500 text-white hover:bg-blue-600"
@@ -107,7 +107,7 @@ export default function PosterHistoryPage() {
 
                                 {/* Download button */}
                                 <button
-                                    onClick={() => handleDownload(poster.imageUrl)}
+                                    onClick={() => handleDownload(poster.posterUrl)}
                                     className="text-sm px-3 py-1 rounded bg-green-500 text-white hover:bg-green-600"
                                 >
                                     Download
@@ -120,13 +120,13 @@ export default function PosterHistoryPage() {
                                             try {
                                                 await navigator.share({
                                                     title: "Check out my car poster!",
-                                                    url: poster.imageUrl,
+                                                    url: poster.posterUrl,
                                                 });
                                             } catch (err) {
                                                 console.error("Share failed:", err);
                                             }
                                         } else {
-                                            await navigator.clipboard.writeText(poster.imageUrl);
+                                            await navigator.clipboard.writeText(poster.posterUrl);
                                             alert("Link copied to clipboard!");
                                         }
                                     }}

@@ -19,9 +19,12 @@ export const generatePosterOnJobCreate = functions
   .onCreate(async (snap, context) => {
     const jobId = context.params.jobId;
     const data = snap.data();
+    let posterData = null;
 
     try {
       console.log("🎬 New job detected:", jobId);
+
+      posterData = data;
 
       const {
         psdUrl,
@@ -31,6 +34,7 @@ export const generatePosterOnJobCreate = functions
         instagramHandle,
         fontsUsed = [],
         token,
+        templateId,
       } = data;
 
       // ✅ 1. Verify token and extract UID
@@ -86,6 +90,9 @@ export const generatePosterOnJobCreate = functions
         posterUrl,
       });
 
+      // Post metadate to users posters
+      await savePosterMetadata(uid, jobId, posterUrl, userImageUrl, templateId, description, carDetails, instagramHandle);
+
       console.log("✅ Poster job completed:", jobId);
     } catch (error) {
       console.error("❌ Poster job failed:", jobId, error);
@@ -104,3 +111,18 @@ async function updateJobStatus(
 ) {
   await db.collection("jobs").doc(jobId).set(update, {merge: true});
 }
+
+const savePosterMetadata = async (uid: string, jobId: string, posterUrl: string, userImageUrl: string, templateId: string, description: string, carDetails: string, instagramHandle: string) => { // TODO: need to use this somewhere!
+  console.log("Saving poster metadata...");
+  await db.collection('users').doc(uid).collection('posters').doc(jobId).set({
+    posterUrl,
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    inputImageUrl: userImageUrl,
+    templateId,
+    description,
+    carDetails,
+    instagramHandle,
+  });
+};
+
+

@@ -224,6 +224,7 @@ export default function OverviewPage() {
                 },
                 body: JSON.stringify({
                     psdUrl: selectedTemplate?.psdFileUrl,
+                    templateId: selectedTemplate?.id,
                     userImageUrl: previewUrl,
                     carDetails,
                     description,

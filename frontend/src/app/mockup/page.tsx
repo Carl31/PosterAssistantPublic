@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 
 export default function MockupPage() {
   const searchParams = useSearchParams();
-  const posterUrl = searchParams.get('url');
+  const posterUrl = searchParams!.get('url');
 
   if (!posterUrl) return <p>Missing poster URL</p>;
 

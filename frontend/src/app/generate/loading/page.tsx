@@ -45,7 +45,7 @@ export default function LoadingPage() {
                     router.push(`/mockup?url=${encoded}`);
                 } else if (data.status === "error") {
                     unsubscribe();
-                    console.log("Error generating poster:", data.progress);
+                    console.log("Error generating poster:", data.error);
                     // TODO: redirect to dedicated error page?
                 } else if (data.status === "queued") {
                     // Frontend to ignore this

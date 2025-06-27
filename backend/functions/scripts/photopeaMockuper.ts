@@ -1,6 +1,6 @@
 // Launches headless Chrome (Puppeteer)
 // Loads Photopea.com
-// Runs a scripted editor flow via Photopea's scripting API
+// Runs a scripted editor flow via Photopea's scripting API for generating mockups (Note - we are not generating mockups below because of the time it takes)
 
 // photopeaRenderer.ts
 import chromium from "chrome-aws-lambda";

@@ -38,6 +38,9 @@ const generationConfig = {
   maxOutputTokens: 1024,
 };
 
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 1000;
+
 
 /**
  * Cloud Function to detect car details from an image using the Gemini API.
@@ -89,7 +92,6 @@ export const generateCarDescriptionWithGemini = functions
       // End auth
 
 
-      // --- AI Logic starts here ---
       // Extract car details from the request data
       console.log("Request body:", req.body);
       const carDetails = req.body;
@@ -118,48 +120,69 @@ export const generateCarDescriptionWithGemini = functions
 
       // --- AI Logic starts here ---
 
-      try {
+      for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        try {
         // Initialize the Generative AI client using the securely available API key
         // process.env.GOOGLE_API_KEY is available because we included GOOGLE_API_KEY in the `secrets` array above
-        if (!process.env.GOOGLE_API_KEY) {
-          console.error("GOOGLE_API_KEY secret is not available.");
-          throw new functions.https.HttpsError(
-            "internal",
-            "Server configuration error: AI key not found."
-          );
+          if (!process.env.GOOGLE_API_KEY) {
+            console.error("GOOGLE_API_KEY secret is not available.");
+            throw new functions.https.HttpsError(
+              "internal",
+              "Server configuration error: AI key not found."
+            );
+          }
+
+          const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+          const flashModel = genAI.getGenerativeModel({model: GEMINI_FLASH_MODEL_NAME});
+
+          // Prepare the content for the API call
+          const parts = [
+            {
+              text: `${carDetails.make} ${carDetails.model} ${carDetails.year}. Write a description of that exact make/model/year of car. Ensure the description is around 110 words and 1 paragraph long, informative (engine specs), just slightlyyy formal, and exciting to read for any car enthusiast. Just like a magazine feature! Don't try to sell it, rather raise the ego of the owner, but written for the public. Don't make it cheesy. If the make and model are unknown, just return "Unknown make/model" and nothing else.`,
+            },
+          ];
+
+          console.log("Calling Gemini API...");
+          // Make the call to the Gemini API
+          const result = await flashModel.generateContent({
+            contents: [{parts, role: "user"}],
+            generationConfig,
+            safetySettings,
+          });
+
+          console.log("Received response from Gemini API: " + result);
+
+          const response = await result.response;
+          const text = response.text();
+
+          return res.status(200).json({text});
+        } catch (error: any) {
+          const isOverloaded = error?.message?.includes("503");
+
+          console.error(`Gemini API error on attempt ${attempt}:`, error.message);
+
+          if (isOverloaded) {
+            if (attempt < MAX_RETRIES) {
+              console.log(`Retrying in ${RETRY_DELAY_MS}ms...`);
+              await new Promise((res) => setTimeout(res, RETRY_DELAY_MS));
+              continue;
+            } else if (attempt === MAX_RETRIES) {
+              // If not retryable or max attempts reached, rethrow
+              throw new Error("Gemini API failed after 3 attempts: " + error.message);
+            }
+          } else {
+            throw new functions.https.HttpsError(
+              "internal",
+              "An error occurred while generating the car description."
+            );
+          }
         }
-
-        const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
-        const flashModel = genAI.getGenerativeModel({model: GEMINI_FLASH_MODEL_NAME});
-
-        // Prepare the content for the API call
-        const parts = [
-          {
-            text: `${carDetails.make} ${carDetails.model} ${carDetails.year}. Write a description of that exact make/model/year of car. Ensure the description is around 110 words and 1 paragraph long, informative (engine specs), just slightlyyy formal, and exciting to read for any car enthusiast. Just like a magazine feature! Don't try to sell it, rather raise the ego of the owner, but written for the public. Don't make it cheesy. If the make and model are unknown, just return "Unknown make/model" and nothing else.`,
-          },
-        ];
-
-        console.log("Calling Gemini API...");
-        // Make the call to the Gemini API
-        const result = await flashModel.generateContent({
-          contents: [{parts, role: "user"}],
-          generationConfig,
-          safetySettings,
-        });
-
-        console.log("Received response from Gemini API: " + result);
-
-        const response = await result.response;
-        const text = response.text();
-
-        return res.status(200).json({text});
-      } catch (error) {
-        console.error("Error:", error);
-        throw new functions.https.HttpsError(
-          "internal",
-          "An error occurred while processing the image."
-        );
       }
+
+      throw new functions.https.HttpsError(
+        "internal",
+        "An error occurred while agenerating the car description."
+      );
     });
   });
 

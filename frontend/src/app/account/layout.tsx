@@ -1,6 +1,5 @@
 'use client'
 
-import { PosterWizardProvider } from '@/context/PosterWizardContext'
 import { useAuth } from '@/context/AuthContext'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
@@ -13,20 +12,19 @@ export default function GenerateLayout({ children }: { children: React.ReactNode
   useEffect(() => {
 
     if (!user) {
-      alert('You must be logged in to generate a poster.');
+      alert('You must be logged in to see this page.');
       router.replace('/login')
     }
-
   }, [user, router])
 
+  // Prevent flicker
+  if (!isAuthChecked) return null
 
-
-  return (
-    <PosterWizardProvider>
-      {(isAuthChecked && user) ? (<div className="">
-        {children}
-      </div>) : <Spinner />}
-      
-    </PosterWizardProvider>
+  return isAuthChecked && user ? (
+    <div className="">
+      {children}
+    </div>
+  ) : (
+    <Spinner />
   )
 }

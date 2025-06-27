@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // This is the main entry point for poster creation.
+// NOTE: This page is no longer being used.
 
 'use client'
 

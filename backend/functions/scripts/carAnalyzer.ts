@@ -38,6 +38,9 @@ const generationConfig = {
   maxOutputTokens: 1024,
 };
 
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 1000;
+
 
 /**
  * Cloud Function to detect car details from an image using the Gemini API.
@@ -89,7 +92,6 @@ export const detectCarDetailsWithGemini = functions
       // End auth
 
 
-      // --- AI Logic starts here ---
       // Extract image data and mime type from the request data
       const {base64Image, mimeType} = req.body as { base64Image: string; mimeType: string };
 
@@ -103,80 +105,101 @@ export const detectCarDetailsWithGemini = functions
 
       // --- AI Logic starts here ---
 
-      try {
+      for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        try {
         // Initialize the Generative AI client using the securely available API key
         // process.env.GOOGLE_API_KEY is available because we included GOOGLE_API_KEY in the `secrets` array above
-        if (!process.env.GOOGLE_API_KEY) {
-          console.error("GOOGLE_API_KEY secret is not available.");
-          throw new functions.https.HttpsError(
-            "internal",
-            "Server configuration error: AI key not found."
-          );
-        }
+          if (!process.env.GOOGLE_API_KEY) {
+            console.error("GOOGLE_API_KEY secret is not available.");
+            throw new functions.https.HttpsError(
+              "internal",
+              "Server configuration error: AI key not found."
+            );
+          }
 
-        const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
-        const flashModel = genAI.getGenerativeModel({model: GEMINI_FLASH_MODEL_NAME});
+          const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+          const flashModel = genAI.getGenerativeModel({model: GEMINI_FLASH_MODEL_NAME});
 
-        // Prepare the content for the API call
-        const parts = [
-          {
-            inlineData: {
-              mimeType: mimeType, // Use the mime type received from the client
-              data: base64Image, // Use the base64 data received from the client
+          // Prepare the content for the API call
+          const parts = [
+            {
+              inlineData: {
+                mimeType: mimeType, // Use the mime type received from the client
+                data: base64Image, // Use the base64 data received from the client
+              },
             },
-          },
-          {
-            text: `You are a car expert. Analyze the photo and return ONLY a JSON object like:
+            {
+              text: `You are a car expert. Analyze the photo and return ONLY a JSON object like:
 {
   "make": "",
   "model": "",
   "year": ""
 }
 If the car is unclear, leave values empty. Do not include any extra explanation.`,
-          },
-        ];
+            },
+          ];
 
-        console.log("Calling Gemini API...");
-        // Make the call to the Gemini API
-        const result = await flashModel.generateContent({
-          contents: [{parts, role: "user"}],
-          generationConfig,
-          safetySettings,
-        });
+          console.log("Calling Gemini API...");
+          // Make the call to the Gemini API
+          const result = await flashModel.generateContent({
+            contents: [{parts, role: "user"}],
+            generationConfig,
+            safetySettings,
+          });
 
-        console.log("Received response from Gemini API: " + result);
+          console.log("Received response from Gemini API: " + result);
 
-        const response = await result.response;
-        const text = response.text();
+          const response = await result.response;
+          const text = response.text();
 
-        // --- Clean the text to remove the markdown wrapping ---
+          // --- Clean the text to remove the markdown wrapping ---
 
-        let cleanedText = text;
+          let cleanedText = text;
 
-        // Remove leading ```json\n
-        // Using a regex with ^ to match the start of the string
-        cleanedText = cleanedText.replace(/^```json\n/, '');
+          // Remove leading ```json\n
+          // Using a regex with ^ to match the start of the string
+          cleanedText = cleanedText.replace(/^```json\n/, '');
 
-        // Remove trailing \n```
-        // Using a regex with $ to match the end of the string
-        cleanedText = cleanedText.replace(/\n```$/, '');
+          // Remove trailing \n```
+          // Using a regex with $ to match the end of the string
+          cleanedText = cleanedText.replace(/\n```$/, '');
 
-        // Optional: Trim any leading/trailing whitespace that might remain
-        cleanedText = cleanedText.trim();
+          // Optional: Trim any leading/trailing whitespace that might remain
+          cleanedText = cleanedText.trim();
 
-        console.log("Cleaned text for parsing:", cleanedText); // Log the cleaned text
+          console.log("Cleaned text for parsing:", cleanedText); // Log the cleaned text
 
-        // --- Attempt to parse the cleaned text as JSON ---
-        const json = JSON.parse(cleanedText);
+          // --- Attempt to parse the cleaned text as JSON ---
+          const json = JSON.parse(cleanedText);
 
-        return res.status(200).json({json});
-      } catch (error) {
-        console.error("Error:", error);
-        throw new functions.https.HttpsError(
-          "internal",
-          "An error occurred while processing the image."
-        );
+          return res.status(200).json({json});
+        } catch (error: any) {
+          const isOverloaded = error?.message?.includes("503");
+
+          console.error(`Gemini API error on attempt ${attempt}:`, error.message);
+
+          if (isOverloaded) {
+            if (attempt < MAX_RETRIES) {
+              console.log(`Retrying in ${RETRY_DELAY_MS}ms...`);
+              await new Promise((res) => setTimeout(res, RETRY_DELAY_MS));
+              continue;
+            } else if (attempt === MAX_RETRIES) {
+            // If not retryable or max attempts reached, rethrow
+              throw new Error("Gemini API failed after 3 attempts: " + error.message);
+            }
+          } else {
+            throw new functions.https.HttpsError(
+              "internal",
+              "An error occurred while analysing the image."
+            );
+          }
+        }
       }
+
+      throw new functions.https.HttpsError(
+        "internal",
+        "An error occurred while analysing the image."
+      );
     });
   });
 

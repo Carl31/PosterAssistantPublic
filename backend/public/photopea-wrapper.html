@@ -233,6 +233,7 @@ while(q.length){
       await waitForDone(1);
       await delay(4000);
       console.log("[Wrapper] Pasted image! Continuing...");
+      console.log("[Wrapper] Important! If \"New layer found\" below is not \"user_uploads%2FzZU7cspNSibPPgUXt4uKpq6In313%2Fuser\" then users image will not paste!!");
       sendToPhotopea(`
           var q=[app.activeDocument];
   var newLayer = null;

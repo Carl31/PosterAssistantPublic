@@ -1,4 +1,5 @@
 import Image from "next/image";
+// Note, this page is not used
 
 export default function Home() {
   return (
