@@ -51,6 +51,7 @@ export default function PosterPreview({ posterUrl }: { posterUrl: string }) {
       <p className="font-semibold mb-2">Your poster with mockup preview:</p>
       <canvas ref={canvasRef} className="rounded shadow-md w-full max-w-md" />
 
+
       {downloadUrl && (
         <a
           href={downloadUrl}

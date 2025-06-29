@@ -10,15 +10,14 @@ export default function GenerateLayout({ children }: { children: React.ReactNode
   const router = useRouter()
 
   useEffect(() => {
-
-    if (!user) {
+    if (isAuthChecked && !user) {
       alert('You must be logged in to see this page.');
       router.replace('/login')
     }
-  }, [user, router])
+  }, [user, isAuthChecked, router])
 
   // Prevent flicker
-  if (!isAuthChecked) return null
+  if (!isAuthChecked) return <Spinner />
 
   return isAuthChecked && user ? (
     <div className="">

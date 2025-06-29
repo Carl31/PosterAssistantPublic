@@ -41,8 +41,14 @@ export default function LoadingPage() {
                 if (data.status === "complete") {
                     unsubscribe();
                     const posterUrl = data.posterUrl; // assuming posterUrl is a property of the data object
-                    const encoded = encodeURIComponent(posterUrl!);
-                    router.push(`/mockup?url=${encoded}`);
+                    const encodedUrl = encodeURIComponent(posterUrl!);
+                    // router.push(`/mockup?url=${encoded}`);
+
+                    const uid = data.userId;
+                    const posterId = data.posterUrl;
+                    const encodedUid = encodeURIComponent(uid!);
+                    const encodedPosterId = encodeURIComponent(posterId!);
+                    router.push(`/mockup?url=${encodedUrl}&uid=${encodedUid}&posterId=${encodedPosterId}`);
                 } else if (data.status === "error") {
                     unsubscribe();
                     console.log("Error generating poster:", data.error);

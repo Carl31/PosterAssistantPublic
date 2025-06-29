@@ -12,14 +12,14 @@ export default function GenerateLayout({ children }: { children: React.ReactNode
 
   useEffect(() => {
 
-    if (!user) {
+    if (!user && isAuthChecked) {
       alert('You must be logged in to generate a poster.');
       router.replace('/login')
     }
 
-  }, [user, router])
+  }, [user, isAuthChecked, router])
 
-
+  if (!isAuthChecked) return <Spinner />
 
   return (
     <PosterWizardProvider>

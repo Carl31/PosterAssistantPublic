@@ -70,7 +70,8 @@ export const generatePosterOnJobCreate = functions
 
       await updateJobStatus(jobId, {progress: "Uploading poster", status: "in-progress"});
 
-      const fileName = `user_posters/${uid}/${uuidv4()}.png`;
+      const posterId = uuidv4();
+      const fileName = `user_posters/${uid}/${posterId}.png`;
       const file = bucket.file(fileName);
 
       await file.save(compressedBuffer, {
@@ -88,10 +89,11 @@ export const generatePosterOnJobCreate = functions
         progress: "Complete",
         status: "complete",
         posterUrl,
+        posterId,
       });
 
       // Post metadate to users posters
-      await savePosterMetadata(uid, jobId, posterUrl, userImageUrl, templateId, description, carDetails, instagramHandle);
+      await savePosterMetadata(uid, jobId, posterUrl, userImageUrl, templateId, description, carDetails, instagramHandle, posterId);
 
       console.log("✅ Poster job completed:", jobId);
     } catch (error) {
@@ -112,7 +114,7 @@ async function updateJobStatus(
   await db.collection("jobs").doc(jobId).set(update, {merge: true});
 }
 
-const savePosterMetadata = async (uid: string, jobId: string, posterUrl: string, userImageUrl: string, templateId: string, description: string, carDetails: string, instagramHandle: string) => { // TODO: need to use this somewhere!
+const savePosterMetadata = async (uid: string, jobId: string, posterUrl: string, userImageUrl: string, templateId: string, description: string, carDetails: string, instagramHandle: string, posterId: string) => {
   console.log("Saving poster metadata...");
   await db.collection('users').doc(uid).collection('posters').doc(jobId).set({
     posterUrl,
@@ -122,6 +124,7 @@ const savePosterMetadata = async (uid: string, jobId: string, posterUrl: string,
     description,
     carDetails,
     instagramHandle,
+    posterId,
   });
 };
 

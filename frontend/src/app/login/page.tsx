@@ -15,9 +15,9 @@ export default function LoginPage() {
         e.preventDefault()
         try {
             await signInWithEmailAndPassword(auth, email, password)
-            router.push('/dashboard')
+            router.push('/account/dashboard')
         } catch (err) {
-            alert('Login failed.')
+            alert('Login failed.' + err)
         }
     }
 
@@ -25,9 +25,9 @@ export default function LoginPage() {
         const provider = new GoogleAuthProvider()
         try {
             await signInWithPopup(auth, provider)
-            router.push('/dashboard')
+            router.push('/account/dashboard')
         } catch (err) {
-            alert('Google sign-in failed.')
+            alert('Google sign-in failed.' + err)
         }
     }
 

@@ -1,4 +1,5 @@
 // src/app/account/posters/page.tsx
+/* eslint-disable @next/next/no-img-element */
 
 'use client'
 
@@ -45,6 +46,7 @@ const handleDownload = async (url: string) => {
 export default function PosterHistoryPage() {
     const [posters, setPosters] = useState<Poster[]>([])
     const [loading, setLoading] = useState(true)
+    const [uid, setUid] = useState<string | null>(null)
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(getAuth(), async (user) => {
@@ -61,6 +63,7 @@ export default function PosterHistoryPage() {
                 id: doc.id,
                 ...(doc.data() as Omit<Poster, 'id'>)
             }));
+            setUid(user.uid)
             setPosters(data)
             setLoading(false)
         })
@@ -96,8 +99,9 @@ export default function PosterHistoryPage() {
                             </a> */}
                             <div className="mt-2 flex gap-2">
                                 {/* View button */}
+                                {/* href={`/mockup?uid=${encodeURIComponent(uid)}&posterId=${encodeURIComponent(poster.id)}`} */}
                                 <a
-                                    href={poster.posterUrl}
+                                    href={`/mockup?uid=${encodeURIComponent(uid!)}&posterId=${encodeURIComponent(poster.id)}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-sm px-3 py-1 rounded bg-blue-500 text-white hover:bg-blue-600"

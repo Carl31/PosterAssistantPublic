@@ -27,6 +27,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 if (!docSnap.exists()) {
                     await setDoc(userRef, {
                         email: firebaseUser.email,
+                        displayMessage: 'If you like my poster, follow me on Instagram!',
                         displayName: firebaseUser.displayName || '',
                         instagramHandle: '',
                         createdAt: serverTimestamp(),
