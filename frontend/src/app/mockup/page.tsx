@@ -8,11 +8,14 @@ import { useSearchParams } from 'next/navigation';
 import PosterPreview from '@/components/PosterPreview';
 import { useEffect, useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react';
+import LoadingPage from '@/components/LoadingPage';
 
 type UserData = {
   instagramHandle: string;
   displayName: string;
-  displayMessage: string;
+  settings: {
+    displayMessage: string;
+  };
 }
 
 export default function MockupPage() {
@@ -25,6 +28,7 @@ export default function MockupPage() {
 
   const [posterUrl, setPosterUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [posterNotFound, setPosterNotFound] = useState(false)
   const [instagramHandle, setInstagramHandle] = useState<string | null>(null)
   const [displayName, setdisplayName] = useState<string | null>(null)
   const [displayMessage, setDisplayMessage] = useState<string | null>(null)
@@ -39,7 +43,7 @@ export default function MockupPage() {
         if (!userData) { return }
         setInstagramHandle(userData.instagramHandle);
         setdisplayName(userData.displayName);
-        setDisplayMessage(userData.displayMessage);
+        setDisplayMessage(userData.settings.displayMessage);
       }
     }
     fetchUserData()
@@ -61,6 +65,7 @@ export default function MockupPage() {
         } else {
           alert('Poster not found')
           setPosterUrl(null)
+          setPosterNotFound(true)
         }
         setLoading(false)
       }
@@ -70,13 +75,13 @@ export default function MockupPage() {
 
   }, [uid, posterId, posterUrlParam])
 
-  if (loading) return <div>Loading...</div>
-  if (!posterUrl) return <div>Not found</div>
+if (posterNotFound) return <div>Poster with ID {posterId} not found</div>
 
   return (
+    ((loading) ? (<LoadingPage text="Loading poster..." />) : (
     <div className="p-4">
       <h1 className="text-xl font-bold mb-4">Poster Mockup Preview</h1>
-      <PosterPreview posterUrl={posterUrl} />
+      <PosterPreview posterUrl={posterUrl!} />
 
       {/* {window.location.origin ? window.location.origin : window.location.protocol + '//' + window.location.host}/mockup/${posterUrl} */}
 
@@ -125,6 +130,7 @@ export default function MockupPage() {
         </div>
       )}
     </div>
+    ))
   )
 
   // Utility functions:

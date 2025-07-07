@@ -10,16 +10,10 @@ import { motion } from 'framer-motion'
 import { usePosterWizard, isStepAccessible } from '@/context/PosterWizardContext'
 import { useAuth } from '@/context/AuthContext'
 import { useState, useEffect, useRef } from 'react'
-import { collection, getDocs, doc, updateDoc, arrayUnion, arrayRemove, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/firebase/client'
-import TemplateCard from '@/components/TemplateCard'
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage'
-import { auth } from '@/firebase/client'
 import { useRouter } from 'next/navigation';
-import imageCompression from 'browser-image-compression';
-import { getFirestore, onSnapshot } from "firebase/firestore";
-import Spinner from '@/components/Spinner';
-import { desc } from 'framer-motion/client'
+import LoadingPage from '@/components/LoadingPage'
 
 type CarDetails = {
     make: string
@@ -105,12 +99,8 @@ export default function OverviewPage() {
     const generateDescription = async () => {
         if (!carDetails) return
 
-        if (!user) {
-            console.error('User is not authenticated.')
-            return
-        }
         // For sending request to backnend with authorisation:
-        const token = user && (await user.getIdToken())
+        const token = await user!.getIdToken()
 
         try {
 
@@ -275,7 +265,7 @@ export default function OverviewPage() {
             transition={{ duration: 0.3 }}
         >
             <div className="p-8 max-w-xl mx-auto">
-                {loading ? <Spinner /> : (
+                {loading ? <LoadingPage text="Generating poster..." /> : (
                     <span>
                         <section id='overview'>
                             {previewUrl && (

@@ -27,7 +27,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 if (!docSnap.exists()) {
                     await setDoc(userRef, {
                         email: firebaseUser.email,
-                        displayMessage: 'If you like my poster, follow me on Instagram!',
                         displayName: firebaseUser.displayName || '',
                         instagramHandle: '',
                         createdAt: serverTimestamp(),
@@ -39,7 +38,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                             subscriptionId: null,
                         },
                         settings: {
-                            favouriteTemplates: []
+                            favouriteTemplates: [],
+                            displayMessage: 'If you like my poster, follow me on Instagram!',
+                            toggleUseAI: true, // currently no use case for this
                         }
                     })
                 }

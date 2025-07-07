@@ -4,7 +4,7 @@ import { PosterWizardProvider } from '@/context/PosterWizardContext'
 import { useAuth } from '@/context/AuthContext'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
-import Spinner from '@/components/Spinner'
+import LoadingPage from '@/components/LoadingPage'
 
 export default function GenerateLayout({ children }: { children: React.ReactNode }) {
   const { user, isAuthChecked } = useAuth()
@@ -19,13 +19,13 @@ export default function GenerateLayout({ children }: { children: React.ReactNode
 
   }, [user, isAuthChecked, router])
 
-  if (!isAuthChecked) return <Spinner />
+  if (!isAuthChecked) return <LoadingPage />
 
   return (
     <PosterWizardProvider>
       {(isAuthChecked && user) ? (<div className="">
         {children}
-      </div>) : <Spinner />}
+      </div>) : <LoadingPage/>}
       
     </PosterWizardProvider>
   )

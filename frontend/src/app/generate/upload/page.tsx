@@ -1,6 +1,4 @@
-
-
-
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 // Page is for uploading user image
 
@@ -12,11 +10,12 @@ import { useState, useEffect, useCallback } from 'react'
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { auth } from '@/firebase/client'
 import { useRouter } from 'next/navigation';
-import imageCompression from 'browser-image-compression';
-import Spinner from '@/components/Spinner';
+// import imageCompression from 'browser-image-compression';
 import Cropper from 'react-easy-crop'
 import { Area } from 'react-easy-crop';
 import { getCroppedImg } from '@/utils/cropImage'
+import Spinner from '@/components/Spinner'
+import LoadingPage from '@/components/LoadingPage'
 
 
 export default function UploadImageStep() {
@@ -46,7 +45,7 @@ export default function UploadImageStep() {
         if (file) setImage(file)
     }
 
-   const onCropComplete = useCallback((_croppedArea: Area, croppedAreaPixels: Area) => {
+    const onCropComplete = useCallback((_croppedArea: Area, croppedAreaPixels: Area) => {
         setCroppedAreaPixels(croppedAreaPixels);
     }, []);
 
@@ -62,6 +61,34 @@ export default function UploadImageStep() {
             router.push("/generate/select");
         }
     }, [state, router]);
+
+    // Helper function to send file and options to Web Worker
+    // const worker = new Worker(new URL('../../../../public/workers/imageCompressor.js', import.meta.url), { type: 'module' });
+    const compressImageInWorker = (file: File, options: any) => {
+        return new Promise<Blob>((resolve, reject) => {
+            const worker = new Worker(new URL('../../../../public/workers/imageCompressor.js', import.meta.url), {
+                type: 'module',
+            });
+
+            worker.onmessage = (e) => {
+                if (e.data.error) {
+                    reject(new Error(e.data.error));
+                } else {
+                    const arrayBuffer = e.data;
+                    const compressedBlob = new Blob([arrayBuffer], { type: 'image/jpeg' });
+                    resolve(compressedBlob); // ✅ This is where you resolve!
+                }
+            };
+
+            worker.onerror = (err) => {
+                reject(err);
+            };
+
+            worker.postMessage({ file, options });
+        });
+    };
+
+
 
     // For uploading user image to Firestore (for Photopea to access later) and setting it in the UI
     const handleImageUpload = async () => {
@@ -94,14 +121,15 @@ export default function UploadImageStep() {
                 // Compress image
                 const options = {
                     maxSizeMB: 4, // Try to get it well under 5MB
-                    maxWidthOrHeight: 7000, // Prevent huge resolutions
-                    useWebWorker: true,
+                    maxWidthOrHeight: 5000, // Prevent huge resolutions
+                    useWebWorker: false,
                     fileType: 'image/jpeg',
                     initialQuality: 0.9,
                 };
 
                 try {
-                    compressedFile = await imageCompression(image, options);
+                    //compressedFile = await imageCompression(image, options);
+                    compressedFile = await compressImageInWorker(image, options);
                     console.log('Size of original file:', image.size / (1024 * 1024), 'MB');
                     // print size of compressed file
                     console.log('Size of compressed file:', compressedFile.size / (1024 * 1024), 'MB');
@@ -171,49 +199,50 @@ export default function UploadImageStep() {
             transition={{ duration: 0.3 }}
         >
             <div className="p-8 max-w-xl mx-auto">
-                <section id='upload image'>
-                    <h1 className="text-2xl font-bold mb-4">Upload Your Image</h1>
 
-                    {!image ? (
-                        <input
-                            id="imageInput"
-                            type="file"
-                            accept="image/*"
-                            onChange={onSelectFile}
-                            className="mb-4"
-                        />
-                    ) : (
-                        <>
-                            <div className="relative w-full h-140 bg-gray-100">
-                                <Cropper
-                                    image={URL.createObjectURL(image)}
-                                    crop={crop}
-                                    zoom={zoom}
-                                    aspect={5 / 7}
-                                    onCropChange={setCrop}
-                                    onZoomChange={setZoom}
-                                    onCropComplete={onCropComplete}
+                {loading ? <LoadingPage text="Uploading image..." /> : (
+                    <span>
+                        <section id='upload image'>
+                            <h1 className="text-2xl font-bold mb-4">Upload Your Image</h1>
+
+                            {!image ? (
+                                <input
+                                    id="imageInput"
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={onSelectFile}
+                                    className="mb-4"
                                 />
-                            </div>
+                            ) : (
+                                <>
+                                    <div className="relative w-full h-140 bg-gray-100">
+                                        <Cropper
+                                            image={URL.createObjectURL(image)}
+                                            crop={crop}
+                                            zoom={zoom}
+                                            aspect={5 / 7}
+                                            onCropChange={setCrop}
+                                            onZoomChange={setZoom}
+                                            onCropComplete={onCropComplete}
+                                        />
+                                    </div>
 
-                            {!loading && (
-                                <button onClick={handleImageUpload} disabled={loading} className="mt-4 bg-purple-600 text-white px-4 py-2 rounded">
-                                    Confirm and Upload
-                                </button>
+                                    <button onClick={handleImageUpload} disabled={!image} className="mt-4 bg-purple-600 text-white px-4 py-2 rounded">
+                                        Confirm and Upload
+                                    </button>
+
+                                </>
                             )}
 
-                        </>
-                    )}
+                            {loading && <Spinner />}
+                        </section>
 
-                    {loading && <Spinner />}
-                </section>
 
-                {/* <button onClick={handleNext} className="mt-6 bg-blue-600 text-white px-4 py-2 rounded-md">
-                    Next Step
-                </button> */}
-                <button onClick={handleBack} className="mt-6 bg-red-600 text-white px-4 py-2 rounded-md">
-                    Back
-                </button>
+                        <button onClick={handleBack} className="mt-6 bg-red-600 text-white px-4 py-2 rounded-md">
+                            Back
+                        </button>
+                    </span>
+                )}
             </div>
         </motion.div>
     )

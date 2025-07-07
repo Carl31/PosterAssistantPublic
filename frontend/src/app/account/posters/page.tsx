@@ -9,6 +9,7 @@ import { collection, getDocs, orderBy, query } from 'firebase/firestore'
 import { db } from '@/firebase/client'
 import { Timestamp } from 'firebase/firestore'
 import { onAuthStateChanged } from 'firebase/auth'
+import LoadingPage from '@/components/LoadingPage'
 
 type Poster = {
     id: string;
@@ -75,7 +76,7 @@ export default function PosterHistoryPage() {
         <div className="p-4">
             <h1 className="text-2xl font-bold mb-4">My Posters</h1>
             {loading ? (
-                <p>Loading posters...</p>
+                <LoadingPage text="Loading posters..." />
             ) : posters.length === 0 ? (
                 <p>No posters found. Go generate one!</p>
             ) : (
