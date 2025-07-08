@@ -11,6 +11,10 @@ import { useAuth } from '@/context/AuthContext'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation';
 import Spinner from '@/components/Spinner';
+import LoadingPage from '@/components/LoadingPage'
+import { notify } from "@/utils/notify";
+import Notification from "@/components/Notification";
+import ErrorPage from '@/components/ErrorPage'
 
 export default function IdentifyVehicleStep() {
 
@@ -26,6 +30,7 @@ export default function IdentifyVehicleStep() {
 
     const [loading, setloading] = useState(false)
     const [pendingValidation, setpendingValidation] = useState(false)
+    const [useAI, setUseAI] = useState(true)
 
     const router = useRouter()
 
@@ -66,7 +71,7 @@ export default function IdentifyVehicleStep() {
 
         if (!user) {
             console.error('User is not authenticated.')
-            return
+            return <ErrorPage text="User is not authenticated." />
         }
         // For sending request to backnend with authorisation:
         const token = user && (await user.getIdToken())
@@ -110,6 +115,7 @@ export default function IdentifyVehicleStep() {
 
         } catch (error) {
             console.error("Error calling Cloud Function:", error);
+            return <ErrorPage text="Error calling Gemini Cloud Function." />
             // Propagate the error or return a default value/structure as needed
             throw error; // Or return { make: "", model: "", year: "", warning: "Client-side error calling function." };
         } finally {
@@ -127,61 +133,70 @@ export default function IdentifyVehicleStep() {
             transition={{ duration: 0.3 }}
         >
             {pendingValidation ? <Spinner /> : (
-            <div className="p-8 max-w-xl mx-auto">
-                <section id='identify vehicle'>
-                    {previewUrl && (
-                        <div className="w-full aspect-[3/4] relative shadow-lg overflow-hidden">
-                            <img
-                                src={previewUrl!}
-                                alt="Preview"
-                                className="absolute inset-0 w-full h-full object-cover"
-                            />
-                        </div>
-                    )}
+                <div className="p-8 max-w-xl mx-auto">
+                    <Notification/>
+                    <section id='identify vehicle'>
+                        {previewUrl && (
+                            <div className="w-full aspect-[3/4] relative shadow-lg overflow-hidden">
+                                <img
+                                    src={previewUrl!}
+                                    alt="Preview"
+                                    className="absolute inset-0 w-full h-full object-cover"
+                                />
+                            </div>
+                        )}
 
-                    <button
-                        disabled={!previewUrl || !selectedTemplate || loading}
-                        onClick={detectCar}
-                        className="mt-6 bg-blue-600 text-white px-4 py-2 rounded-md"
-                    >
-                        {loading ? 'Detecting...' : 'Detect Car Info'}
+                        <button
+                            disabled={!previewUrl || !selectedTemplate || loading}
+                            onClick={detectCar}
+                            className="mt-6 bg-blue-600 text-white px-4 py-2 rounded-md"
+                        >
+                            {loading ? 'Detecting...' : 'Detect Car Info'}
+                        </button>
+
+                        <button
+                            disabled={!previewUrl || !selectedTemplate || loading}
+                            onClick={() => setUseAI(false)}
+                            className="mt-6 bg-blue-600 text-white px-4 py-2 rounded-md"
+                        >
+                            {'Manually Input Car Details'}
+                        </button>
+
+                        {(geminiChecked || !useAI) && (
+                            <div className="mt-4 space-y-2">
+                                <label className="block">Make</label>
+                                <input
+                                    value={carDetails.make}
+                                    onChange={(e) => setCarDetails({ ...carDetails, make: e.target.value })}
+                                    className="border p-2 w-full"
+                                    placeholder="Add make"
+                                />
+                                <label className="block">Model</label>
+                                <input
+                                    value={carDetails.model}
+                                    onChange={(e) => setCarDetails({ ...carDetails, model: e.target.value })}
+                                    className="border p-2 w-full"
+                                    placeholder="Add model"
+                                />
+                                <label className="block">Year</label>
+                                <input
+                                    value={carDetails.year}
+                                    onChange={(e) => setCarDetails({ ...carDetails, year: e.target.value })}
+                                    className="border p-2 w-full"
+                                    placeholder="Add year"
+                                />
+                            </div>
+                        )}
+
+                    </section>
+
+                    <button onClick={handleNext} className="mt-6 bg-blue-600 text-white px-4 py-2 rounded-md">
+                        Next Step
                     </button>
-
-                    {geminiChecked && (
-                        <div className="mt-4 space-y-2">
-                            <label className="block">Make</label>
-                            <input
-                                value={carDetails.make}
-                                onChange={(e) => setCarDetails({ ...carDetails, make: e.target.value })}
-                                className="border p-2 w-full"
-                                placeholder="Add make"
-                            />
-                            <label className="block">Model</label>
-                            <input
-                                value={carDetails.model}
-                                onChange={(e) => setCarDetails({ ...carDetails, model: e.target.value })}
-                                className="border p-2 w-full"
-                                placeholder="Add model"
-                            />
-                            <label className="block">Year</label>
-                            <input
-                                value={carDetails.year}
-                                onChange={(e) => setCarDetails({ ...carDetails, year: e.target.value })}
-                                className="border p-2 w-full"
-                                placeholder="Add year"
-                            />
-                        </div>
-                    )}
-
-                </section>
-
-                <button onClick={handleNext} className="mt-6 bg-blue-600 text-white px-4 py-2 rounded-md">
-                    Next Step
-                </button>
-                <button onClick={handleBack} className="mt-6 bg-red-600 text-white px-4 py-2 rounded-md">
-                    Choose a different image
-                </button>
-            </div>
+                    <button onClick={handleBack} className="mt-6 bg-red-600 text-white px-4 py-2 rounded-md">
+                        Choose a different image
+                    </button>
+                </div>
             )}
         </motion.div>
     )
@@ -220,7 +235,7 @@ export default function IdentifyVehicleStep() {
                 return { valid: false, reason: `Model "${model}" was not produced in year ${year}` };
             }
 
-            return { valid: true };            
+            return { valid: true };
         } catch (error) {
             console.error("Validation error:", error);
             return { valid: false, reason: "Failed to validate vehicle details. Please try again." };
@@ -271,11 +286,32 @@ export default function IdentifyVehicleStep() {
                 //const parsedDetails = JSON.parse(jsonString);
 
                 // Basic validation to ensure the parsed object looks like car details
-                if (typeof responseObject === 'object' && responseObject !== null) {
+                if (typeof responseObject === "object" && responseObject !== null) {
                     // Update the state with the parsed JSON object
                     setCarDetails(responseObject);
                     console.log("Car details state updated successfully:", responseObject);
-                } else {
+
+                    const missingMake = responseObject.make === "";
+                    const missingModel = responseObject.model === "";
+                    const missingYear = responseObject.year === "";
+
+                    if (missingMake && missingModel && missingYear) {
+                        // All missing → show warning
+                        console.log("All missing");
+                        notify("warning", "Our AI could not identify the car. Please input the details manually.");
+                    } else {
+                        if (missingMake) {
+                            notify("info", "Our AI could not identify the make of the car. Please input the details manually.");
+                        }
+                        if (missingModel) {
+                            notify("info", "Our AI could not identify the model of the car. Please input the details manually.");
+                        }
+                        if (missingYear) {
+                            notify("info", "Our AI could not identify the year of the car. Please input the details manually.");
+                        }
+                    }
+                }
+                else {
                     console.error("Parsed content from 'message' is not an object:", responseObject);
                 }
 

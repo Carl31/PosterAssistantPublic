@@ -9,6 +9,7 @@ import PosterPreview from '@/components/PosterPreview';
 import { useEffect, useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react';
 import LoadingPage from '@/components/LoadingPage';
+import ErrorPage from '@/components/ErrorPage';
 
 type UserData = {
   instagramHandle: string;
@@ -38,19 +39,17 @@ export default function MockupPage() {
 
     // Get user properties
     const fetchUserData = async () => {
-      if (uid) {
         const userData = await getUserData(uid);
         if (!userData) { return }
         setInstagramHandle(userData.instagramHandle);
         setdisplayName(userData.displayName);
         setDisplayMessage(userData.settings.displayMessage);
-      }
     }
     fetchUserData()
 
 
     if (posterUrlParam) {
-      setPosterUrl(posterUrlParam)
+      setPosterUrl(posterUrlParam) // faster load if posterUrl is already accessible from URL
       setLoading(false)
       return
     } else {
@@ -59,11 +58,24 @@ export default function MockupPage() {
         const docRef = doc(db, 'users', uid, 'posters', posterId)
         const docSnap = await getDoc(docRef)
 
-        if (docSnap.exists()) { // faster load if posterUrl is already accessible from URL
+        if (docSnap.exists()) { 
           const poster = docSnap.data()
-          setPosterUrl(poster.posterUrl)
+          const posterUrl = poster.posterUrl
+          
+          try {
+            const response = await fetch(posterUrl)
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`)
+            }
+            setPosterUrl(posterUrl)
+          } catch (error) {
+            console.error("Error loading poster:", error)
+            setPosterUrl(null)
+            setPosterNotFound(true)
+          }
+
         } else {
-          alert('Poster not found')
+          // alert('Poster not found')
           setPosterUrl(null)
           setPosterNotFound(true)
         }
@@ -75,7 +87,7 @@ export default function MockupPage() {
 
   }, [uid, posterId, posterUrlParam])
 
-if (posterNotFound) return <div>Poster with ID {posterId} not found</div>
+if (posterNotFound) return <ErrorPage text={`Poster with ID ${posterId} not found`} />;
 
   return (
     ((loading) ? (<LoadingPage text="Loading poster..." />) : (

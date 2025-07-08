@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client'
 
 import { createUserWithEmailAndPassword } from 'firebase/auth'
@@ -13,8 +15,10 @@ export default function SignupPage() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      await createUserWithEmailAndPassword(auth, email, password)
-      router.push('/dashboard')
+      // User signup currently disabled
+      // await createUserWithEmailAndPassword(auth, email, password)
+      // router.push('/dashboard')
+      alert('User signup currently disabled.')
     } catch (err: any) {
       alert(err.message || 'Signup failed.')
     }

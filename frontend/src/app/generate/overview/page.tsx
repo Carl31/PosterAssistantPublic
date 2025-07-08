@@ -14,6 +14,7 @@ import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/firebase/client'
 import { useRouter } from 'next/navigation';
 import LoadingPage from '@/components/LoadingPage'
+import ErrorPage from '@/components/ErrorPage'
 
 type CarDetails = {
     make: string
@@ -192,7 +193,7 @@ export default function OverviewPage() {
 
         if (!user) {
             console.error('User is not authenticated.')
-            return
+            return <ErrorPage text="User is not authenticated." />
         }
         // For sending request to backnend with authorisation:
         const token = user && (await user.getIdToken())
