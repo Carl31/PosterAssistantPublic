@@ -6,7 +6,7 @@ import { db } from '@/firebase/client'
 import { doc, getDoc } from 'firebase/firestore'
 import { useSearchParams } from 'next/navigation';
 import PosterPreview from '@/components/PosterPreview';
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react';
 import LoadingPage from '@/components/LoadingPage';
 import ErrorPage from '@/components/ErrorPage';
@@ -91,6 +91,7 @@ if (posterNotFound) return <ErrorPage text={`Poster with ID ${posterId} not foun
 
   return (
     ((loading) ? (<LoadingPage text="Loading poster..." />) : (
+      <Suspense fallback={<LoadingPage text="Loading poster..." />}>
     <div className="p-4">
       <h1 className="text-xl font-bold mb-4">Poster Mockup Preview</h1>
       <PosterPreview posterUrl={posterUrl!} />
@@ -142,6 +143,7 @@ if (posterNotFound) return <ErrorPage text={`Poster with ID ${posterId} not foun
         </div>
       )}
     </div>
+    </Suspense>
     ))
   )
 
