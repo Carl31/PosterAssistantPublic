@@ -107,7 +107,7 @@ function MockupContent() {
         <div className="mt-8">
           <h2 className="text-lg font-semibold mb-2">Scan this QR code to view:</h2>
           <QRCodeSVG
-            value={qrCodeLink + "?utm_source=poster_assistant&utm_medium=qr"}
+            value={qrCodeLink + "&utm_source=poster_assistant&utm_medium=qr"}
             size={200}
             level="M"
             bgColor="#ffffff"
