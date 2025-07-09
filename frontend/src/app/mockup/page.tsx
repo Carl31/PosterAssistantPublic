@@ -80,6 +80,7 @@ export default function MockupPage() {
           setPosterNotFound(true)
         }
         setLoading(false)
+        console.log("Loading:", loading);
       }
       fetchPosterData()
     }
@@ -90,8 +91,9 @@ export default function MockupPage() {
 if (posterNotFound) return <ErrorPage text={`Poster with ID ${posterId} not found`} />;
 
   return (
+    <Suspense fallback={<LoadingPage text="Loading poster..." />}>
     ((loading) ? (<LoadingPage text="Loading poster..." />) : (
-      <Suspense fallback={<LoadingPage text="Loading poster..." />}>
+      
     <div className="p-4">
       <h1 className="text-xl font-bold mb-4">Poster Mockup Preview</h1>
       <PosterPreview posterUrl={posterUrl!} />
@@ -143,8 +145,9 @@ if (posterNotFound) return <ErrorPage text={`Poster with ID ${posterId} not foun
         </div>
       )}
     </div>
-    </Suspense>
+    
     ))
+    </Suspense>
   )
 
   // Utility functions:
