@@ -6,10 +6,11 @@ import { db } from '@/firebase/client'
 import { doc, getDoc } from 'firebase/firestore'
 import { useSearchParams } from 'next/navigation';
 import PosterPreview from '@/components/PosterPreview';
-import { Suspense, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react';
 import LoadingPage from '@/components/LoadingPage';
 import ErrorPage from '@/components/ErrorPage';
+import { Suspense } from "react";
 
 type UserData = {
   instagramHandle: string;
@@ -20,6 +21,14 @@ type UserData = {
 }
 
 export default function MockupPage() {
+  return (
+    <Suspense fallback={<LoadingPage text="Loading poster..." />}>
+      <MockupContent />
+    </Suspense>
+  );
+}
+
+function MockupContent() {
   const searchParams = useSearchParams();
   const uid = searchParams!.get('uid');
   const posterId = searchParams!.get('posterId');
@@ -80,7 +89,6 @@ export default function MockupPage() {
           setPosterNotFound(true)
         }
         setLoading(false)
-        console.log("Loading:", loading);
       }
       fetchPosterData()
     }
@@ -91,9 +99,7 @@ export default function MockupPage() {
 if (posterNotFound) return <ErrorPage text={`Poster with ID ${posterId} not found`} />;
 
   return (
-    <Suspense fallback={<LoadingPage text="Loading poster..." />}>
     ((loading) ? (<LoadingPage text="Loading poster..." />) : (
-      
     <div className="p-4">
       <h1 className="text-xl font-bold mb-4">Poster Mockup Preview</h1>
       <PosterPreview posterUrl={posterUrl!} />
@@ -145,9 +151,7 @@ if (posterNotFound) return <ErrorPage text={`Poster with ID ${posterId} not foun
         </div>
       )}
     </div>
-    
     ))
-    </Suspense>
   )
 
   // Utility functions:
