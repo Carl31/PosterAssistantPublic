@@ -34,7 +34,7 @@ function MockupContent() {
   const posterId = searchParams!.get('posterId');
   const posterUrlParam = searchParams!.get('url');
 
-  const qrCodeLink = `${process.env.PUBLIC_SITE_URL}/mockup?uid=${uid}&posterId=${posterId}` // for production
+  const qrCodeLink = `https://poster-assistant-public-frontend.vercel.app/mockup?uid=${uid}&posterId=${posterId}` // for production
 
   const [posterUrl, setPosterUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
