@@ -34,8 +34,7 @@ function MockupContent() {
   const posterId = searchParams!.get('posterId');
   const posterUrlParam = searchParams!.get('url');
 
-  let qrCodeLink = "";
-  //const qrCodeLink = `${process.env.PUBLIC_SITE_URL}/mockup?uid=${uid}&posterId=${posterId}` // for production
+  const qrCodeLink = `${process.env.PUBLIC_SITE_URL}/mockup?uid=${uid}&posterId=${posterId}` // for production
 
   const [posterUrl, setPosterUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -57,9 +56,6 @@ function MockupContent() {
     }
     fetchUserData()
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    qrCodeLink = new URL(window.location.href).toString();
-    
     if (posterUrlParam) {
       setPosterUrl(posterUrlParam) // faster load if posterUrl is already accessible from URL
       setLoading(false)
@@ -96,7 +92,6 @@ function MockupContent() {
       fetchPosterData()
     }
 
-
   }, [uid, posterId, posterUrlParam])
 
   if (posterNotFound) return <ErrorPage text={`Poster with ID ${posterId} not found`} />;
@@ -112,9 +107,9 @@ function MockupContent() {
         <div className="mt-8">
           <h2 className="text-lg font-semibold mb-2">Scan this QR code to view:</h2>
           <QRCodeSVG
-            value={qrCodeLink}
-            size={256}
-            level="L"
+            value={qrCodeLink + "?utm_source=poster_assistant&utm_medium=qr"}
+            size={200}
+            level="M"
             bgColor="#ffffff"
             fgColor="#000000"
             marginSize={7}
