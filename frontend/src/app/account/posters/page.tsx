@@ -134,7 +134,7 @@ export default function PosterHistoryPage() {
                                             } catch (err) {
                                                 console.error("Share failed:", err);
                                             }
-                                        } else { // TODO: THe below link may not include the domain name, same as above
+                                        } else {
                                             await navigator.clipboard.writeText(`/mockup?uid=${encodeURIComponent(uid!)}&posterId=${encodeURIComponent(poster.id)}`);
                                             alert("Link copied to clipboard!");
                                         }
