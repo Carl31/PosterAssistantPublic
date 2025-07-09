@@ -10,6 +10,7 @@ import { db } from '@/firebase/client'
 import { Timestamp } from 'firebase/firestore'
 import { onAuthStateChanged } from 'firebase/auth'
 import LoadingPage from '@/components/LoadingPage'
+import { useRouter } from 'next/navigation'
 
 type Poster = {
     id: string;
@@ -23,31 +24,34 @@ type Poster = {
     }
 }
 
-const handleDownload = async (url: string) => {
+const handleDownload = async (poster: Poster) => {
     try {
-    const response = await fetch(url, { mode: 'cors' });
-    if (!response.ok) throw new Error('Network response was not ok');
+        const url = poster.posterUrl
+        const response = await fetch(url, { mode: 'cors' });
+        if (!response.ok) throw new Error('Network response was not ok');
 
-    const blob = await response.blob();
-    const blobUrl = URL.createObjectURL(blob);
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
 
-    const link = document.createElement('a');
-    link.href = blobUrl;
-    link.download = 'poster.png';
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = `Poster_${poster.carDetails.make}_${poster.carDetails.model}.png`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
 
-    URL.revokeObjectURL(blobUrl); // clean up
-  } catch (error) {
-    console.error('Download failed:', error);
-  }
+        URL.revokeObjectURL(blobUrl); // clean up
+    } catch (error) {
+        console.error('Download failed:', error);
+    }
 };
 
 export default function PosterHistoryPage() {
     const [posters, setPosters] = useState<Poster[]>([])
     const [loading, setLoading] = useState(true)
     const [uid, setUid] = useState<string | null>(null)
+
+    const router = useRouter()
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(getAuth(), async (user) => {
@@ -107,12 +111,12 @@ export default function PosterHistoryPage() {
                                     rel="noopener noreferrer"
                                     className="text-sm px-3 py-1 rounded bg-blue-500 text-white hover:bg-blue-600"
                                 >
-                                    View
+                                    Showcase
                                 </a>
 
                                 {/* Download button */}
                                 <button
-                                    onClick={() => handleDownload(poster.posterUrl)}
+                                    onClick={() => handleDownload(poster)}
                                     className="text-sm px-3 py-1 rounded bg-green-500 text-white hover:bg-green-600"
                                 >
                                     Download
@@ -125,13 +129,13 @@ export default function PosterHistoryPage() {
                                             try {
                                                 await navigator.share({
                                                     title: "Check out my car poster!",
-                                                    url: poster.posterUrl,
+                                                    url: `/mockup?uid=${encodeURIComponent(uid!)}&posterId=${encodeURIComponent(poster.id)}`,
                                                 });
                                             } catch (err) {
                                                 console.error("Share failed:", err);
                                             }
-                                        } else {
-                                            await navigator.clipboard.writeText(poster.posterUrl);
+                                        } else { // TODO: THe below link may not include the domain name, same as above
+                                            await navigator.clipboard.writeText(`/mockup?uid=${encodeURIComponent(uid!)}&posterId=${encodeURIComponent(poster.id)}`);
                                             alert("Link copied to clipboard!");
                                         }
                                     }}
@@ -144,6 +148,15 @@ export default function PosterHistoryPage() {
                     ))}
                 </div>
             )}
+            <button
+                onClick={() => {
+                    router.replace('/account/dashboard');
+                }}
+                className="mt-6 bg-blue-600 text-white px-4 py-2 rounded-md"
+            >
+                Back
+            </button>
+
         </div>
     )
 }

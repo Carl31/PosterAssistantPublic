@@ -35,7 +35,7 @@ export default function SelectTemplatePage() {
     }
 
     const handleBack = () => {
-        router.push('/dashboard')
+        router.push('/account/dashboard')
     }
 
     // Load all templates

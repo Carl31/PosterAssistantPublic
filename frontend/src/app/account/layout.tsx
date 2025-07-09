@@ -11,7 +11,6 @@ export default function GenerateLayout({ children }: { children: React.ReactNode
 
   useEffect(() => {
     if (isAuthChecked && !user) {
-      alert('You must be logged in to see this page.');
       router.replace('/login')
     }
   }, [user, isAuthChecked, router])
