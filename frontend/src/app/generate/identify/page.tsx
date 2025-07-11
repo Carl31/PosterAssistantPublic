@@ -40,7 +40,7 @@ export default function IdentifyVehicleStep() {
 
         if (!valid) {
             setpendingValidation(false);
-            alert(reason); // or show in UI
+            notify("error", "Invalid car details: " + reason);
             return;
         }
         router.push('/generate/overview')

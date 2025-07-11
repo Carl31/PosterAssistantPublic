@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 // /app/mockup/[id]/page.tsx
 
 'use client'
@@ -11,6 +12,8 @@ import { QRCodeSVG } from 'qrcode.react';
 import LoadingPage from '@/components/LoadingPage';
 import ErrorPage from '@/components/ErrorPage';
 import { Suspense } from "react";
+import Notification from "@/components/Notification";
+import { notify } from "@/utils/notify";
 
 type UserData = {
   instagramHandle: string;
@@ -40,8 +43,9 @@ function MockupContent() {
   const [loading, setLoading] = useState(true)
   const [posterNotFound, setPosterNotFound] = useState(false)
   const [instagramHandle, setInstagramHandle] = useState<string | null>(null)
-  const [displayName, setdisplayName] = useState<string | null>(null)
+  // const [displayName, setdisplayName] = useState<string | null>(null)
   const [displayMessage, setDisplayMessage] = useState<string | null>(null)
+  const [btnLink, setBtnLink] = useState('');
 
   useEffect(() => {
     if (!uid || !posterId) return
@@ -51,7 +55,7 @@ function MockupContent() {
       const userData = await getUserData(uid);
       if (!userData) { return }
       setInstagramHandle(userData.instagramHandle);
-      setdisplayName(userData.displayName);
+      // setdisplayName(userData.displayName);
       setDisplayMessage(userData.settings.displayMessage);
     }
     fetchUserData()
@@ -98,56 +102,84 @@ function MockupContent() {
 
   return (
     ((loading) ? (<LoadingPage text="Loading poster..." />) : (
-      <div className="p-4">
-        <h1 className="text-xl font-bold mb-4">Poster Mockup Preview</h1>
-        <PosterPreview posterUrl={posterUrl!} />
+      <div className="px-4 bg-white">
+        <Notification />
+        {/* <h1 className="text-xl font-bold mb-4">Poster Mockup Preview</h1> */}
 
-        {/* {window.location.origin ? window.location.origin : window.location.protocol + '//' + window.location.host}/mockup/${posterUrl} */}
 
-        <div className="mt-8">
-          <h2 className="text-lg font-semibold mb-2">Scan this QR code to view:</h2>
-          <QRCodeSVG
-            value={qrCodeLink + "&utm_source=poster_assistant&utm_medium=qr"}
-            size={200}
-            level="M"
-            bgColor="#ffffff"
-            fgColor="#000000"
-            marginSize={7}
-            title="Scan me!"
-          />
+        <div className="flex flex-col items-center">
+          <PosterPreview posterUrl={posterUrl!} onLinkGenerated={(link) => setBtnLink(link)} />
+
+          {displayMessage !== null && instagramHandle !== null && (
+            <p className="text-xs mb-2 text-center text-gray-900">{displayMessage}</p>
+          )}
+
+          <button className="relative rounded-lg w-full max-w-[256px] h-[29px] overflow-hidden">
+            <a href={`https://www.instagram.com/${instagramHandle}`} target="_blank" rel="noopener noreferrer">
+              <div className="absolute inset-0 bg-gradient-to-l from-[#4f5bd599] via-[#962fbf99] via-[#d6297699] via-[#fa7e1e99] to-[#feda7599]" />
+              <p className="relative text-xs font-bold text-center text-white mt-0.5">
+                <img className="instagram-svg inline-block w-4 h-4 mr-2" src="/svg/instagram_white.svg" alt="instagramSVG" />View</p>
+            </a>
+          </button>
+
+          <div className="mt-28 w-full max-w-[155px] flex items-center justify-center border-[6px] border-black h-7 bg-[#080808]">
+            <h5 className="text-[22px] leading-7 tracking-[-0.4px] text-white font-bold">
+              Share
+            </h5>
+          </div>
+
+          <div className="qr-code w-full max-w-[310px]">
+            <QRCodeSVG
+              value={qrCodeLink + "&utm_source=poster_assistant&utm_medium=qr"}
+              level="M"
+              bgColor="#ffffff"
+              fgColor="#000000"
+              marginSize={5}
+              title="Scan me!"
+              className="w-full h-auto"
+            />
+          </div>
+
+
+          <button className="mb-5 relative border-3 border-black rounded-lg w-full max-w-[256px] h-[29px] overflow-hidden"
+            onClick={async () => {
+              if (navigator.share) {
+                try {
+                  await navigator.clipboard.writeText(qrCodeLink);
+                  await navigator.share({
+                    title: "Check out my car poster!",
+                    url: qrCodeLink,
+                  }).then(() => {
+                    notify("info", "Link copied to clipboard!");
+                  });
+                } catch (err) {
+                  console.error("Share failed:", err);
+                  notify("error", "Share failed");
+                }
+              } else {
+                await navigator.clipboard.writeText(qrCodeLink);
+                notify("info", "Link copied to clipboard!");
+              }
+            }}>
+            <div className="absolute inset-0 bg-white" />
+            <p className="relative text-xs font-bold text-center text-gray-900">
+              <img className="inline-block w-4 h-4 mr-2" src="/svg/copy.svg" alt="copySVG" />
+              Share Link</p>
+          </button>
+
+          <button className="mb-14 relative border-3 border-black rounded-lg w-full max-w-[256px] h-[29px] overflow-hidden">
+            <a
+              href={btnLink}
+              download="CoolPoster.png"
+            >
+              <div className="absolute inset-0 bg-white" />
+              <p className="relative text-xs font-bold text-center text-gray-900 mt-0.5">
+                <img className="inline-block w-4 h-4 mr-2" src="/svg/download.svg" alt="downloadSVG" />Download</p>
+            </a>
+          </button>
+
         </div>
 
-        {/* Share button */}
-        <button
-          onClick={async () => {
-            if (navigator.share) {
-              try {
-                await navigator.share({
-                  title: "Check out my car poster!",
-                  url: qrCodeLink,
-                });
-              } catch (err) {
-                console.error("Share failed:", err);
-              }
-            } else {
-              await navigator.clipboard.writeText(qrCodeLink);
-              alert("Link copied to clipboard!");
-            }
-          }}
-          className="text-sm px-3 py-1 rounded bg-purple-500 text-white hover:bg-purple-600"
-        >
-          Share
-        </button>
-
-        {displayName !== null && instagramHandle !== null && (
-          <div className="mt-8">
-            <h2 className="text-lg font-semibold mb-2">User:</h2>
-            <p>{displayMessage}</p>
-            <a href={`https://www.instagram.com/${instagramHandle}`} target="_blank" rel="noopener noreferrer">
-              <button className="text-sm px-3 py-1 rounded bg-purple-500 text-white hover:bg-purple-600">View Instagram Profile</button>
-            </a>
-          </div>
-        )}
       </div>
     ))
   )

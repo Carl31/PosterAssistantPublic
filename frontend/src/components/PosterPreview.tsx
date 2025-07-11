@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-export default function PosterPreview({ posterUrl }: { posterUrl: string }) {
+export default function PosterPreview({ posterUrl, onLinkGenerated }: { posterUrl: string; onLinkGenerated?: (link: string) => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -41,18 +42,19 @@ export default function PosterPreview({ posterUrl }: { posterUrl: string }) {
         ctx.drawImage(posterImg, x, y, width, height);
 
         const url = canvas.toDataURL('image/png');
-        setDownloadUrl(url);
+        //setDownloadUrl(url);
+        onLinkGenerated!(url);
       };
     };
   }, [posterUrl]);
 
   return (
-    <div className="mt-4">
-      <p className="font-semibold mb-2">Your poster with mockup preview:</p>
-      <canvas ref={canvasRef} className="rounded shadow-md w-full max-w-md" />
+    <div className="">
+      {/* <p className="font-semibold mb-2">Your poster with mockup preview:</p> */}
+      <canvas ref={canvasRef} className="w-full max-w-md" />
 
 
-      {downloadUrl && (
+      {/* {downloadUrl && (
         <a
           href={downloadUrl}
           download="mockup.png"
@@ -60,7 +62,7 @@ export default function PosterPreview({ posterUrl }: { posterUrl: string }) {
         >
           Download Mockup as PNG
         </a>
-      )}
+      )} */}
     </div>
   );
 }
