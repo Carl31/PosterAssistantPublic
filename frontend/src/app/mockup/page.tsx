@@ -111,16 +111,30 @@ function MockupContent() {
           <PosterPreview posterUrl={posterUrl!} onLinkGenerated={(link) => setBtnLink(link)} />
 
           {displayMessage !== null && instagramHandle !== null && (
-            <p className="text-xs mb-2 text-center text-gray-900">{displayMessage}</p>
+            <p className="text-xs mb-4 text-center text-gray-900">{displayMessage}</p>
           )}
 
-          <button className="relative rounded-lg w-full max-w-[256px] h-[29px] overflow-hidden">
-            <a href={`https://www.instagram.com/${instagramHandle}`} target="_blank" rel="noopener noreferrer">
-              <div className="absolute inset-0 bg-gradient-to-l from-[#4f5bd599] via-[#962fbf99] via-[#d6297699] via-[#fa7e1e99] to-[#feda7599]" />
-              <p className="relative text-xs font-bold text-center text-white mt-0.5">
-                <img className="instagram-svg inline-block w-4 h-4 mr-2" src="/svg/instagram_white.svg" alt="instagramSVG" />View</p>
-            </a>
-          </button>
+
+          <div className="relative w-full max-w-[256px] h-[29px] rounded-lg shadow-darker animate-bounce">
+            <button className="relative w-full h-full overflow-hidden rounded-lg">
+              <a
+                href={`https://www.instagram.com/${instagramHandle}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <div className="absolute inset-0 animate-btn" />
+                <p className="relative text-xs font-bold text-center text-white mt-0.5">
+                  <img
+                    className="instagram-svg inline-block w-4 h-4 mr-2"
+                    src="/svg/instagram_white.svg"
+                    alt="instagramSVG"
+                  />
+                  View
+                </p>
+              </a>
+            </button>
+          </div>
+
 
           <div className="mt-28 w-full max-w-[155px] flex items-center justify-center border-[6px] border-black h-7 bg-[#080808]">
             <h5 className="text-[22px] leading-7 tracking-[-0.4px] text-white font-bold">

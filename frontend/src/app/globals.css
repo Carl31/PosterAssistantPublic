@@ -56,3 +56,33 @@ body {
     animation: slide-out 0.3s ease-in forwards;
   }
 }
+
+.animate-btn {
+	background: linear-gradient(-45deg, #4f5bd599, #4f5bd599, #962fbf99, #d6297699, #fa7e1e99, #feda7599);
+	background-size: 200% 200%;
+	animation: gradient 6s ease infinite;
+	height: 10vh;
+}
+
+@keyframes gradient {
+	0% {
+		background-position: 0% 0%;
+	}
+	25% {
+		background-position: 50% 50%;
+	}
+	50% {
+		background-position: 100% 100%;
+	}
+  75% {
+    background-position: 50% 50%;
+  }
+  100% {
+    background-position: 0% 0%;
+  }
+}
+
+.shadow-darker {
+  --tw-shadow: 0 10px 20px -8px rgba(0, 0, 0, 0.7); /* increase opacity */
+  box-shadow: var(--tw-shadow);
+}
