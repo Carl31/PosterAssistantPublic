@@ -15,6 +15,7 @@ import LoadingPage from '@/components/LoadingPage'
 import { notify } from "@/utils/notify";
 import Notification from "@/components/Notification";
 import ErrorPage from '@/components/ErrorPage'
+import { carData, modelExists } from "@/pages/api/carData";
 
 export default function IdentifyVehicleStep() {
 
@@ -40,6 +41,7 @@ export default function IdentifyVehicleStep() {
 
         if (!valid) {
             setpendingValidation(false);
+            console.log("Invalid car details: " + reason);
             notify("error", "Invalid car details: " + reason);
             return;
         }
@@ -132,9 +134,9 @@ export default function IdentifyVehicleStep() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
         >
+            <Notification />
             {pendingValidation ? <Spinner /> : (
                 <div className="p-8 max-w-xl mx-auto">
-                    <Notification/>
                     <section id='identify vehicle'>
                         {previewUrl && (
                             <div className="w-full aspect-[3/4] relative shadow-lg overflow-hidden">
@@ -224,6 +226,8 @@ export default function IdentifyVehicleStep() {
             const modelData = await modelRes.json();
             const validModels = modelData.Results.map((m: any) => m.Model_Name.toLowerCase());
             if (!validModels.includes(model)) {
+                const exists = modelExists(make, model); // If model is not present on american car database, check if it exists in Japanese db (locally stored).
+                if (exists) return { valid: true };
                 return { valid: false, reason: `Model "${model}" is not valid for make "${make}"` };
             }
 

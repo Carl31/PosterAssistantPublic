@@ -33,7 +33,7 @@ export default function Notification() {
             // Remove it after the slide-out duration
             setTimeout(() => {
                 setNotifications((prev) => prev.filter((n) => n.id !== id));
-            }, 3000);
+            }, 4000);
         };
 
         window.addEventListener("app-notify", handler as EventListener);

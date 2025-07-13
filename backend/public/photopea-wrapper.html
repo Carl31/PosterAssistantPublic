@@ -14,7 +14,7 @@
     const psdUrl = params.get("psd");
     const userImageUrl = params.get("userImageUrl");
     let description = params.get("description");
-    const instagram = params.get("instagramHandle");
+    const instagram = params.get("instagramHandle").toUpperCase();
     const carMake = params.get("carMake").toUpperCase();
     const carModel = params.get("carModel").toUpperCase();
     const carYear = params.get("carYear");
@@ -184,6 +184,8 @@ while(q.length){
               if (q[0].layers[i].layers[j].name === "description") {
                 console.log("Found description layer! : " + q[0].layers[i].layers[j]);
                 q[0].layers[i].layers[j].textItem.contents="${description}";
+              } else {
+                console.log("Skipping layer: " + q[0].layers[i].layers[j].name);
               }
             }
           }
@@ -233,7 +235,7 @@ while(q.length){
       await waitForDone(1);
       await delay(4000);
       console.log("[Wrapper] Pasted image! Continuing...");
-      console.log("[Wrapper] Important! If \"New layer found\" below is not \"user_uploads%2FzZU7cspNSibPPgUXt4uKpq6In313%2Fuser\" then users image will not paste!!");
+      console.log("[Wrapper] Important! If \"New layer found\" below is not \"user_uploads...\" then users image will not paste!!");
       sendToPhotopea(`
           var q=[app.activeDocument];
   var newLayer = null;
@@ -243,7 +245,7 @@ if (q[0].layers.length > 0) {
     if (q[0].layers[i].name === "VAR_TEXTS") {
       if (q[0].layers[i].layers.length > 0) {
         for (var j = 0; j < q[0].layers[i].layers.length - 1; j++) {
-          if (q[0].layers[i].layers[j].name === "user_uploads%2FzZU7cspNSibPPgUXt4uKpq6In313%2Fuser") {
+          if (q[0].layers[i].layers[j].name.startsWith("user_uploads")) {
             newLayer = q[0].layers[i].layers[j];
             console.log("New layer found:", newLayer.name);
             break;

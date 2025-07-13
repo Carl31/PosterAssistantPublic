@@ -5,6 +5,7 @@
 // photopeaRenderer.ts
 import chromium, {font} from "chrome-aws-lambda";
 import puppeteer from "puppeteer-core";
+import {format, toZonedTime} from 'date-fns-tz';
 
 type CarDetails = {
     make: string
@@ -45,11 +46,16 @@ export const renderPoster = async ({
   try {
     page = await browser.newPage();
 
-
+    const timeZone = 'Pacific/Auckland'; // Use IANA timezone name
     const now = new Date();
-    const day = String(now.getDate()).padStart(2, '0');
-    const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are zero-indexed
-    const year = String(now.getFullYear()).slice(-2); // Get last two digits
+    const nzDate = toZonedTime(now, timeZone);
+
+    // const day = String(now.getDate()).padStart(2, '0');
+    // const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are zero-indexed
+    // const year = String(now.getFullYear()).slice(-2); // Get last two digits
+    const day = format(nzDate, 'dd'); // e.g. "07"
+    const month = format(nzDate, 'MM'); // e.g. "07"
+    const year = format(nzDate, 'yy'); // e.g. "2025"
     const formattedDate = `${day}/${month}/${year}`;
 
     // Send to hosted html page

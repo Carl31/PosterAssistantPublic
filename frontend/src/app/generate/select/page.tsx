@@ -19,7 +19,7 @@ import { s } from 'framer-motion/client'
 
 export default function SelectTemplatePage() {
     const [templates, setTemplates] = useState<Template[]>([])
-    const { selectedTemplate, setSelectedTemplate } = usePosterWizard()
+    const { selectedTemplate, setSelectedTemplate, setInstagramHandle } = usePosterWizard()
     const { user } = useAuth()
     const [favoriteTemplates, setFavoriteTemplates] = useState<string[]>([])
     const [loading, setLoading] = useState(false)
@@ -59,8 +59,10 @@ export default function SelectTemplatePage() {
             const userSnap = await getDoc(userRef)
             const data = userSnap.data()
             setFavoriteTemplates(data?.settings?.favouriteTemplates || [])
+            setInstagramHandle(data?.instagramHandle || '')
         }
         fetchFavorites()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user])
 
     // Toggle favorite
