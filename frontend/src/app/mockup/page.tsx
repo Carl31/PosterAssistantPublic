@@ -46,6 +46,7 @@ function MockupContent() {
   // const [displayName, setdisplayName] = useState<string | null>(null)
   const [displayMessage, setDisplayMessage] = useState<string | null>(null)
   const [btnLink, setBtnLink] = useState('');
+  const [showPopup, setShowPopup] = useState(false);
 
   useEffect(() => {
     if (!uid || !posterId) return
@@ -107,7 +108,56 @@ function MockupContent() {
         {/* <h1 className="text-xl font-bold mb-4">Poster Mockup Preview</h1> */}
 
 
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col items-center" onClick={(e) => {
+          const target = e.target as HTMLElement;
+          if (!target.closest('.popup-content')) {
+            if (showPopup === true) {
+              setShowPopup(false);
+              console.log('popup closed')
+            }
+          }
+        }}>
+
+          {showPopup && (
+            <div className="p-2 fixed inset-0 flex items-center justify-center backdrop-blur-sm bg-black/60 z-50 fade-in">
+              <div className="m-2 popup-content p-4 rounded-lg max-w-sm min-h-50 text-center bg-gray-100">
+                <div className='mb-4'>
+                  <img src="/svg/xmark_gray.svg" alt="Close" className="relative top-3 right-3 w-6 h-6 cursor-pointer float-right" onClick={() => setShowPopup(false)}/>
+                  <div className="rounded-lg w-full h-70 bg-image bg-cover bg-center" style={{ backgroundImage: `url('/png/print.png')` }}></div>
+                  <h5 className=" mt-5 text-[22px] font-bold mb-2 text-black">Want to print?</h5>
+                  <button className="mt-4 relative w-full h-full overflow-hidden rounded-lg">
+                    <a
+                      href={`https://ig.me/m/${instagramHandle}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <div className="absolute inset-0 animate-btn" />
+                      <p className="relative text-s font-bold text-center text-white mt-1 mb-1 mx-2.5">
+                        <img
+                          className="instagram-svg inline-block w-4 h-4 mr-2"
+                          src="/svg/instagram_white.svg"
+                          alt="instagramSVG"
+                        />
+                        Message me for the high-res file!
+                      </p>
+                    </a>
+                  </button>
+                  <p className="mt-6 text-gray-900 mb-6">
+                    OR
+                  </p>
+                  <a
+                    className=" mb-10 text-black rounded"
+                    href={btnLink}
+                    download="CoolPoster.png"
+                  >
+                    <u>Download normal quality</u>
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
+
+
           <PosterPreview posterUrl={posterUrl!} onLinkGenerated={(link) => setBtnLink(link)} />
 
           {displayMessage !== null && instagramHandle !== null && (
@@ -181,15 +231,12 @@ function MockupContent() {
               Share Link</p>
           </button>
 
-          <button className="mb-14 relative border-3 border-black rounded-lg w-full max-w-[256px] h-[29px] overflow-hidden">
-            <a
-              href={btnLink}
-              download="CoolPoster.png"
-            >
-              <div className="absolute inset-0 bg-white" />
-              <p className="relative text-xs font-bold text-center text-gray-900 mt-0.5">
-                <img className="inline-block w-4 h-4 mr-2" src="/svg/download.svg" alt="downloadSVG" />Download</p>
-            </a>
+          <button className="mb-14 relative border-3 border-black rounded-lg w-full max-w-[256px] h-[29px] animate-customPulse overflow-hidden" onClick={() => setShowPopup(true)}>
+
+            <div className="absolute inset-0 bg-white" />
+            <p className="relative text-xs font-bold text-center text-gray-900 mt-0.5">
+              <img className="inline-block w-4 h-4 mr-2" src="/svg/download.svg" alt="downloadSVG" />Download</p>
+
           </button>
 
         </div>

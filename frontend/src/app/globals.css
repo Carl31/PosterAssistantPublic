@@ -57,6 +57,26 @@ body {
   }
 }
 
+@layer utilities {
+  .fade-in {
+    animation: fadeIn 0.3s ease-in-out forwards;
+  }
+
+  .fade-out {
+    animation: fadeOut 0.3s ease-in-out forwards;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  @keyframes fadeOut {
+    from { opacity: 1; }
+    to   { opacity: 0; }
+  }
+}
+
 .animate-btn {
 	background: linear-gradient(-45deg, #4f5bd599, #4f5bd599, #962fbf99, #d6297699, #fa7e1e99, #feda7599);
 	background-size: 200% 200%;
@@ -79,6 +99,17 @@ body {
   }
   100% {
     background-position: 0% 0%;
+  }
+}
+
+@layer utilities {
+  .animate-customPulse {
+    animation: customPulse 1s ease-in-out infinite;
+  }
+
+  @keyframes customPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
   }
 }
 
