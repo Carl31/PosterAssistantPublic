@@ -127,7 +127,7 @@ function MockupContent() {
                   <h5 className=" mt-5 text-[22px] font-bold mb-2 text-black">Want to print?</h5>
                   <button className="mt-4 relative w-full h-full overflow-hidden rounded-lg">
                     <a
-                      href={`https://ig.me/m/${instagramHandle}`}
+                      href={`https://www.instagram.com/${instagramHandle}`}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
