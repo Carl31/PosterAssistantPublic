@@ -266,7 +266,7 @@ export default function OverviewPage() {
             transition={{ duration: 0.3 }}
         >
             <div className="p-8 max-w-xl mx-auto">
-                {loading ? <LoadingPage text="Generating poster..." /> : (
+                {loading ? <LoadingPage text="Generating preview..." /> : (
                     <span>
                         <section id='overview'>
                             {previewUrl && (

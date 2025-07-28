@@ -231,13 +231,13 @@ export default function IdentifyVehicleStep() {
                 return { valid: false, reason: `Model "${model}" is not valid for make "${make}"` };
             }
 
-            // 3. Validate Year for Make+Model
-            const yearRes = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/GetModelsForMakeYear/make/${make}/modelyear/${year}?format=json`);
-            const yearData = await yearRes.json();
-            const modelsThisYear = yearData.Results.map((m: any) => m.Model_Name.toLowerCase());
-            if (!modelsThisYear.includes(model)) {
-                return { valid: false, reason: `Model "${model}" was not produced in year ${year}` };
-            }
+            // 3. Validate Year for Make+Model (TODO: Somehow rewrite this year validation without using NHTSA API, it's not comprehensive enough.)
+            // const yearRes = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/GetModelsForMakeYear/make/${make}/modelyear/${year}?format=json`);
+            // const yearData = await yearRes.json();
+            // const modelsThisYear = yearData.Results.map((m: any) => m.Model_Name.toLowerCase());
+            // if (!modelsThisYear.includes(model)) {
+            //     return { valid: false, reason: `Model "${model}" was not produced in year ${year}` };
+            // }
 
             return { valid: true };
         } catch (error) {

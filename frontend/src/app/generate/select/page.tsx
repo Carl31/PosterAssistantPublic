@@ -10,7 +10,7 @@ import { usePosterWizard } from '@/context/PosterWizardContext'
 import { useAuth } from '@/context/AuthContext'
 import { Template } from '@/types/template'
 import { useState, useEffect } from 'react'
-import { collection, getDocs, doc, updateDoc, arrayUnion, arrayRemove, getDoc } from 'firebase/firestore'
+import { collection, getDocs, doc, updateDoc, arrayUnion, arrayRemove, getDoc, query, where } from 'firebase/firestore'
 import { db } from '@/firebase/client'
 import TemplateCard from '@/components/TemplateCard'
 import { useRouter } from 'next/navigation';
@@ -42,7 +42,7 @@ export default function SelectTemplatePage() {
     useEffect(() => {
         const fetchTemplates = async () => {
             setLoading(true)
-            const snapshot = await getDocs(collection(db, 'templates'))
+            const snapshot = await getDocs(query(collection(db, 'templates'), where('isActive', '==', true)));
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Template))
             setTemplates(data)
             setLoading(false)
