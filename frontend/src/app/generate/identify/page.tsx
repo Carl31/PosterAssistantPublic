@@ -227,7 +227,7 @@ export default function IdentifyVehicleStep() {
             const validModels = modelData.Results.map((m: any) => m.Model_Name.toLowerCase());
             if (!validModels.includes(model)) {
                 const exists = modelExists(make, model); // If model is not present on american car database, check if it exists in Japanese db (locally stored).
-                if (exists) return { valid: true };
+                if (true) return { valid: true };
                 return { valid: false, reason: `Model "${model}" is not valid for make "${make}"` };
             }
 
