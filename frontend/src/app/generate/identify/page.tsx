@@ -24,7 +24,7 @@ export default function IdentifyVehicleStep() {
     const {
         selectedTemplate,
         carDetails, setCarDetails,
-        previewUrl,
+        userImgThumbDownloadUrl, userImgDownloadUrl,
         geminiChecked, setGeminiChecked,
     } = usePosterWizard()
     const { state } = usePosterWizard();
@@ -58,12 +58,12 @@ export default function IdentifyVehicleStep() {
     const handleBack = () => {
         setCarDetails({ make: '', model: '', year: '' })
         setGeminiChecked(false)
-        router.push('/generate/upload')
+        router.push('/generate/select')
     }
 
     // Detect car details in image using cloud function
     const detectCar = async () => {
-        if (!previewUrl) return
+        if (!userImgThumbDownloadUrl) return
         setloading(true)
 
         // Below 2 lines for dummy data
@@ -83,7 +83,7 @@ export default function IdentifyVehicleStep() {
             // const base64Image = await fileToBase64(image);
             // const mimeType = image.type;
 
-            const { base64Image, mimeType } = await convertImageUrlToBase64(previewUrl);
+            const { base64Image, mimeType } = await convertImageUrlToBase64(userImgThumbDownloadUrl);
             // 2. Prepare the data to send in the request body
             const requestBody = {
                 base64Image: base64Image,
@@ -138,10 +138,10 @@ export default function IdentifyVehicleStep() {
             {pendingValidation ? <Spinner /> : (
                 <div className="p-8 max-w-xl mx-auto">
                     <section id='identify vehicle'>
-                        {previewUrl && (
+                        {userImgDownloadUrl && (
                             <div className="w-full aspect-[3/4] relative shadow-lg overflow-hidden">
                                 <img
-                                    src={previewUrl!}
+                                    src={userImgDownloadUrl!}
                                     alt="Preview"
                                     className="absolute inset-0 w-full h-full object-cover"
                                 />
@@ -149,7 +149,7 @@ export default function IdentifyVehicleStep() {
                         )}
 
                         <button
-                            disabled={!previewUrl || !selectedTemplate || loading}
+                            disabled={!userImgThumbDownloadUrl || !selectedTemplate || loading}
                             onClick={detectCar}
                             className="mt-6 bg-blue-600 text-white px-4 py-2 rounded-md"
                         >
@@ -157,7 +157,7 @@ export default function IdentifyVehicleStep() {
                         </button>
 
                         <button
-                            disabled={!previewUrl || !selectedTemplate || loading}
+                            disabled={!userImgThumbDownloadUrl || !selectedTemplate || loading}
                             onClick={() => setUseAI(false)}
                             className="mt-6 bg-blue-600 text-white px-4 py-2 rounded-md"
                         >
@@ -196,7 +196,7 @@ export default function IdentifyVehicleStep() {
                         Next Step
                     </button>
                     <button onClick={handleBack} className="mt-6 bg-red-600 text-white px-4 py-2 rounded-md">
-                        Choose a different image
+                        Back
                     </button>
                 </div>
             )}
@@ -227,7 +227,7 @@ export default function IdentifyVehicleStep() {
             const validModels = modelData.Results.map((m: any) => m.Model_Name.toLowerCase());
             if (!validModels.includes(model)) {
                 const exists = modelExists(make, model); // If model is not present on american car database, check if it exists in Japanese db (locally stored).
-                if (true) return { valid: true };
+                if (true) return { valid: true }; // This "true" is a placeholder. Its meant to be "exists". But temporarily allowing all models for makes, as the database is not comprehensive enough and blocks some models from being used in app.
                 return { valid: false, reason: `Model "${model}" is not valid for make "${make}"` };
             }
 

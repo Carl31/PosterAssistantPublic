@@ -18,8 +18,10 @@ type PosterWizardContextType = {
   setState: React.Dispatch<React.SetStateAction<PosterWizardState>>
   selectedTemplate: Template | null
   setSelectedTemplate: (template: Template | null) => void
-  previewUrl: string | null
-  setPreviewUrl: (url: string | null) => void
+  userImgThumbDownloadUrl: string | null
+  setuserImgThumbDownloadUrl: (url: string | null) => void
+  userImgDownloadUrl: string | null
+  setuserImgDownloadUrl: (url: string | null) => void
   carDetails: CarDetails
   setCarDetails: (details: CarDetails) => void
   prevCarDetails: CarDetails
@@ -30,8 +32,6 @@ type PosterWizardContextType = {
   setInstagramHandle: (handle: string) => void
   geminiChecked: boolean
   setGeminiChecked: (value: boolean) => void
-  //   posterUrl: string | null
-  //   setPosterUrl: (url: string | null) => void
   progress: string | null
   setProgress: (progress: string | null) => void
 }
@@ -49,7 +49,8 @@ export const PosterWizardProvider = ({ children }: { children: React.ReactNode }
 
   const [state, setState] = useState<PosterWizardState>({});
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [userImgDownloadUrl, setuserImgDownloadUrl] = useState<string | null>(null)
+  const [userImgThumbDownloadUrl, setuserImgThumbDownloadUrl] = useState<string | null>(null)
   const [carDetails, setCarDetails] = useState<CarDetails>({ make: '', model: '', year: '' })
   const [description, setDescription] = useState('')
   const [prevCarDetails, setPrevCarDetails] = useState<CarDetails>({ make: '', model: '', year: '' })
@@ -61,10 +62,10 @@ export const PosterWizardProvider = ({ children }: { children: React.ReactNode }
   useEffect(() => {
     setState({
       selectedTemplate: selectedTemplate,
-      uploadedImageUrl: previewUrl,
+      uploadedImageUrl: userImgDownloadUrl,
       carDetails,
     });
-  }, [selectedTemplate, previewUrl, carDetails]);
+  }, [selectedTemplate, userImgDownloadUrl, carDetails]);
 
 return (
   <PosterWizardContext.Provider value={{
@@ -72,8 +73,10 @@ return (
     setState,
     selectedTemplate,
     setSelectedTemplate,
-    previewUrl,
-    setPreviewUrl,
+    userImgDownloadUrl,
+    setuserImgDownloadUrl,
+    userImgThumbDownloadUrl,
+    setuserImgThumbDownloadUrl,
     carDetails,
     setCarDetails,
     prevCarDetails,
@@ -84,8 +87,6 @@ return (
     setInstagramHandle,
     geminiChecked,
     setGeminiChecked,
-    //   posterUrl,
-    //   setPosterUrl,
     progress,
     setProgress
   }}>
@@ -103,7 +104,7 @@ export const usePosterWizard = () => {
 }
 
 export function isStepAccessible(step: string, state: PosterWizardState): boolean {
-  if (step === "upload") return !!state.selectedTemplate;
+  if (step === "select") return !!state.uploadedImageUrl;
   if (step === "identify") return !!state.uploadedImageUrl;
   if (step === "overview") return !!state.carDetails && Object.values(state.carDetails).every((value) => value !== "");
   return true;

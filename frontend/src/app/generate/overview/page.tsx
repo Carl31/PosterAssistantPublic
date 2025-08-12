@@ -31,7 +31,7 @@ export default function OverviewPage() {
     const {
         selectedTemplate, carDetails,
         description, setDescription, instagramHandle,
-        previewUrl, prevCarDetails, setPrevCarDetails
+        userImgDownloadUrl, prevCarDetails, setPrevCarDetails
     } = usePosterWizard()
     const { state } = usePosterWizard();
 
@@ -148,13 +148,13 @@ export default function OverviewPage() {
         }
     }
 
-    const savePosterMetadata = async (uid: string, imageUrl: string) => { // TODO: need to use this somewhere!
+    const savePosterMetadata = async (uid: string, imageUrl: string) => { // TODO: useless as metadata is being saved in cloud function
         const posterId = crypto.randomUUID()
 
         await setDoc(doc(db, 'users', uid, 'posters', posterId), {
             imageUrl,
             createdAt: serverTimestamp(),
-            inputImageUrl: previewUrl,
+            inputImageUrl: userImgDownloadUrl,
             templateId: selectedTemplate?.id,
             description,
             carDetails,
@@ -216,7 +216,7 @@ export default function OverviewPage() {
                 body: JSON.stringify({
                     psdUrl: selectedTemplate?.psdFileUrl,
                     templateId: selectedTemplate?.id,
-                    userImageUrl: previewUrl,
+                    userImageUrl: userImgDownloadUrl,
                     carDetails,
                     description,
                     instagramHandle,
@@ -269,10 +269,10 @@ export default function OverviewPage() {
                 {loading ? <LoadingPage text="Generating preview..." /> : (
                     <span>
                         <section id='overview'>
-                            {previewUrl && (
+                            {userImgDownloadUrl && (
                                 <div className="w-full aspect-[3/4] relative rounded-xl shadow-lg overflow-hidden">
                                     <img
-                                        src={previewUrl!}
+                                        src={userImgDownloadUrl!}
                                         alt="Preview"
                                         className="absolute inset-0 w-full h-full object-cover"
                                     />

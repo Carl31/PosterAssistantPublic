@@ -36,7 +36,7 @@ export default function GeneratePage() {
 
     // For uploading image
     const [image, setImage] = useState<File | null>(null)
-    const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+    const [userImgDownloadUrl, setuserImgDownloadUrl] = useState<string | null>(null)
 
     // For templates
     const [templates, setTemplates] = useState<any[]>([])
@@ -190,7 +190,7 @@ export default function GeneratePage() {
                 const snapshot = await uploadBytes(storageRef, file)
                 const downloadURL = await getDownloadURL(snapshot.ref)
 
-                setPreviewUrl(downloadURL) // ✅ Use downloadURL instead of in-memory blob
+                setuserImgDownloadUrl(downloadURL) // ✅ Use downloadURL instead of in-memory blob
             } catch (err) {
                 console.error('Image upload failed:', err)
                 alert('Failed to upload image. Please try again.')
@@ -374,7 +374,7 @@ export default function GeneratePage() {
         await setDoc(doc(db, 'users', uid, 'posters', posterId), {
             imageUrl,
             createdAt: serverTimestamp(),
-            inputImageUrl: previewUrl,
+            inputImageUrl: userImgDownloadUrl,
             templateId: selectedTemplate?.id,
             description,
             carDetails,
@@ -389,7 +389,7 @@ export default function GeneratePage() {
     //         const generatePoster = httpsCallable(functions, 'generatePoster')
     //         const result = await generatePoster({
     //             psdUrl: selectedTemplate?.psdFileUrl,
-    //             userImageUrl: previewUrl, // Must be publicly accessible
+    //             userImageUrl: userImgDownloadUrl, // Must be publicly accessible
     //             carDetails,
     //             description,
     //             instagramHandle: instagramHandle
@@ -451,7 +451,7 @@ export default function GeneratePage() {
                 },
                 body: JSON.stringify({
                     psdUrl: selectedTemplate?.psdFileUrl,
-                    userImageUrl: previewUrl, // Must be publicly accessible
+                    userImageUrl: userImgDownloadUrl, // Must be publicly accessible
                     carDetails,
                     description,
                     instagramHandle,
@@ -518,8 +518,8 @@ export default function GeneratePage() {
                     className="mb-4"
                 />
 
-                {previewUrl && (
-                    <img src={previewUrl} alt="Preview" className="w-full rounded-xl shadow-lg" />
+                {userImgDownloadUrl && (
+                    <img src={userImgDownloadUrl} alt="Preview" className="w-full rounded-xl shadow-lg" />
                 )}
             </section>
 

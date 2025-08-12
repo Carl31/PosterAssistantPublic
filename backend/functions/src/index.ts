@@ -22,13 +22,6 @@
 // Above code is default code.
 
 
-// WHAT generatePoster FUNCTION DOES:
-// Validates auth
-// Receives all poster input fields
-// Renders the final poster image using renderPoster()
-// Uploads to Storage: posters/{uid}/{uuid}.png
-// Returns a signed URL for immediate access
-
 // This file also exports other firebase functions (see last line of file)
 
 
@@ -42,142 +35,134 @@ import * as admin from "firebase-admin";
 import cors from "cors";
 
 import sharp from 'sharp'; // For image compression
+import * as path from 'path';
+import * as os from 'os';
+import * as fs from 'fs';
 
 admin.initializeApp();
 
-const corsHandler = cors({origin: true}); // Allow all origins — adjust for production
-
-// const bucket = getStorage().bucket();
-// const db = admin.firestore();
-
-// async function updateJobStatus(jobId: string, status: { progress: string; status: 'in-progress' | 'complete' | 'error' ; posterUrl?: string; userId?: string}) {
-//   await db.collection('jobs').doc(jobId).set(status, {merge: true});
-// }
-
-// export const generatePoster = functions .runWith({memory: "8GB", timeoutSeconds: 120})
-//   .https.onRequest(async (req, res) => {
-//     corsHandler(req, res, async () => {
-//       console.log("Function received a request:", req.method, req.url); // Testing
-
-//       // Don't have to manually set headers when using cors package.
-//       // ✅ Handle CORS Preflight (OPTIONS)
-//       // if (req.method === "OPTIONS") {
-//       //   res.set("Access-Control-Allow-Origin", "*");
-//       //   res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
-//       //   res.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
-//       //   res.status(204).send(""); // No content
-//       //   return;
-//       // }
-
-//       // // ✅ Set CORS headers on actual response
-//       // res.set("Access-Control-Allow-Origin", "*");
-
-//       // if (req.method !== "POST") {
-//       //   res.set("Access-Control-Allow-Origin", "*"); // ✅ always explicitly include this
-//       //   return res.status(405).send("Method Not Allowed");
-//       // }
-
-//       // UNCOMMENT FROM HERE IN ORDER TO SEE LOGS IN FIREBASE CONSOLE
-
-//       if (req.method !== 'POST') {
-//         return res.status(405).send('Method Not Allowed');
-//       }
-
-//       // Handle authenticated POST from frontend with poster generation data
-//       try {
-//         // Auth
-//         const authHeader = req.headers.authorization || "";
-//         const match = authHeader.match(/^Bearer (.+)$/);
-//         const idToken = match?.[1];
-
-//         if (!idToken) {
-//           return res.status(401).send("Unauthorized: No token provided");
-//         }
-
-//         const decodedToken = await admin.auth().verifyIdToken(idToken);
-//         const uid = decodedToken.uid;
-//         console.log("User ID:", uid);
-//         // End auth
-
-//         const {psdUrl, userImageUrl, carDetails, description, instagramHandle, fontsUsed = [], jobId} = req.body;
-
-//         res.status(200).json({ status: "Job started", jobId });
-
-//         // Step 1: Generate the original poster
-//         console.log("Generating poster...");
-//         await updateJobStatus(jobId, {progress: "Preparing canvas", status: 'in-progress'});
-//         // Render the poster
-//         const imageBuffer = await renderPoster({
-//           psdUrl,
-//           userImageUrl,
-//           carDetails,
-//           description,
-//           instagramHandle,
-//           fontsUsed,
-//           onProgress: (status) => updateJobStatus(jobId, status),
-//         });
-
-//         await updateJobStatus(jobId, {progress: "Compressing image", status: 'in-progress'});
-
-//         // Step 1.5: Compress image
-//         // FOR FUTURE - If user is on paid version, do not compress!!
-//         console.log("Compressing image...");
-//         const compressedBuffer = await sharp(imageBuffer)
-//           .jpeg({quality: 75}) // Adjust this as needed
-//           .toBuffer();
-
-//         // Step 2: Upload to 'posters/...'
-//         // Upload the image to Firebase Storage
-//         await updateJobStatus(jobId, {progress: "Uploading poster", status: 'in-progress'});
-//         console.log("Uploading poster...");
-//         const fileName = `user_posters/${uid}/${uuidv4()}.png`;
-//         const file = bucket.file(fileName);
-
-//         await file.save(compressedBuffer, {
-//           metadata: {
-//             contentType: "image/png",
-//           },
-//         });
-
-//         const [posterUrl] = await file.getSignedUrl({
-//           action: "read",
-//           expires: "03-01-3030",
-//         });
-
-//         // Not generating mockup with Photopea as takes too long:
-//         // // Step 3: Generate the mockup from the poster URL
-//         // console.log("Generating mockup...");
-//         // const mockupBuffer = await renderMockup(posterUrl); // if wanting to change mockup type, add it as an argument here
-//         // // Step 4: Upload to 'mockups/...'
-//         // console.log("Uploading mockup...");
-//         // const mockupFile = bucket.file(`mockups/${uid}/${uuidv4()}.png`);
-//         // await mockupFile.save(mockupBuffer, {metadata: {contentType: 'image/png'}});
-//         // const [mockupUrl] = await mockupFile.getSignedUrl({action: 'read', expires: '03-01-3030'});
+// const corsHandler = cors({origin: true}); // Allow all origins — adjust for production
 
 
-//         // OLD WAY OF TERMINATING FUNCTION
-//         // Return the signed URL as a JSON response
-//         // Step 5: Return both
-//         // console.log("Returning response...");
-//         // return res.status(200).json({
-//         //   imageUrl: posterUrl,
-//         //   mockupUrl: "mockupUrl",
-//         // });
+// Now, every time an image is uploaded to your Storage bucket, this function will:
+// Check if it’s an image.
+// Skip if it’s already a thumbnail.
+// Create a 300px wide JPEG (around ~300 KB).
+// Save it in the same folder with _thumb appended to the filename.
 
-//         // Testing
-//         // console.log("generatePoster called");
-//         // console.log("Car Details:", carDetails);
+// The generatePosterThumbnail is exactly the same but for posters instead of user image uploads
 
-//       // Simulated output
-//       // return res.status(200).json({
-//       //   imageUrl: "https://example.com/mock.png",
-//       // });
-//       } catch (err) {
-//         console.error("Rendering error:", err);
-//         return res.status(500).send("Failed to generate poster/mockup.");
-//       }
-//     });
-//   });
+// Example:
+// user_uploads/uid/photo.jpg
+// user_uploads/uid/photo_thumb.jpg
+
+export const generateThumbnail = functions.storage
+  .object()
+  .onFinalize(async (object) => {
+    const bucket = admin.storage().bucket(object.bucket);
+    const filePath = object.name; // e.g. 'user_uploads/uid/photo.jpg'
+    const contentType = object.contentType;
+
+    // Exit if the file is not an image
+    if (!contentType?.startsWith('image/')) {
+      console.log('Not an image, skipping:', filePath);
+      return null;
+    }
+
+    // Avoid infinite loops (don’t thumbnail an already-generated thumbnail)
+    if (filePath?.includes('_thumb')) {
+      console.log('Already a thumbnail, skipping:', filePath);
+      return null;
+    }
+
+    const fileName = path.basename(filePath!);
+    const thumbFileName = fileName.replace(/(\.[\w\d_-]+)$/i, '_thumb$1');
+    const thumbFilePath = path.join(path.dirname(filePath!), thumbFileName);
+
+    // Download file to tmp
+    const tempFilePath = path.join(os.tmpdir(), fileName);
+    await bucket.file(filePath!).download({destination: tempFilePath});
+
+    // Generate thumbnail (~300 KB target, width ~300px)
+    const tempThumbPath = path.join(os.tmpdir(), thumbFileName);
+    await sharp(tempFilePath)
+      .resize(300) // width 300px, auto height
+      .jpeg({quality: 80}) // adjust quality for ~300KB average
+      .toFile(tempThumbPath);
+
+    // Upload thumbnail back to the same folder
+    await bucket.upload(tempThumbPath, {
+      destination: thumbFilePath,
+      metadata: {contentType: 'image/jpeg'},
+    });
+
+    // Cleanup tmp files
+    fs.unlinkSync(tempFilePath);
+    fs.unlinkSync(tempThumbPath);
+
+    console.log('Thumbnail created at', thumbFilePath);
+    return null;
+  });
+
+const bucket = admin.storage().bucket();
+
+export const generatePosterThumbnail = functions.storage
+  .object()
+  .onFinalize(async (object) => {
+    if (!object.name) return;
+    if (!object.contentType?.startsWith("image/")) return;
+    if (object.name.includes("_thumb")) return; // avoid loops
+
+    // Only process poster images
+    if (!object.name.startsWith("user_posters/")) return;
+
+    const filePath = object.name;
+    const fileName = filePath.split("/").pop();
+    const fileDir = filePath.split("/").slice(0, -1).join("/");
+    const thumbFileName = fileName?.replace(".png", "_thumb.png");
+    const thumbFilePath = `${fileDir}/${thumbFileName}`;
+
+    // Download original
+    const [buffer] = await bucket.file(filePath).download();
+
+    // Resize + compress
+    const thumbnailBuffer = await sharp(buffer)
+      .resize(400) // width in px
+      .png({quality: 80})
+      .toBuffer();
+
+    // Upload thumbnail
+    await bucket.file(thumbFilePath).save(thumbnailBuffer, {
+      metadata: {contentType: "image/png"},
+    });
+
+    // Generate the signed URL for the thumbnail
+    const [thumbUrl] = await bucket.file(thumbFilePath).getSignedUrl({
+      action: "read",
+      expires: "03-01-3030",
+    });
+
+    const pathParts = filePath.split('/'); // ["user_posters", "abc123", "def456.png"]
+    if (pathParts.length !== 3 || pathParts[0] !== 'user_posters') {
+      console.log("File is not in the expected user_posters folder, exiting...");
+      return;
+    }
+
+    const uid = pathParts[1]; // "abc123"
+    const posterFileName = pathParts[2]; // "def456.png"
+    const posterId = posterFileName.replace('.png', ''); // "def456"
+
+    // Update Firestore document for that poster (example for posters)
+    await admin
+      .firestore()
+      .collection("users")
+      .doc(uid)
+      .collection("posters")
+      .doc(posterId)
+      .set({thumbnailUrl: thumbUrl}, {merge: true});
+
+    console.log(`Thumbnail created at ${thumbFilePath}`);
+  });
 
 
 // How to export other functions:

@@ -22,6 +22,7 @@ type Poster = {
         make: string
         model: string
     }
+    thumbnailUrl: string
 }
 
 const handleDownload = async (poster: Poster) => {
@@ -87,7 +88,7 @@ export default function PosterHistoryPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                     {posters.map((poster, index) => (
                         <div key={index} className="border rounded-xl p-3 shadow-md bg-white">
-                            <img src={poster.posterUrl} alt="Poster" className="rounded-md mb-2" />
+                            <img src={poster.thumbnailUrl || poster.posterUrl} alt="Poster" className="rounded-md mb-2" />
                             <p className="text-sm text-gray-600">Created: {poster.createdAt.toDate().toLocaleDateString()}</p>
                             <p className="text-sm font-medium">Template: {poster.templateId}</p>
                             <p className="text-sm italic text-gray-700">

@@ -116,7 +116,7 @@ async function updateJobStatus(
 
 const savePosterMetadata = async (uid: string, jobId: string, posterUrl: string, userImageUrl: string, templateId: string, description: string, carDetails: string, instagramHandle: string, posterId: string) => {
   console.log("Saving poster metadata...");
-  await db.collection('users').doc(uid).collection('posters').doc(jobId).set({
+  await db.collection('users').doc(uid).collection('posters').doc(posterId).set({
     posterUrl,
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
     inputImageUrl: userImageUrl,
@@ -125,6 +125,7 @@ const savePosterMetadata = async (uid: string, jobId: string, posterUrl: string,
     carDetails,
     instagramHandle,
     posterId,
+    thumbnailUrl: "",
   });
 };
 

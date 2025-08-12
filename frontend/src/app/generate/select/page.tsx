@@ -6,7 +6,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { usePosterWizard } from '@/context/PosterWizardContext'
+import { usePosterWizard, isStepAccessible } from '@/context/PosterWizardContext'
 import { useAuth } from '@/context/AuthContext'
 import { Template } from '@/types/template'
 import { useState, useEffect } from 'react'
@@ -15,7 +15,6 @@ import { db } from '@/firebase/client'
 import TemplateCard from '@/components/TemplateCard'
 import { useRouter } from 'next/navigation';
 import Spinner from '@/components/Spinner';
-import { s } from 'framer-motion/client'
 
 export default function SelectTemplatePage() {
     const [templates, setTemplates] = useState<Template[]>([])
@@ -24,18 +23,26 @@ export default function SelectTemplatePage() {
     const [favoriteTemplates, setFavoriteTemplates] = useState<string[]>([])
     const [loading, setLoading] = useState(false)
     const router = useRouter()
+    const { state } = usePosterWizard()
+
+    useEffect(() => {
+        if (!isStepAccessible('select', state)) {
+            console.log('No image uploaded. Redirecting.')
+            router.push('/generate/upload')
+        }
+    }, [state, router])
 
     const handleNext = () => {
         if (selectedTemplate === null) {
             alert('No template selected');
             return
         } else {
-            router.push('/generate/upload')
+            router.push('/generate/identify')
         }
     }
 
     const handleBack = () => {
-        router.push('/account/dashboard')
+        router.push('/generate/upload?from=select')
     }
 
     // Load all templates
@@ -62,7 +69,7 @@ export default function SelectTemplatePage() {
             setInstagramHandle(data?.instagramHandle || '')
         }
         fetchFavorites()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user])
 
     // Toggle favorite
