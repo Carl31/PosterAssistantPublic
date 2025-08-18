@@ -78,69 +78,85 @@ export default function PosterHistoryPage() {
     }, [])
 
     return (
-        <div className="p-4">
+        <div className="p-2">
             <h1 className="text-2xl font-bold mb-4">My Posters</h1>
             {loading ? (
                 <LoadingPage text="Loading posters..." />
             ) : posters.length === 0 ? (
                 <p>No posters found. Go generate one!</p>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                    {posters.map((poster, index) => (
-                        <div key={index} className="border rounded-xl p-3 shadow-md bg-white">
-                            <img src={poster.thumbnailUrl || poster.posterUrl} alt="Poster" className="rounded-md mb-2" />
-                            <p className="text-sm text-gray-600">Created: {poster.createdAt.toDate().toLocaleDateString()}</p>
-                            <p className="text-sm font-medium">Template: {poster.templateId}</p>
-                            <p className="text-sm italic text-gray-700">
-                                {poster.carDetails?.year} {poster.carDetails?.make} {poster.carDetails?.model}
-                            </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:px-6 lg:px-12">
 
-                            {/* ✅ Add download link */}
-                            {/* <a
-                                href={poster.imageUrl}
-                                download
-                                className="mt-2 inline-block text-blue-600 underline text-sm"
-                            >
-                                Download Poster
-                            </a> */}
-                            <div className="mt-2 flex gap-2">
-                                {/* View button */}
-                                {/* href={`/mockup?uid=${encodeURIComponent(uid)}&posterId=${encodeURIComponent(poster.id)}`} */}
+                    {posters.map((poster, index) => (
+                        <div
+                            key={index}
+                            className="flex flex-col border rounded-xl p-4 shadow-md bg-gray-200 hover:shadow-lg transition-shadow duration-300"
+                        >
+                            <img
+                                src={poster.thumbnailUrl || poster.posterUrl}
+                                alt="Poster"
+                                className="rounded-md mb-3 object-contain w-full h-48 sm:h-56 md:h-64 bg-gray-800"
+                            />
+
+                            <div className="flex-1">
+                                <p className="text-xs sm:text-sm text-gray-600 mb-1">
+                                    Created: {poster.createdAt.toDate().toLocaleDateString()}
+                                </p>
+                                <p className="text-xs sm:text-sm font-medium mb-1 text-gray-600">
+                                    Template: {poster.templateId}
+                                </p>
+                                <p className="text-xs sm:text-sm italic text-gray-700">
+                                    {poster.carDetails?.year} {poster.carDetails?.make}{" "}
+                                    {poster.carDetails?.model}
+                                </p>
+                            </div>
+
+                            {/* Buttons */}
+                            <div className="mt-3 flex flex-wrap gap-2">
+                                {/* Showcase */}
                                 <a
-                                    href={`/mockup?uid=${encodeURIComponent(uid!)}&posterId=${encodeURIComponent(poster.id)}`}
+                                    href={`/mockup?uid=${encodeURIComponent(uid!)}&posterId=${encodeURIComponent(
+                                        poster.id
+                                    )}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-sm px-3 py-1 rounded bg-blue-500 text-white hover:bg-blue-600"
+                                    className="flex-1 text-center text-xs sm:text-sm px-3 py-2 rounded bg-blue-500 text-white hover:bg-blue-600 transition-colors"
                                 >
                                     Showcase
                                 </a>
 
-                                {/* Download button */}
+                                {/* Download */}
                                 <button
                                     onClick={() => handleDownload(poster)}
-                                    className="text-sm px-3 py-1 rounded bg-green-500 text-white hover:bg-green-600"
+                                    className="flex-1 text-center text-xs sm:text-sm px-3 py-2 rounded bg-green-500 text-white hover:bg-green-600 transition-colors"
                                 >
                                     Download
                                 </button>
 
-                                {/* Share button */}
+                                {/* Share */}
                                 <button
                                     onClick={async () => {
                                         if (navigator.share) {
                                             try {
                                                 await navigator.share({
                                                     title: "Check out my car poster!",
-                                                    url: `/mockup?uid=${encodeURIComponent(uid!)}&posterId=${encodeURIComponent(poster.id)}`,
+                                                    url: `/mockup?uid=${encodeURIComponent(
+                                                        uid!
+                                                    )}&posterId=${encodeURIComponent(poster.id)}`,
                                                 });
                                             } catch (err) {
                                                 console.error("Share failed:", err);
                                             }
                                         } else {
-                                            await navigator.clipboard.writeText(`/mockup?uid=${encodeURIComponent(uid!)}&posterId=${encodeURIComponent(poster.id)}`);
+                                            await navigator.clipboard.writeText(
+                                                `/mockup?uid=${encodeURIComponent(
+                                                    uid!
+                                                )}&posterId=${encodeURIComponent(poster.id)}`
+                                            );
                                             alert("Link copied to clipboard!");
                                         }
                                     }}
-                                    className="text-sm px-3 py-1 rounded bg-purple-500 text-white hover:bg-purple-600"
+                                    className="flex-1 text-center text-xs sm:text-sm px-3 py-2 rounded bg-purple-500 text-white hover:bg-purple-600 transition-colors"
                                 >
                                     Share
                                 </button>
@@ -148,14 +164,14 @@ export default function PosterHistoryPage() {
                         </div>
                     ))}
                 </div>
+
             )}
-            <button
-                onClick={() => {
+            <button  onClick={() => {
                     router.replace('/account/dashboard');
-                }}
-                className="mt-6 bg-blue-600 text-white px-4 py-2 rounded-md"
-            >
-                Back
+                }} className="self-start mt-6 relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-pink-500 to-orange-400 group-hover:from-pink-500 group-hover:to-orange-400 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-pink-200 dark:focus:ring-pink-800">
+                <span className="relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent">
+                    Back
+                </span>
             </button>
 
         </div>

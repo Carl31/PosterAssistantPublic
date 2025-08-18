@@ -16,6 +16,12 @@ import { notify } from "@/utils/notify";
 import Notification from "@/components/Notification";
 import ErrorPage from '@/components/ErrorPage'
 import { carData, modelExists } from "@/pages/api/carData";
+import { Archivo_Black } from "next/font/google";
+
+const archivoBlack = Archivo_Black({
+    weight: "400", // Archivo Black only has 400
+    subsets: ["latin"],
+});
 
 export default function IdentifyVehicleStep() {
 
@@ -25,13 +31,15 @@ export default function IdentifyVehicleStep() {
         selectedTemplate,
         carDetails, setCarDetails,
         userImgThumbDownloadUrl, userImgDownloadUrl,
-        geminiChecked, setGeminiChecked,
+        geminiChecked, setGeminiChecked, useAI, setUseAI,
     } = usePosterWizard()
     const { state } = usePosterWizard();
 
     const [loading, setloading] = useState(false)
     const [pendingValidation, setpendingValidation] = useState(false)
-    const [useAI, setUseAI] = useState(true)
+
+    const [manualInputClicked, setManualInputClicked] = useState(false);
+    const [AiInputClicked, setAiInputClicked] = useState(false);
 
     const router = useRouter()
 
@@ -44,8 +52,10 @@ export default function IdentifyVehicleStep() {
             console.log("Invalid car details: " + reason);
             notify("error", "Invalid car details: " + reason);
             return;
+        } else {
+            router.push('/generate/overview')
         }
-        router.push('/generate/overview')
+
     }
 
     useEffect(() => {
@@ -56,8 +66,6 @@ export default function IdentifyVehicleStep() {
     }, [state, router]);
 
     const handleBack = () => {
-        setCarDetails({ make: '', model: '', year: '' })
-        setGeminiChecked(false)
         router.push('/generate/select')
     }
 
@@ -135,71 +143,127 @@ export default function IdentifyVehicleStep() {
             transition={{ duration: 0.3 }}
         >
             <Notification />
-            {pendingValidation ? <Spinner /> : (
-                <div className="p-8 max-w-xl mx-auto">
-                    <section id='identify vehicle'>
-                        {userImgDownloadUrl && (
-                            <div className="w-full aspect-[3/4] relative shadow-lg overflow-hidden">
-                                <img
-                                    src={userImgDownloadUrl!}
-                                    alt="Preview"
-                                    className="absolute inset-0 w-full h-full object-cover"
-                                />
+            <div className="p-2 max-w-xl mx-auto">
+                <section id='identify vehicle'>
+                    <div className="mt-4 border-4 border-blue-700 px-4 py-2 mb-12 flex flex-col items-center shadow-[0_0_14px_rgba(59,130,246,0.7)]">
+                        <h1 className={`text-2xl text-gray-200 ${archivoBlack.className}`}>
+                            Identify Your Vehicle
+                        </h1>
+                    </div>
+
+                    {userImgThumbDownloadUrl && (
+                        <div className="w-full aspect-[3/4] relative shadow-lg overflow-hidden">
+                            <img
+                                src={userImgThumbDownloadUrl!}
+                                alt="Preview"
+                                className="absolute inset-0 w-full h-full object-cover"
+                            />
+                        </div>
+                    )}
+
+                    {pendingValidation ? <div className="flex justify-center m-4">
+                        <Spinner />
+                    </div> : (
+                        <div>
+
+                            <div className="flex flex-col items-center">
+                                <button
+                                    disabled={!userImgThumbDownloadUrl || !selectedTemplate || loading}
+                                    onClick={() => {
+                                        detectCar();
+                                        setAiInputClicked(true);
+                                    }}
+                                    className={`w-full mt-6 text-white 
+      ${AiInputClicked
+                                            ? "bg-purple-900 text-gray-200" // permanent dark style
+                                            : "bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:bg-gradient-to-br"} 
+      focus:ring-4 focus:outline-none focus:ring-purple-300 dark:focus:ring-purple-800 
+      shadow-lg shadow-purple-500/50 dark:shadow-lg dark:shadow-purple-800/80 
+      font-medium rounded-lg text-sm py-2.5 text-center`}
+                                >
+                                    {loading ? 'Detecting...' : 'Detect Car Info'}
+                                </button>
+
+                                <div className="flex items-center my-4">
+                                    <div className="w-1 h-1 bg-purple-500 rounded-full"></div>
+                                    <p className="text-purple-500 mx-2">OR</p>
+                                    <div className="w-1 h-1 bg-purple-500 rounded-full"></div>
+                                </div>
+
+                                <button
+                                    disabled={!userImgThumbDownloadUrl || !selectedTemplate || loading}
+                                    onClick={() => {
+                                        setUseAI(false);
+                                        setManualInputClicked(true)
+                                    }}
+                                    className={`w-full text-white 
+      ${manualInputClicked || geminiChecked
+                                            ? "bg-purple-900 text-gray-200" // permanent dark style
+                                            : "bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:bg-gradient-to-br"} 
+      focus:ring-4 focus:outline-none focus:ring-purple-300 dark:focus:ring-purple-800 
+      shadow-lg shadow-purple-500/50 dark:shadow-lg dark:shadow-purple-800/80 
+      font-medium rounded-lg text-sm py-2.5 text-center`}
+                                >
+                                    {'Manually Input Car Details'}
+                                </button>
                             </div>
-                        )}
 
-                        <button
-                            disabled={!userImgThumbDownloadUrl || !selectedTemplate || loading}
-                            onClick={detectCar}
-                            className="mt-6 bg-blue-600 text-white px-4 py-2 rounded-md"
-                        >
-                            {loading ? 'Detecting...' : 'Detect Car Info'}
-                        </button>
+                            {(geminiChecked || !useAI) && (
+                                <div className="mt-4 space-y-2">
+                                    <label className="block">Make</label>
+                                    <input
+                                        value={carDetails.make}
+                                        onChange={(e) => setCarDetails({ ...carDetails, make: e.target.value })}
+                                        className="border p-2 w-full"
+                                        placeholder="Add make"
+                                    />
+                                    <label className="block">Model</label>
+                                    <input
+                                        value={carDetails.model}
+                                        onChange={(e) => setCarDetails({ ...carDetails, model: e.target.value })}
+                                        className="border p-2 w-full"
+                                        placeholder="Add model"
+                                    />
+                                    <label className="block">Year</label>
+                                    <input
+                                        value={carDetails.year}
+                                        onChange={(e) => setCarDetails({ ...carDetails, year: e.target.value })}
+                                        className="border p-2 w-full"
+                                        placeholder="Add year"
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    )}
 
-                        <button
-                            disabled={!userImgThumbDownloadUrl || !selectedTemplate || loading}
-                            onClick={() => setUseAI(false)}
-                            className="mt-6 bg-blue-600 text-white px-4 py-2 rounded-md"
-                        >
-                            {'Manually Input Car Details'}
-                        </button>
+                </section>
 
-                        {(geminiChecked || !useAI) && (
-                            <div className="mt-4 space-y-2">
-                                <label className="block">Make</label>
-                                <input
-                                    value={carDetails.make}
-                                    onChange={(e) => setCarDetails({ ...carDetails, make: e.target.value })}
-                                    className="border p-2 w-full"
-                                    placeholder="Add make"
-                                />
-                                <label className="block">Model</label>
-                                <input
-                                    value={carDetails.model}
-                                    onChange={(e) => setCarDetails({ ...carDetails, model: e.target.value })}
-                                    className="border p-2 w-full"
-                                    placeholder="Add model"
-                                />
-                                <label className="block">Year</label>
-                                <input
-                                    value={carDetails.year}
-                                    onChange={(e) => setCarDetails({ ...carDetails, year: e.target.value })}
-                                    className="border p-2 w-full"
-                                    placeholder="Add year"
-                                />
-                            </div>
-                        )}
-
-                    </section>
-
-                    <button onClick={handleNext} className="mt-6 bg-blue-600 text-white px-4 py-2 rounded-md">
-                        Next Step
+                <div className="mt-5 flex justify-between">
+                    <button onClick={handleBack} className="self-start mt-6 relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-pink-500 to-orange-400 group-hover:from-pink-500 group-hover:to-orange-400 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-pink-200 dark:focus:ring-pink-800">
+                        <span className="relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent">
+                            Back
+                        </span>
                     </button>
-                    <button onClick={handleBack} className="mt-6 bg-red-600 text-white px-4 py-2 rounded-md">
-                        Back
+
+                    <button
+                        disabled={!geminiChecked && !manualInputClicked}
+                        onClick={handleNext}
+                        className={`self-end relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium rounded-lg 
+    ${!geminiChecked && !manualInputClicked ? 'opacity-50 cursor-not-allowed' : ''}
+    bg-gradient-to-br from-purple-600 to-blue-500 group-hover:from-purple-600 group-hover:to-blue-500 hover:text-white dark:text-white 
+    focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800`}
+                    >
+                        <span
+                            className={`relative px-5 py-2.5 transition-all ease-in duration-75 
+      ${!geminiChecked && !manualInputClicked ? 'bg-gray-400 dark:bg-gray-700' : 'bg-white dark:bg-gray-900'} 
+      rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent`}
+                        >
+                            Next
+                        </span>
                     </button>
                 </div>
-            )}
+            </div>
+
         </motion.div>
     )
 
@@ -207,11 +271,15 @@ export default function IdentifyVehicleStep() {
 
     // For validating car data
     // Validate car make, model, and year using NHTSA API
-    async function validateCarDetails(make: string, model: string, year: string | number): Promise<{ valid: boolean; reason?: string }> {
+    async function validateCarDetails(make: string, model: string, year: string): Promise<{ valid: boolean; reason?: string }> {
         try {
             // Normalize inputs
             make = make.trim().toLowerCase();
             model = model.split(' ')[0].trim().toLowerCase();
+
+            if (!/^\d{4}$/.test(year)) return { valid: false, reason: "Invalid year" };
+            if (make.length === 0) return { valid: false, reason: "Make is required" };
+            if (model.length === 0) return { valid: false, reason: "Model is required" };
 
             // 1. Validate Make
             const makeRes = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/GetAllMakes?format=json`);

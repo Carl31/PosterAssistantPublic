@@ -50,12 +50,12 @@ export default function OverviewPage() {
     }
 
     useEffect(() => {
-    if (!isStepAccessible("overview", state)) {
-      console.log("No car identified. Redirecting.");
-      router.replace("/generate/identify");
-    }
-  }, [state, router]);
-    
+        if (!isStepAccessible("overview", state)) {
+            console.log("No car identified. Redirecting.");
+            router.replace("/generate/identify");
+        }
+    }, [state, router]);
+
 
     // Basically, generates description when car details change from prvious page.
     useEffect(() => {
@@ -148,7 +148,7 @@ export default function OverviewPage() {
         }
     }
 
-    const savePosterMetadata = async (uid: string, imageUrl: string) => { // TODO: useless as metadata is being saved in cloud function
+    const savePosterMetadata = async (uid: string, imageUrl: string) => { // useless as metadata is being saved in cloud function
         const posterId = crypto.randomUUID()
 
         await setDoc(doc(db, 'users', uid, 'posters', posterId), {
@@ -269,37 +269,31 @@ export default function OverviewPage() {
                 {loading ? <LoadingPage text="Generating preview..." /> : (
                     <span>
                         <section id='overview'>
-                            {userImgDownloadUrl && (
-                                <div className="w-full aspect-[3/4] relative rounded-xl shadow-lg overflow-hidden">
-                                    <img
-                                        src={userImgDownloadUrl!}
-                                        alt="Preview"
-                                        className="absolute inset-0 w-full h-full object-cover"
-                                    />
+                            <div className="fixed inset-0 flex items-center justify-center mx-6">
+                                <div className="bg-white rounded-2xl shadow-xl p-6 max-w-md w-full text-center">
+                                    <h2 className="text-2xl font-bold text-gray-800 mb-2">Generate poster?</h2>
+                                    <p className="text-gray-600 mb-6">
+                                        You are about to create a poster for a <span className="font-semibold">{carDetails.year} {carDetails.make} {carDetails.model}</span>.
+                                    </p>
+                                    <div className="flex justify-center gap-4">
+                                        <button
+                                            className="px-5 py-2 rounded-lg bg-gray-200 text-gray-700 font-medium hover:bg-gray-300 transition"
+                                            onClick={handleBack}
+                                        >
+                                            Back
+                                        </button>
+                                        <button
+                                            className="px-5 py-2 rounded-lg bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 text-white font-medium shadow-md hover:from-purple-600 hover:to-purple-800 transition"
+                                            onClick={handleGeneratePoster}
+                                        >
+                                            Generate
+                                        </button>
+                                    </div>
                                 </div>
-                            )}
-
-                            <h1>+</h1>
-
-                            {selectedTemplate && (
-                                <div className="w-full aspect-[3/4] relative rounded-xl shadow-lg overflow-hidden">
-                                    <img
-                                        src={selectedTemplate.previewImageUrl}
-                                        alt="Preview"
-                                        className="absolute inset-0 w-full h-full object-cover"
-                                    />
-                                </div>
-                            )}
+                            </div>
 
 
                         </section>
-
-                        <button onClick={handleGeneratePoster} className="mt-6 bg-purple-600 text-white px-4 py-2 rounded-md">
-                            Generate!
-                        </button>
-                        <button onClick={handleBack} className="mt-6 bg-red-600 text-white px-4 py-2 rounded-md">
-                            Back
-                        </button>
                     </span>
                 )}
 

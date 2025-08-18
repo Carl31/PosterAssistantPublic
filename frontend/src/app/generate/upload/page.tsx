@@ -17,6 +17,13 @@ import LoadingPage from '@/components/LoadingPage'
 import { onAuthStateChanged, User } from 'firebase/auth'
 import { getAuth } from 'firebase/auth'
 import { useSearchParams } from 'next/navigation';
+import { Archivo_Black } from "next/font/google";
+import Spinner from '@/components/Spinner';
+
+const archivoBlack = Archivo_Black({
+  weight: "400", // Archivo Black only has 400
+  subsets: ["latin"],
+});
 
 export default function UploadImageStep() {
   const { setuserImgDownloadUrl, setuserImgThumbDownloadUrl } = usePosterWizard()
@@ -38,7 +45,7 @@ export default function UploadImageStep() {
   const [error, setError] = useState<string | null>(null)
 
   const searchParams = useSearchParams();
-  const cameFromSelectPage = searchParams!.get('from') === 'select';
+  const cameFromSelectPage = searchParams!.get('imageUploaded') === 'true';
 
   // --- Auth ---
   useEffect(() => {
@@ -187,7 +194,7 @@ export default function UploadImageStep() {
         }
       }
 
-      router.push('/generate/select')
+      router.push('/generate/select?upload=true')
     } catch (err) {
       console.error('Upload failed:', err)
       alert('Image processing failed.')
@@ -202,16 +209,46 @@ export default function UploadImageStep() {
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
-      <div className="p-8 max-w-xl mx-auto">
+      <div className="p-2 max-w-xl mx-auto">
         {loading ? (
           <LoadingPage text="Uploading image..." />
         ) : (
           <>
             {/* Upload & Crop Section */}
-            <section id="upload image" className="mb-8">
-              <h1 className="text-2xl font-bold mb-4">Upload Your Image</h1>
+            <section id="upload image" className="mb-8 mt-5">
+              <div className="border-4 border-blue-700 max-w-md mx-auto p-4 px-4 py-2 mb-12 flex flex-col items-center shadow-[0_0_14px_rgba(59,130,246,0.7)]">
+                <h1 className={`text-2xl text-gray-200 ${archivoBlack.className}`}>
+                  Choose an image
+                </h1>
+              </div>
+
+              <h1 className="text-xl font-bold mb-4 ">Upload Your Image</h1>
               {!image ? (
-                <input id="imageInput" type="file" accept="image/*" onChange={onSelectFile} className="mb-4" />
+                <label
+                  htmlFor="imageInput"
+                  className="cursor-pointer text-black"
+                >
+                  <div className="bg-blue-300 text-black px-4 py-4 rounded-xl flex flex-col items-center">
+                    <img
+                      className="w-9 h-9 mt-2 mb-2"
+                      src="/svg/upload.svg"
+                      alt="uploadSVG"
+                    />
+
+
+                    Upload Image
+
+
+                    <input
+                      id="imageInput"
+                      type="file"
+                      accept="image/*"
+                      onChange={onSelectFile}
+                      className="hidden"
+                    />
+                  </div>
+                </label>
+
               ) : (
                 <>
                   <div className="relative w-full h-140 bg-gray-100">
@@ -225,7 +262,7 @@ export default function UploadImageStep() {
                       onCropComplete={onCropComplete}
                     />
                   </div>
-                  <button onClick={handleImageUpload} disabled={!image} className="mt-4 bg-purple-600 text-white px-4 py-2 rounded">
+                  <button onClick={handleImageUpload} disabled={!image} className="mt-4 text-white bg-gradient-to-br from-purple-600 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2">
                     Confirm and Upload
                   </button>
                 </>
@@ -234,30 +271,36 @@ export default function UploadImageStep() {
 
             {/* Gallery Section */}
             <section id="user images">
-              <h1 className="text-2xl font-bold mb-4">Your Uploaded Images</h1>
+              <h1 className="text-xl font-bold mb-4">Your Uploaded Images</h1>
               {imagesLoading ? (
-                <p>Loading your images...</p>
+                <span>
+                  <Spinner />
+                </span>
+
               ) : error ? (
                 <p style={{ color: 'red' }}>{error}</p>
               ) : userImages.length === 0 ? (
                 <p>No images found for your account. Time to upload some!</p>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                  {userImages.map(({ thumbUrl, originalUrl }) => (
+                  {userImages.length > 0 && userImages.map(({ thumbUrl, originalUrl }) => (
                     <img
                       key={thumbUrl}
                       src={thumbUrl}
                       alt="User Upload"
                       onClick={() => handleSelectExisting(thumbUrl, originalUrl)}
-                      className="rounded-md object-cover w-full h-60 cursor-pointer hover:opacity-80"
+                      className="rounded-md object-cover w-full h-60 cursor-pointer  transform transition active:scale-95 
+             hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
                     />
                   ))}
                 </div>
               )}
             </section>
 
-            <button onClick={handleBack} className="mt-6 bg-red-600 text-white px-4 py-2 rounded-md">
-              Back
+            <button onClick={handleBack} className="mt-8 relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-pink-500 to-orange-400 group-hover:from-pink-500 group-hover:to-orange-400 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-pink-200 dark:focus:ring-pink-800">
+              <span className="relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent">
+                Back
+              </span>
             </button>
           </>
         )}

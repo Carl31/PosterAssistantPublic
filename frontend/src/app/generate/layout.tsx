@@ -24,9 +24,15 @@ export default function GenerateLayout({ children }: { children: React.ReactNode
   return (
     <PosterWizardProvider>
       {(isAuthChecked && user) ? (<div className="">
-        {children}
-      </div>) : <LoadingPage/>}
-      
+        <div className="px-4 bg-gray-800 h-full min-h-screen">
+          <div className="flex flex-col items-center">
+            <div className="">
+              {children}
+            </div>
+          </div>
+        </div>
+      </div>) : <LoadingPage />}
+
     </PosterWizardProvider>
   )
 }

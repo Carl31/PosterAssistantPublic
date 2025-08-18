@@ -34,6 +34,10 @@ type PosterWizardContextType = {
   setGeminiChecked: (value: boolean) => void
   progress: string | null
   setProgress: (progress: string | null) => void
+  templateIndex: number
+  setTemplateIndex: (index: number) => void
+  useAI: boolean
+  setUseAI: (value: boolean) => void
 }
 
 export type PosterWizardState = {
@@ -58,6 +62,8 @@ export const PosterWizardProvider = ({ children }: { children: React.ReactNode }
   const [geminiChecked, setGeminiChecked] = useState(false)
   //const [posterUrl, setPosterUrl] = useState<string | null>(null)
   const [progress, setProgress] = useState<string | null>("Starting...")
+  const [templateIndex, setTemplateIndex] = useState(0)
+  const [useAI, setUseAI] = useState(true)
 
   useEffect(() => {
     setState({
@@ -88,7 +94,11 @@ return (
     geminiChecked,
     setGeminiChecked,
     progress,
-    setProgress
+    setProgress,
+    templateIndex,
+    setTemplateIndex,
+    useAI,
+    setUseAI
   }}>
     {children}
   </PosterWizardContext.Provider>
