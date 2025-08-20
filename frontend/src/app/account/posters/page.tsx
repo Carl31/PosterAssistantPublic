@@ -85,12 +85,13 @@ export default function PosterHistoryPage() {
             ) : posters.length === 0 ? (
                 <p>No posters found. Go generate one!</p>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:px-6 lg:px-12">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:px-6 lg:px-12 p-2">
 
                     {posters.map((poster, index) => (
                         <div
                             key={index}
-                            className="flex flex-col border rounded-xl p-4 shadow-md bg-gray-200 hover:shadow-lg transition-shadow duration-300"
+                            className="flex flex-col rounded-xl p-[4px] bg-gradient-to-br from-cyan-700 to-blue-800 shadow-md hover:shadow-lg transition-shadow duration-300"
+
                         >
                             <img
                                 src={poster.thumbnailUrl || poster.posterUrl}
@@ -98,21 +99,21 @@ export default function PosterHistoryPage() {
                                 className="rounded-md mb-3 object-contain w-full h-48 sm:h-56 md:h-64 bg-gray-800"
                             />
 
-                            <div className="flex-1">
-                                <p className="text-xs sm:text-sm text-gray-600 mb-1">
-                                    Created: {poster.createdAt.toDate().toLocaleDateString()}
-                                </p>
-                                <p className="text-xs sm:text-sm font-medium mb-1 text-gray-600">
-                                    Template: {poster.templateId}
-                                </p>
-                                <p className="text-xs sm:text-sm italic text-gray-700">
+                            <div className="flex-1 mx-2">
+                                <p className="text-xs sm:text-sm italic text-gray-300">
                                     {poster.carDetails?.year} {poster.carDetails?.make}{" "}
                                     {poster.carDetails?.model}
+                                </p>
+                                <p className="text-xs sm:text-sm font-medium mb-1 text-gray-300">
+                                    Template: {poster.templateId}
+                                </p>
+                                <p className="text-xs sm:text-sm text-gray-300 mb-1">
+                                    Created: {poster.createdAt.toDate().toLocaleDateString()}
                                 </p>
                             </div>
 
                             {/* Buttons */}
-                            <div className="mt-3 flex flex-wrap gap-2">
+                            <div className="mt-3 flex flex-wrap gap-2 m-2">
                                 {/* Showcase */}
                                 <a
                                     href={`/mockup?uid=${encodeURIComponent(uid!)}&posterId=${encodeURIComponent(
@@ -120,7 +121,7 @@ export default function PosterHistoryPage() {
                                     )}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="flex-1 text-center text-xs sm:text-sm px-3 py-2 rounded bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+                                    className="flex-1 text-center text-xs sm:text-sm px-3 py-2 rounded bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 transition-colors"
                                 >
                                     Showcase
                                 </a>
@@ -128,7 +129,7 @@ export default function PosterHistoryPage() {
                                 {/* Download */}
                                 <button
                                     onClick={() => handleDownload(poster)}
-                                    className="flex-1 text-center text-xs sm:text-sm px-3 py-2 rounded bg-green-500 text-white hover:bg-green-600 transition-colors"
+                                    className="flex-1 text-center text-xs sm:text-sm px-3 py-2 rounded bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 transition-colors"
                                 >
                                     Download
                                 </button>
@@ -156,7 +157,7 @@ export default function PosterHistoryPage() {
                                             alert("Link copied to clipboard!");
                                         }
                                     }}
-                                    className="flex-1 text-center text-xs sm:text-sm px-3 py-2 rounded bg-purple-500 text-white hover:bg-purple-600 transition-colors"
+                                    className="flex-1 text-center text-xs sm:text-sm px-3 py-2 rounded bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-colors"
                                 >
                                     Share
                                 </button>

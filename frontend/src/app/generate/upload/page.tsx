@@ -209,20 +209,20 @@ export default function UploadImageStep() {
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
-      <div className="p-2 max-w-xl mx-auto">
+      <div className="p-2 mx-auto">
         {loading ? (
           <LoadingPage text="Uploading image..." />
         ) : (
           <>
             {/* Upload & Crop Section */}
             <section id="upload image" className="mb-8 mt-5">
-              <div className="border-4 border-blue-700 max-w-md mx-auto p-4 px-4 py-2 mb-12 flex flex-col items-center shadow-[0_0_14px_rgba(59,130,246,0.7)]">
+              <div className="border-3 border-blue-700 max-w-md mx-auto p-4 px-4 py-2 mb-12 flex flex-col items-center shadow-[0_0_14px_rgba(59,130,246,0.7)]">
                 <h1 className={`text-2xl text-gray-200 ${archivoBlack.className}`}>
                   Choose an image
                 </h1>
               </div>
 
-              <h1 className="text-xl font-bold mb-4 ">Upload Your Image</h1>
+              <h1 className="text-xl font-bold mb-4">Upload Your Image</h1>
               {!image ? (
                 <label
                   htmlFor="imageInput"
@@ -282,7 +282,7 @@ export default function UploadImageStep() {
               ) : userImages.length === 0 ? (
                 <p>No images found for your account. Time to upload some!</p>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-4">
                   {userImages.length > 0 && userImages.map(({ thumbUrl, originalUrl }) => (
                     <img
                       key={thumbUrl}

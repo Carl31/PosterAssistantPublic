@@ -145,7 +145,7 @@ export default function IdentifyVehicleStep() {
             <Notification />
             <div className="p-2 max-w-xl mx-auto">
                 <section id='identify vehicle'>
-                    <div className="mt-4 border-4 border-blue-700 px-4 py-2 mb-12 flex flex-col items-center shadow-[0_0_14px_rgba(59,130,246,0.7)]">
+                    <div className="mt-4 border-3 border-blue-700 px-4 py-2 mb-12 flex flex-col items-center shadow-[0_0_14px_rgba(59,130,246,0.7)]">
                         <h1 className={`text-2xl text-gray-200 ${archivoBlack.className}`}>
                             Identify Your Vehicle
                         </h1>

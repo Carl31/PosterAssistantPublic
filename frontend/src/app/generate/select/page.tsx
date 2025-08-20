@@ -140,9 +140,9 @@ export default function SelectTemplatePage() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
         >
-            <section id="select template" className="mb-8 mt-5">
-                <div className="p-2 max-w-xl mx-auto">
-                    <div className="border-4 border-blue-700 px-4 py-2 mb-12 flex flex-col items-center shadow-[0_0_14px_rgba(59,130,246,0.7)]">
+            <section id="select template" className="">
+                <div className="p-2 max-w-xl mx-auto pt-5">
+                    <div className="border-3 border-blue-700 px-4 py-2 mb-12 flex flex-col items-center shadow-[0_0_14px_rgba(59,130,246,0.7)]">
                         <h1 className={`text-2xl text-gray-200 ${archivoBlack.className}`}>
                             Choose A Template
                         </h1>
