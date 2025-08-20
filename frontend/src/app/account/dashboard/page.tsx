@@ -3,7 +3,7 @@
 import { useAuth } from '@/context/AuthContext'
 import { useRouter } from 'next/navigation'
 import { Bebas_Neue } from "next/font/google";
-import { collection, getDocs, doc, updateDoc, arrayUnion, arrayRemove, getDoc, query, where } from 'firebase/firestore'
+import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/firebase/client'
 import { useState, useEffect } from 'react'
 
