@@ -3,6 +3,7 @@ import * as admin from "firebase-admin";
 import {renderPoster} from "./photopeaRenderer";
 import {v4 as uuidv4} from "uuid";
 import sharp from 'sharp'; // For image compression
+import {getDownloadURL} from "firebase-admin/storage";
 
 const db = admin.firestore();
 const bucket = admin.storage().bucket();
@@ -80,10 +81,11 @@ export const generatePosterOnJobCreate = functions
         },
       });
 
-      const [posterUrl] = await file.getSignedUrl({
-        action: "read",
-        expires: "03-01-3030",
-      });
+      // const [posterUrl] = await file.getSignedUrl({
+      //   action: "read",
+      //   expires: "03-01-3030",
+      // });
+      const posterUrl = await getDownloadURL(file);
 
       await updateJobStatus(jobId, {
         progress: "Complete",

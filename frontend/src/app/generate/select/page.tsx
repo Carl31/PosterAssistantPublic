@@ -142,11 +142,13 @@ export default function SelectTemplatePage() {
         >
             <section id="select template" className="">
                 <div className="p-2 max-w-xl mx-auto pt-5">
-                    <div className="border-3 border-blue-700 px-4 py-2 mb-12 flex flex-col items-center shadow-[0_0_14px_rgba(59,130,246,0.7)]">
+                    <div className="border-3 border-blue-700 px-4 py-2 mb-9 flex flex-col items-center shadow-[0_0_14px_rgba(59,130,246,0.7)]">
                         <h1 className={`text-2xl text-gray-200 ${archivoBlack.className}`}>
                             Choose A Template
                         </h1>
                     </div>
+
+                    <p className='text-sm text-gray-500 mx-auto mb-2'>**Placehonder text only**</p>
 
                     <div className="relative w-full max-w-[600px] aspect-[3/4] rounded-md overflow-hidden shadow-lg">
                         {/* User's uploaded image */}

@@ -10,7 +10,7 @@ import { db } from '@/firebase/client'
 import { Timestamp } from 'firebase/firestore'
 import { onAuthStateChanged } from 'firebase/auth'
 import LoadingPage from '@/components/LoadingPage'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 type Poster = {
     id: string;
@@ -54,6 +54,9 @@ export default function PosterHistoryPage() {
 
     const router = useRouter()
 
+    const searchParams = useSearchParams();
+    const showReloadFlag = searchParams!.get('fromLoading') === 'true';
+
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(getAuth(), async (user) => {
             if (!user) {
@@ -80,6 +83,10 @@ export default function PosterHistoryPage() {
     return (
         <div className="p-2">
             <h1 className="text-2xl font-bold mb-4">My Posters</h1>
+            {showReloadFlag && (
+                <p className='text-sm text-gray-500 mb-2'>**Please reload the page to see newly generated poster**</p>
+            )}
+
             {loading ? (
                 <LoadingPage text="Loading posters..." />
             ) : posters.length === 0 ? (
@@ -167,9 +174,9 @@ export default function PosterHistoryPage() {
                 </div>
 
             )}
-            <button  onClick={() => {
-                    router.replace('/account/dashboard');
-                }} className="self-start mt-6 relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-pink-500 to-orange-400 group-hover:from-pink-500 group-hover:to-orange-400 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-pink-200 dark:focus:ring-pink-800">
+            <button onClick={() => {
+                router.replace('/account/dashboard');
+            }} className="self-start mt-6 relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-pink-500 to-orange-400 group-hover:from-pink-500 group-hover:to-orange-400 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-pink-200 dark:focus:ring-pink-800">
                 <span className="relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent">
                     Back
                 </span>

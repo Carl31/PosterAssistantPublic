@@ -131,16 +131,35 @@ export const generatePosterThumbnail = functions.storage
       .png({quality: 80})
       .toBuffer();
 
-    // Upload thumbnail
+    // // Upload thumbnail
+    // await bucket.file(thumbFilePath).save(thumbnailBuffer, {
+    //   metadata: {contentType: "image/png"},
+    // });
+
+    // // Generate the signed URL for the thumbnail
+    // const [thumbUrl] = await bucket.file(thumbFilePath).getSignedUrl({
+    //   action: "read",
+    //   expires: "03-01-3030",
+    // });
+
+    // Upload thumbnail with a new token
+    const uuid = uuidv4();
     await bucket.file(thumbFilePath).save(thumbnailBuffer, {
-      metadata: {contentType: "image/png"},
+      metadata: {
+        contentType: "image/png",
+        metadata: {
+          firebaseStorageDownloadTokens: uuid,
+        },
+      },
     });
 
-    // Generate the signed URL for the thumbnail
-    const [thumbUrl] = await bucket.file(thumbFilePath).getSignedUrl({
-      action: "read",
-      expires: "03-01-3030",
-    });
+    // Construct the download URL
+    const thumbUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(
+      thumbFilePath
+    )}?alt=media&token=${uuid}`;
+
+    console.log("Thumbnail URL:", thumbUrl);
+
 
     const pathParts = filePath.split('/'); // ["user_posters", "abc123", "def456.png"]
     if (pathParts.length !== 3 || pathParts[0] !== 'user_posters') {

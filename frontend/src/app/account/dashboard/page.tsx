@@ -2,12 +2,16 @@
 
 import { useAuth } from '@/context/AuthContext'
 import { useRouter } from 'next/navigation'
-import { Bebas_Neue } from "next/font/google";
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/firebase/client'
 import { useState, useEffect } from 'react'
 
-const bebas = Bebas_Neue({ weight: "400", subsets: ["latin"] });
+import { Anton } from 'next/font/google';
+const anton = Anton({
+  weight: '400',        // required because Anton isn't a variable font
+  subsets: ['latin'],   // choose the subsets you need
+  display: 'swap',      // optional, helps with font rendering strategy
+});
 
 
 
@@ -35,14 +39,24 @@ export default function DashboardPage() {
   if (!user || loading) return <div className="p-8">Loading...</div>
 
   return (
-    <div className="p-8 mx-auto">
-
-
-      <div className="flex flex-col items-center border-4 border-blue-700 px-6 py-4">
-        <h1 className={`text-6xl mb-4 text-blue-700 ${bebas.className}`}>
-          POSTER APP
-        </h1>
-        <h1 className="text-xl font-bold text-gray-400">SICKSHOTS AI</h1>
+    <div className="p-4 sm:p-6 md:p-8 mx-auto w-full max-w-3xl">
+      <div
+        className="flex flex-col items-center 
+    relative 
+    p-[4px] 
+    bg-gradient-to-br from-cyan-500 to-blue-500
+    rounded-2xl"
+      >
+        <div className="flex flex-col items-center bg-gray-900 rounded-xl px-4 sm:px-6 py-6 w-full">
+          <h1
+            className={`text-4xl sm:text-5xl md:text-5xl lg:text-6xl mb-4 text-blue-700 text-center ${anton.className}`}
+          >
+            SICKSHOTS AI
+          </h1>
+          <h2 className="text-sm sm:text-base md:text-lg text-gray-400 text-center">
+            Turn photos into posters in minutes.
+          </h2>
+        </div>
       </div>
 
       <h1 className="mt-6 text-xl font-bold mb-4">

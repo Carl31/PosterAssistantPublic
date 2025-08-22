@@ -50,7 +50,7 @@ export default function LoadingPage() {
                     const encodedUid = encodeURIComponent(uid!);
                     const encodedPosterId = encodeURIComponent(posterId!);
                     // router.push(`/mockup?url=${encodedUrl}&uid=${encodedUid}&posterId=${encodedPosterId}`);
-                    router.push('/account/posters');
+                    router.push('/account/posters?fromLoading=true');
                     window.open(`/mockup?url=${encodedUrl}&uid=${encodedUid}&posterId=${encodedPosterId}`, '_blank');
                 } else if (data.status === "error") {
                     unsubscribe();
@@ -90,7 +90,7 @@ export default function LoadingPage() {
                     <Spinner />
                 </div>
 
-                <div className="relative w-full h-4 bg-gray-200 rounded-full overflow-hidden shadow-inner">
+                <div className="relative w-full h-4 bg-gray-200 rounded-full overflow-hidden shadow-inner mt-4">
                     <div
                         className="absolute top-0 left-0 h-full bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 transition-all duration-500 ease-out"
                         style={{ width: getProgressPercentage(progress!) }}
