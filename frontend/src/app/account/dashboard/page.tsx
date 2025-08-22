@@ -45,11 +45,11 @@ export default function DashboardPage() {
     relative 
     p-[4px] 
     bg-gradient-to-br from-cyan-500 to-blue-500
-    rounded-2xl"
+    rounded-2xl mt-4"
       >
         <div className="flex flex-col items-center bg-gray-900 rounded-xl px-4 sm:px-6 py-6 w-full">
           <h1
-            className={`text-4xl sm:text-5xl md:text-5xl lg:text-6xl mb-4 text-blue-700 text-center ${anton.className}`}
+            className={`text-4xl sm:text-5xl md:text-5xl lg:text-6xl mb-4 text-blue-400 text-center ${anton.className}`}
           >
             SICKSHOTS AI
           </h1>

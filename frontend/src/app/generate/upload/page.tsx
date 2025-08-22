@@ -216,7 +216,7 @@ export default function UploadImageStep() {
           <>
             {/* Upload & Crop Section */}
             <section id="upload image" className="mb-8 mt-5">
-              <div className="border-3 border-blue-700 max-w-md mx-auto p-4 px-4 py-2 mb-12 flex flex-col items-center shadow-[0_0_14px_rgba(59,130,246,0.7)]">
+              <div className="border-3 border-blue-400 max-w-md mx-auto p-4 px-4 py-2 mb-12 flex flex-col items-center shadow-[0_0_14px_rgba(59,130,246,0.7)]">
                 <h1 className={`text-2xl text-gray-200 ${archivoBlack.className}`}>
                   Choose an image
                 </h1>
