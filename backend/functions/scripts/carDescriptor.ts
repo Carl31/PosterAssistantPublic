@@ -138,7 +138,7 @@ export const generateCarDescriptionWithGemini = functions
           // Prepare the content for the API call
           const parts = [
             {
-              text: `${carDetails.make} ${carDetails.model} ${carDetails.year}. Write a description of that exact make/model/year of car. Ensure the description is around 110 words and 1 paragraph long, informative (engine specs), just slightlyyy formal, and exciting to read for any car enthusiast. Just like a magazine feature! Don't try to sell it, rather raise the ego of the owner, but written for the public. Don't make it cheesy. If the make and model are unknown, just return "Unknown make/model" and nothing else.`,
+              text: `${carDetails.make} ${carDetails.model} ${carDetails.year}. Write a description of that exact make/model/year of car. Ensure the description is around 110 words and 1 paragraph long, informative (engine specs), just slightlyyy formal, and exciting to read for any car enthusiast. Just like a magazine feature! Don't try to sell it, rather raise the ego of the owner, but written for the public. Don't make it cheesy. New line after every second sentence. If the make and model are unknown, just return "Unknown make/model" and nothing else.`,
             },
           ];
 

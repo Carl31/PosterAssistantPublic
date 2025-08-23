@@ -83,9 +83,17 @@ export default function UploadImageStep() {
               const originalRef = ref(storage, `user_uploads/${user.uid}/${originalName}`);
               const originalUrl = await getDownloadURL(originalRef);
 
-              return { thumbUrl, originalUrl };
+              return { thumbUrl, originalUrl, name: originalName };
             })
         );
+
+        // Sort by timestamp in name descending (most recent first)
+        urls.sort((a, b) => {
+          const timestampA = parseInt(a.name.split('_')[0]); // assuming timestamp is first
+          const timestampB = parseInt(b.name.split('_')[0]);
+          return timestampB - timestampA;
+        });
+
         setUserImages(urls); // [{ thumbUrl, originalUrl }, ...]
       } catch (err: any) {
         setError(`Failed to load images: ${err.message}`)
@@ -167,9 +175,21 @@ export default function UploadImageStep() {
         })
       }
 
-      const storageRef = ref(storage, `user_uploads/${user.uid}/${image.name}`)
-      const snapshot = await uploadBytes(storageRef, finalBlob)
-      const downloadURL = await getDownloadURL(snapshot.ref)
+      // Old
+      // const storageRef = ref(storage, `user_uploads/${user.uid}/${image.name}`)
+
+      // New (saving image names with timeestamps)
+      // Add timestamp prefix to the filename
+      const timestamp = Date.now();
+      const filename = `${timestamp}_${image.name.replace(/\s+/g, '_')}`;
+
+
+      const storageRef = ref(
+        storage,
+        `user_uploads/${user.uid}/${filename}`
+      );
+      const snapshot = await uploadBytes(storageRef, finalBlob);
+      const downloadURL = await getDownloadURL(snapshot.ref);
 
       setuserImgDownloadUrl(downloadURL)
 
@@ -179,7 +199,7 @@ export default function UploadImageStep() {
 
       while (retryCount <= maxRetries) {
         try {
-          const storageThumbRef = ref(storage, `user_uploads/${user.uid}/${image.name.replace(/\.(?=[^.]+$)/, '_thumb.')}`)
+          const storageThumbRef = ref(storage, `user_uploads/${user.uid}/${filename.replace(/\.(?=[^.]+$)/, '_thumb.')}`)
           await new Promise(resolve => setTimeout(resolve, delay))
           const downloadThumbURL = await getDownloadURL(storageThumbRef)
           setuserImgThumbDownloadUrl(downloadThumbURL)

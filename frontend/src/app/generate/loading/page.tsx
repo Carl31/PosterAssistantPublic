@@ -86,7 +86,7 @@ export default function LoadingPage() {
                     Generating Your Poster
                 </h1>
                 <p className="text-gray-600 mb-6 text-sm">{progress}</p>
-                <div className="flex justify-center m-4">
+                <div className="flex justify-center m-4 mb-4">
                     <Spinner />
                 </div>
 

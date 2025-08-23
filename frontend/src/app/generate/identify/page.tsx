@@ -241,23 +241,23 @@ export default function IdentifyVehicleStep() {
                 </section>
 
                 <div className="mt-5 flex justify-between">
-                    <button onClick={handleBack} className="self-start mt-6 relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-pink-500 to-orange-400 group-hover:from-pink-500 group-hover:to-orange-400 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-pink-200 dark:focus:ring-pink-800">
+                    <button onClick={handleBack} disabled={loading} className="self-start mt-6 relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-pink-500 to-orange-400 group-hover:from-pink-500 group-hover:to-orange-400 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-pink-200 dark:focus:ring-pink-800">
                         <span className="relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent">
                             Back
                         </span>
                     </button>
 
                     <button
-                        disabled={!geminiChecked && !manualInputClicked}
+                        disabled={!geminiChecked && !manualInputClicked && !loading}
                         onClick={handleNext}
                         className={`self-end relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium rounded-lg 
-    ${!geminiChecked && !manualInputClicked ? 'opacity-50 cursor-not-allowed' : ''}
+    ${!geminiChecked && !manualInputClicked && !loading ? 'opacity-50 cursor-not-allowed' : ''}
     bg-gradient-to-br from-purple-600 to-blue-500 group-hover:from-purple-600 group-hover:to-blue-500 hover:text-white dark:text-white 
     focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800`}
                     >
                         <span
                             className={`relative px-5 py-2.5 transition-all ease-in duration-75 
-      ${!geminiChecked && !manualInputClicked ? 'bg-gray-400 dark:bg-gray-700' : 'bg-white dark:bg-gray-900'} 
+      ${!geminiChecked && !manualInputClicked && !loading ? 'bg-gray-400 dark:bg-gray-700' : 'bg-white dark:bg-gray-900'} 
       rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent`}
                         >
                             Next
