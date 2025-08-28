@@ -169,8 +169,8 @@ while(q.length){
 
 
 
-      description = description.trim();
-      console.log("Trimmed description: " + description); // For testing
+      //description = description.trim();
+      console.log("Description: " + description); // For testing
 
       // If desciption is set, assume that psd has desciption layer visible and ready to be updated
       if (description != "Unknown make/model" || description != "") {
@@ -178,8 +178,10 @@ while(q.length){
         const updateDescriptionScript = `
   var q=[app.activeDocument];
   var descriptionLayer = null;
+  app.echoToOE("Teesting echoToOE");
   for (var i = q[0].layers.length - 1; i >= 0; i--) {
           if (q[0].layers[i].name === "VAR_TEXTS") {
+          console.log("Found VAR_TEXTS layer! : " + q[0].layers[i].name);
             for (var j = 0; j < q[0].layers[i].layers.length; j++) {
               if (q[0].layers[i].layers[j].name === "description") {
                 console.log("Found description layer! : " + q[0].layers[i].layers[j]);
@@ -189,6 +191,7 @@ while(q.length){
               }
             }
           }
+            console.log("Skipping layer: " + q[0].layers[i].name);
     }
   `;
         console.log("[Photopea Progress] Inserting car details");
