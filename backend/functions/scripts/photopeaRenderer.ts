@@ -109,22 +109,6 @@ export const renderPoster = async ({
     (page as any).on('message', listener);
 
 
-    // Listen for messages from inside Photopea (via echoToOE)
-    await page.exposeFunction("onPhotopeaMessage", (msg: any) => {
-      console.log("[Photopea echoToOE]", msg);
-    });
-
-    // Inject a bridge inside the page
-    await page.evaluate(() => {
-      // When Photopea calls app.echoToOE, it posts to the outside window
-      window.addEventListener("message", (event) => {
-        if (event.data) {
-          (window as any).onPhotopeaMessage(event.data);
-        }
-      });
-    });
-
-
     // Wait for buffer to be written to window
     const timeoutMs = 120000; // 2min
     const start = Date.now();

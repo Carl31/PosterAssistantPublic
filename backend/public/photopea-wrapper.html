@@ -178,7 +178,6 @@ while(q.length){
         const updateDescriptionScript = `
   var q=[app.activeDocument];
   var descriptionLayer = null;
-  app.echoToOE("Teesting echoToOE");
   for (var i = q[0].layers.length - 1; i >= 0; i--) {
           if (q[0].layers[i].name === "VAR_TEXTS") {
           console.log("Found VAR_TEXTS layer! : " + q[0].layers[i].name);
