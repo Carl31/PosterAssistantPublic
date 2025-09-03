@@ -55,9 +55,21 @@ export default function PosterHistoryPage() {
     const router = useRouter()
 
     const searchParams = useSearchParams();
-    const showReloadFlag = searchParams!.get('fromLoading') === 'true';
+    let showReloadFlag = searchParams!.get('fromLoading') === 'true';
 
     useEffect(() => {
+        const [nav] = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
+
+        if (nav?.type === "reload") {
+            const url = new URL(window.location.href);
+
+            // ✅ Remove "fromLoading" param
+            url.searchParams.delete("fromLoading");
+
+            // ✅ Update URL without reloading again
+            window.history.replaceState({}, "", url.toString());
+        }
+
         const unsubscribe = onAuthStateChanged(getAuth(), async (user) => {
             if (!user) {
                 setLoading(false)
@@ -84,7 +96,7 @@ export default function PosterHistoryPage() {
         <div className="p-2">
             <h1 className="text-2xl font-bold mb-4">My Posters</h1>
             {showReloadFlag && (
-                <p className='text-sm text-gray-500 mb-2'>**Please reload the page to see newly generated poster**</p>
+                <p className='text-sm text-gray-500 mb-2'>**Please reload the page to see newly-generated poster**</p>
             )}
 
             {loading ? (

@@ -45,7 +45,7 @@
     };
 
     for (let i = 0; i < fontsUsedArray.length; i++) {
-      payload.resources.push(`https://cdn.jsdelivr.net/gh/Carl31/PosterAssistant@main/fonts/${fontsUsedArray[i]}`);	
+      payload.resources.push(`https://cdn.jsdelivr.net/gh/Carl31/PosterAssistant@main/fonts/${fontsUsedArray[i]}`);
     }
     console.log("Payload:", payload);
 
@@ -175,24 +175,63 @@ while(q.length){
       // If desciption is set, assume that psd has desciption layer visible and ready to be updated
       if (description != "Unknown make/model" || description != "") {
         console.log("[Wrapper] Updating description...");
-        const updateDescriptionScript = `
-  var q=[app.activeDocument];
+        //       const updateDescriptionScript = `
+        // var q=[app.activeDocument];
+        // var descriptionLayer = null;
+        // for (var i = q[0].layers.length - 1; i >= 0; i--) {
+        //         if (q[0].layers[i].name === "VAR_TEXTS") {
+        //         console.log("Found VAR_TEXTS layer! : " + q[0].layers[i].name);
+        //           for (var j = 0; j < q[0].layers[i].layers.length; j++) {
+        //             if (q[0].layers[i].layers[j].name === "description") {
+        //               console.log("Found description layer! : " + q[0].layers[i].layers[j]);
+        //               q[0].layers[i].layers[j].textItem.contents="${description}";
+        //             } else {
+        //               console.log("Skipping layer: " + q[0].layers[i].layers[j].name);
+        //             }
+        //           }
+        //         }
+        //           console.log("Skipping layer: " + q[0].layers[i].name);
+        //   }
+        // `;
+        function sanitizeDescription(str) {
+          return str
+            .replace(/'/g, "\\'")   // escape single quotes
+            .replace(/"/g, '\\"')   // escape double quotes
+            .replace(/\r?\n/g, "\\r"); // replace newlines with carriage returns
+        }
+        // Puts a \ before every single quote in the string
+        description = sanitizeDescription(description);
+        console.log(description);
+
+        const updateDescriptionScript = `var p=[app.activeDocument];
   var descriptionLayer = null;
-  for (var i = q[0].layers.length - 1; i >= 0; i--) {
-          if (q[0].layers[i].name === "VAR_TEXTS") {
-          console.log("Found VAR_TEXTS layer! : " + q[0].layers[i].name);
-            for (var j = 0; j < q[0].layers[i].layers.length; j++) {
-              if (q[0].layers[i].layers[j].name === "description") {
-                console.log("Found description layer! : " + q[0].layers[i].layers[j]);
-                q[0].layers[i].layers[j].textItem.contents="${description}";
-              } else {
-                console.log("Skipping layer: " + q[0].layers[i].layers[j].name);
-              }
+  console.log("Updating description...");
+  for (var i = p[0].layers.length - 1; i >= 0; i--) {
+    var currentLayer = p[0].layers[i];
+
+    if (currentLayer.name === "VAR_TEXTS") {
+        console.log("Found VAR_TEXTS layer! : " + currentLayer.name);
+
+        if (currentLayer.layers && currentLayer.layers.length > 0) {
+            for (var j = 0; j < currentLayer.layers.length; j++) {
+                var subLayer = currentLayer.layers[j];
+
+                if (subLayer.name === "description") {
+                    console.log("Found description layer! : " + subLayer.name);
+                    console.log("Below kind must be 2 (for text layer)");
+                    console.log("Sublayer kind: " + subLayer.kind);
+                    p[0].layers[i].layers[j].textItem.contents = "${description}"; // error here because description has quotes in it I think.
+                } else {
+                    console.log("Skipping layer: " + subLayer.name);
+                }
             }
-          }
-            console.log("Skipping layer: " + q[0].layers[i].name);
+        } else {
+            console.log("VAR_TEXTS has no sublayers.");
+        }
+    } else {
+        console.log("Skipping layer: " + currentLayer.name);
     }
-  `;
+}`
         console.log("[Photopea Progress] Inserting car details");
         ppWindow.postMessage(updateDescriptionScript, "*");
         await waitForDone(1);
