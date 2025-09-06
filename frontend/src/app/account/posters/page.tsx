@@ -55,17 +55,15 @@ export default function PosterHistoryPage() {
     const router = useRouter()
 
     const searchParams = useSearchParams();
-    let showReloadFlag = searchParams!.get('fromLoading') === 'true';
+    const showReloadFlag = searchParams!.get('fromLoading') === 'true';
 
     useEffect(() => {
+        // Removes the "fromLoading" param from the URL when the page is reloaded
         const [nav] = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
-
         if (nav?.type === "reload") {
             const url = new URL(window.location.href);
-
             // ✅ Remove "fromLoading" param
             url.searchParams.delete("fromLoading");
-
             // ✅ Update URL without reloading again
             window.history.replaceState({}, "", url.toString());
         }
