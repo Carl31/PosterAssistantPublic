@@ -36,6 +36,7 @@ export const generatePosterOnJobCreate = functions
         fontsUsed = [],
         token,
         templateId,
+        supportedTexts,
       } = data;
 
       // ✅ 1. Verify token and extract UID
@@ -56,6 +57,7 @@ export const generatePosterOnJobCreate = functions
         description,
         instagramHandle,
         fontsUsed,
+        supportedTexts,
         onProgress: (progress) =>
           updateJobStatus(jobId, {progress, status: "in-progress"}),
       });

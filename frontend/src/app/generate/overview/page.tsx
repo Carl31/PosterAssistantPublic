@@ -74,7 +74,7 @@ export default function OverviewPage() {
             const generate = async () => {
                 try {
                     console.log("Generating new description...");
-                    const newDescription = await generateDescription();
+                    await generateDescription(); // if needed, could save new description as output from generateDescription() here
                     setPrevCarDetails(carDetails);
                     lastGeneratedAtRef.current = Date.now();
                 } catch (err) {
@@ -223,7 +223,8 @@ export default function OverviewPage() {
                     fontsUsed: selectedTemplate?.fontsUsed,
                     jobId,
                     token,
-                    userId: user.uid
+                    userId: user.uid,
+                    supportedTexts: selectedTemplate?.supportedTexts
                 })
             })
 

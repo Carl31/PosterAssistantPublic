@@ -20,6 +20,7 @@ type PosterRenderInput = {
     description: string
     instagramHandle: string
     fontsUsed: string[]
+    supportedTexts: string[]
     onProgress: (progress: string) => void
 }
 
@@ -32,6 +33,7 @@ export const renderPoster = async ({
   description,
   instagramHandle,
   fontsUsed,
+  supportedTexts,
   onProgress,
 }: PosterRenderInput): Promise<Buffer> => {
   const browser = await puppeteer.launch({
@@ -70,6 +72,7 @@ export const renderPoster = async ({
       carYear: carDetails.year,
       date: formattedDate,
       fontsUsed: fontsUsed.join(','),
+      supportedTexts: supportedTexts.join(','),
     });
 
     console.log(fontsUsed);

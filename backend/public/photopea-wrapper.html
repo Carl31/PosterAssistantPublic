@@ -23,6 +23,9 @@
     const fontsUsed = params.get("fontsUsed");
     const fontsUsedArray = fontsUsed.split(',');
 
+    const supportedTexts = params.get("supportedTexts");
+    const supportedTextsArray = supportedTexts.split(',');
+
     const delay = (ms) => new Promise((r) => setTimeout(r, ms));
     const iframe = document.getElementById("pp");
     const ppWindow = iframe.contentWindow;
@@ -147,17 +150,21 @@
 
       const updateVarScript = `
 var names = [];
+var supportedTexts = ${JSON.stringify(supportedTexts)};
 var q=[app.activeDocument];
 while(q.length){
   var g=q.pop();
   for(var i=0;i<g.layers.length;i++){
     var l=g.layers[i];
 
+    if (supportedTexts.indexOf(l.name) !== -1) {
+    console.log("Layer is visible: " + l.name);
     if(l.name=="make"){l.textItem.contents="${carMake}"; console.log("Updated make!");}
     if(l.name=="model"){l.textItem.contents="${carModel}"; console.log("Updated model!");}
     if(l.name=="year"){l.textItem.contents="${carYear}"; console.log("Updated year!");}
     if(l.name=="date"){l.textItem.contents="${date}"; console.log("Updated date!");}
-    if(l.name=="instagram"){l.textItem.contents="${instagram}"; console.log("Updated instagram!");}
+    if(l.name=="instagram"){l.textItem.contents="@${instagram}"; console.log("Updated instagram!");}
+    }
 
     names.push(l.name);
     if(l.layers) q.push(l);
@@ -173,7 +180,7 @@ while(q.length){
       console.log("Description: " + description); // For testing
 
       // If desciption is set, assume that psd has desciption layer visible and ready to be updated
-      if (description != "Unknown make/model" || description != "") {
+      if (description != "Unknown make/model" || description != "" || !supportedTexts.includes("description")) {
         console.log("[Wrapper] Updating description...");
         //       const updateDescriptionScript = `
         // var q=[app.activeDocument];
