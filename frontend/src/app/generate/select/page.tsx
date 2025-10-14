@@ -170,21 +170,24 @@ export default function SelectTemplatePage() {
                         </h1>
                     </div>
 
-                    <p className='text-sm text-gray-500 mx-auto mb-2'>**Placehonder text only**</p>
+                    <p className="text-sm text-gray-500 mx-auto mb-2">**Placeholder text only**</p>
 
-                    {/* WRAPPER for double-tap */}
-                    <div className="relative flex flex-col items-center w-full" onClick={handleDoubleTap}>
+                    {/* WRAPPER for double-tap (no drag here) */}
+                    <div
+                        className="relative flex flex-col items-center w-full"
+                        onClick={handleDoubleTap}
+                    >
                         <div className="relative w-full max-w-[600px] aspect-[3/4] rounded-md overflow-hidden shadow-lg">
-                            {/* User's uploaded image */}
+                            {/* User's uploaded image — STATIC */}
                             {userImgDownloadUrl && (
                                 <img
                                     src={userImgDownloadUrl}
                                     alt="Preview"
-                                    className="absolute inset-0 w-full h-full object-cover"
+                                    className="absolute inset-0 w-full h-full object-cover pointer-events-none"
                                 />
                             )}
 
-                            {/* Template overlay, swipeable */}
+                            {/* Template overlay — SWIPE ENABLED */}
                             <AnimatePresence initial={false} custom={direction}>
                                 <motion.img
                                     key={currentTemplate?.id}
@@ -196,41 +199,24 @@ export default function SelectTemplatePage() {
                                     animate={{ x: 0, opacity: 1 }}
                                     exit={{ x: direction > 0 ? -300 : 300, opacity: 0 }}
                                     transition={{ duration: 0.4 }}
+                                    draggable={false}
                                     drag="x"
+                                    dragConstraints={{ left: 0, right: 0 }}
                                     dragElastic={0.6}
                                     onDragEnd={(e, { offset }) => {
-                                        if (offset.x < -50) paginate(1);
-                                        else if (offset.x > 50) paginate(-1);
+                                        if (offset.x < -50) paginate(1)
+                                        else if (offset.x > 50) paginate(-1)
                                     }}
                                 />
                             </AnimatePresence>
-
-
-                        </div>
-
-
-                        {/* Navigation controls */}
-                        <div className="absolute inset-0 flex justify-between items-center px-4">
-                            <button
-                                onClick={() => paginate(-1)}
-                                className="bg-white/70 hover:bg-white text-blue-700 rounded-full p-3 shadow-lg"
-                            >
-                                ←
-                            </button>
-                            <button
-                                onClick={() => paginate(1)}
-                                className="bg-white/70 hover:bg-white text-blue-700 rounded-full p-3 shadow-lg"
-                            >
-                                →
-                            </button>
                         </div>
 
                         {/* Template label */}
                         <div className="mt-6 mb-2 mx-auto text-center bg-black/60 text-white px-4 py-1 rounded-lg text-sm">
                             {currentTemplate?.name}
                         </div>
-
                     </div>
+
 
                     <TemplateKnob
                         templates={templates}
@@ -247,8 +233,8 @@ export default function SelectTemplatePage() {
                                 animate={{ scale: 1.5, opacity: 1 }}
                                 exit={{ scale: 0, opacity: 0 }}
                                 transition={{ duration: 0.3 }}
-                                className="absolute text-red-500 text-3xl select-none pointer-events-none"
-                                style={{ bottom: '13rem', left: '45%', transform: 'translateX(-50%)' }}
+                                className="absolute text-red-500 text-3xl select-none pointer-events-none left-1/2"
+                                style={{ bottom: '18rem', transform: 'translateX(-50%)' }}
                             >
                                 ❤️
                             </motion.div>
@@ -256,7 +242,7 @@ export default function SelectTemplatePage() {
                     </AnimatePresence>
 
                     {/* Permanent toggle heart */}
-                    <div className="flex flex-col items-center w-full h-[2rem]"> {/* reserve space */}
+                    <div className="flex flex-col items-center w-full h-[2rem]">
                         {isFavorite && (
                             <button
                                 onClick={() => currentTemplate && toggleFavorite(currentTemplate.id)}
@@ -266,26 +252,31 @@ export default function SelectTemplatePage() {
                             </button>
                         )}
                     </div>
-
                 </div>
 
                 <div className="flex justify-between">
-                    <button onClick={handleBack} className="self-start mt-6 relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-pink-500 to-orange-400 group-hover:from-pink-500 group-hover:to-orange-400 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-pink-200 dark:focus:ring-pink-800">
+                    <button
+                        onClick={handleBack}
+                        className="self-start mt-6 relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-pink-500 to-orange-400 group-hover:from-pink-500 group-hover:to-orange-400 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-pink-200 dark:focus:ring-pink-800"
+                    >
                         <span className="relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent">
                             Back
                         </span>
                     </button>
 
-                    <button onClick={handleNext} className="self-end relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-purple-600 to-blue-500 group-hover:from-purple-600 group-hover:to-blue-500 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800">
+                    <button
+                        onClick={handleNext}
+                        className="self-end relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-purple-600 to-blue-500 group-hover:from-purple-600 group-hover:to-blue-500 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800"
+                    >
                         <span className="relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent">
                             Next
                         </span>
                     </button>
                 </div>
-
             </section>
         </motion.div>
-    );
+    )
+
 
     // return (
     //     <motion.div
