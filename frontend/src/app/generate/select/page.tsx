@@ -8,7 +8,7 @@
 import { usePosterWizard, isStepAccessible } from '@/context/PosterWizardContext'
 import { useAuth } from '@/context/AuthContext'
 import { Template } from '@/types/template'
-import { useState, useEffect } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { collection, getDocs, doc, updateDoc, arrayUnion, arrayRemove, getDoc, query, where } from 'firebase/firestore'
 import { db } from '@/firebase/client'
 import TemplateCard from '@/components/TemplateCard'
@@ -17,6 +17,7 @@ import Spinner from '@/components/Spinner';
 import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from "framer-motion";
 import { Archivo_Black } from "next/font/google";
+import TemplateKnob from '@/components/TemplateKnob'
 
 const archivoBlack = Archivo_Black({
     weight: "400", // Archivo Black only has 400
@@ -39,12 +40,33 @@ export default function SelectTemplatePage() {
     const [direction, setDirection] = useState(0); // -1 left, 1 right
     const currentTemplate = templates[index];
 
+    const [showHeart, setShowHeart] = useState(false);
+    const lastTap = useRef(0);
+
+    const handleDoubleTap = () => {
+        if (!currentTemplate) return;
+        const now = Date.now();
+        if (now - lastTap.current < 300) {
+            const willFavorite = !favoriteTemplates.includes(currentTemplate.id); // true if adding
+            toggleFavorite(currentTemplate.id);
+            if (willFavorite) {
+                setShowHeart(true);
+                setTimeout(() => setShowHeart(false), 600);
+            }
+        }
+        lastTap.current = now;
+    };
+
+
+    const isFavorite = currentTemplate
+        ? favoriteTemplates.includes(currentTemplate.id)
+        : false;
+
     const paginate = (newDirection: number) => {
+        const newIndex = (index + newDirection + templates.length) % templates.length;
         setDirection(newDirection);
-        setIndex((prev) =>
-            (prev + newDirection + templates.length) % templates.length
-        );
-        setSelectedTemplate(templates[index]);
+        setIndex(newIndex);
+        setSelectedTemplate(templates[newIndex]);
     };
 
 
@@ -150,69 +172,104 @@ export default function SelectTemplatePage() {
 
                     <p className='text-sm text-gray-500 mx-auto mb-2'>**Placehonder text only**</p>
 
-                    <div className="relative w-full max-w-[600px] aspect-[3/4] rounded-md overflow-hidden shadow-lg">
-                        {/* User's uploaded image */}
-                        {userImgDownloadUrl && (
-                            <img
-                                src={userImgDownloadUrl}
-                                alt="Preview"
-                                className="absolute inset-0 w-full h-full object-cover"
-                            />
+                    {/* WRAPPER for double-tap */}
+                    <div className="relative flex flex-col items-center w-full" onClick={handleDoubleTap}>
+                        <div className="relative w-full max-w-[600px] aspect-[3/4] rounded-md overflow-hidden shadow-lg">
+                            {/* User's uploaded image */}
+                            {userImgDownloadUrl && (
+                                <img
+                                    src={userImgDownloadUrl}
+                                    alt="Preview"
+                                    className="absolute inset-0 w-full h-full object-cover"
+                                />
+                            )}
+
+                            {/* Template overlay, swipeable */}
+                            <AnimatePresence initial={false} custom={direction}>
+                                <motion.img
+                                    key={currentTemplate?.id}
+                                    src={currentTemplate?.previewImageUrl}
+                                    alt={currentTemplate?.name}
+                                    className="absolute inset-0 w-full h-full object-cover"
+                                    custom={direction}
+                                    initial={{ x: direction > 0 ? 300 : -300, opacity: 0 }}
+                                    animate={{ x: 0, opacity: 1 }}
+                                    exit={{ x: direction > 0 ? -300 : 300, opacity: 0 }}
+                                    transition={{ duration: 0.4 }}
+                                    drag="x"
+                                    dragElastic={0.6}
+                                    onDragEnd={(e, { offset }) => {
+                                        if (offset.x < -50) paginate(1);
+                                        else if (offset.x > 50) paginate(-1);
+                                    }}
+                                />
+                            </AnimatePresence>
+
+
+                        </div>
+
+
+                        {/* Navigation controls */}
+                        <div className="absolute inset-0 flex justify-between items-center px-4">
+                            <button
+                                onClick={() => paginate(-1)}
+                                className="bg-white/70 hover:bg-white text-blue-700 rounded-full p-3 shadow-lg"
+                            >
+                                ←
+                            </button>
+                            <button
+                                onClick={() => paginate(1)}
+                                className="bg-white/70 hover:bg-white text-blue-700 rounded-full p-3 shadow-lg"
+                            >
+                                →
+                            </button>
+                        </div>
+
+                        {/* Template label */}
+                        <div className="mt-6 mb-2 mx-auto text-center bg-black/60 text-white px-4 py-1 rounded-lg text-sm">
+                            {currentTemplate?.name}
+                        </div>
+
+                    </div>
+
+                    <TemplateKnob
+                        templates={templates}
+                        index={index}
+                        paginate={paginate}
+                    />
+
+                    {/* Floating heart animation */}
+                    <AnimatePresence>
+                        {showHeart && (
+                            <motion.div
+                                key="heart"
+                                initial={{ scale: 0, opacity: 0 }}
+                                animate={{ scale: 1.5, opacity: 1 }}
+                                exit={{ scale: 0, opacity: 0 }}
+                                transition={{ duration: 0.3 }}
+                                className="absolute text-red-500 text-3xl select-none pointer-events-none"
+                                style={{ bottom: '13rem', left: '45%', transform: 'translateX(-50%)' }}
+                            >
+                                ❤️
+                            </motion.div>
                         )}
+                    </AnimatePresence>
 
-                        {/* Template overlay, swipeable */}
-                        <AnimatePresence initial={false} custom={direction}>
-                            <motion.img
-                                key={currentTemplate?.id}
-                                src={currentTemplate?.previewImageUrl}
-                                alt={currentTemplate?.name}
-                                className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-                                custom={direction}
-                                initial={{ x: direction > 0 ? 300 : -300, opacity: 0 }}
-                                animate={{ x: 0, opacity: 1 }}
-                                exit={{ x: direction > 0 ? -300 : 300, opacity: 0 }}
-                                transition={{ duration: 0.4 }}
-                                drag="x"
-                                dragConstraints={{ left: 0, right: 0 }}
-                                dragElastic={0.6}
-                                onDragEnd={(e, { offset, velocity }) => {
-                                    const swipe = offset.x * velocity.x;
-
-                                    if (swipe < -1000) {
-                                        // Swipe left → next template
-                                        paginate(1);
-                                    } else if (swipe > 1000) {
-                                        // Swipe right → previous template
-                                        paginate(-1);
-                                    }
-                                }}
-                            />
-                        </AnimatePresence>
+                    {/* Permanent toggle heart */}
+                    <div className="flex flex-col items-center w-full h-[2rem]"> {/* reserve space */}
+                        {isFavorite && (
+                            <button
+                                onClick={() => currentTemplate && toggleFavorite(currentTemplate.id)}
+                                className="opacity-70 text-2xl"
+                            >
+                                ❤️
+                            </button>
+                        )}
                     </div>
 
-                    {/* Navigation controls */}
-                    <div className="absolute inset-0 flex justify-between items-center px-4">
-                        <button
-                            onClick={() => paginate(-1)}
-                            className="bg-white/70 hover:bg-white text-blue-700 rounded-full p-3 shadow-lg"
-                        >
-                            ←
-                        </button>
-                        <button
-                            onClick={() => paginate(1)}
-                            className="bg-white/70 hover:bg-white text-blue-700 rounded-full p-3 shadow-lg"
-                        >
-                            →
-                        </button>
-                    </div>
-
-                    {/* Template label */}
-                    <div className="mt-6 mx-auto text-center bg-black/60 text-white px-4 py-1 rounded-lg text-sm">
-                        {currentTemplate?.name}
-                    </div>
                 </div>
 
-                <div className="mt-5 flex justify-between">
+                <div className="flex justify-between">
                     <button onClick={handleBack} className="self-start mt-6 relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-pink-500 to-orange-400 group-hover:from-pink-500 group-hover:to-orange-400 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-pink-200 dark:focus:ring-pink-800">
                         <span className="relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent">
                             Back
