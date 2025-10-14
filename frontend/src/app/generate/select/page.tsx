@@ -195,9 +195,23 @@ export default function SelectTemplatePage() {
                                     alt={currentTemplate?.name}
                                     className="absolute inset-0 w-full h-full object-cover"
                                     custom={direction}
-                                    initial={{ x: direction > 0 ? 300 : -300, opacity: 0 }}
-                                    animate={{ x: 0, opacity: 1 }}
-                                    exit={{ x: direction > 0 ? -300 : 300, opacity: 0 }}
+                                    variants={{
+                                        enter: (dir: number) => ({
+                                            x: dir > 0 ? 300 : -300,
+                                            opacity: 0,
+                                        }),
+                                        center: {
+                                            x: 0,
+                                            opacity: 1,
+                                        },
+                                        exit: (dir: number) => ({
+                                            x: dir > 0 ? -300 : 300,
+                                            opacity: 0,
+                                        }),
+                                    }}
+                                    initial="enter"
+                                    animate="center"
+                                    exit="exit"
                                     transition={{ duration: 0.4 }}
                                     draggable={false}
                                     drag="x"
@@ -208,6 +222,7 @@ export default function SelectTemplatePage() {
                                         else if (offset.x > 50) paginate(-1)
                                     }}
                                 />
+
                             </AnimatePresence>
                         </div>
 
