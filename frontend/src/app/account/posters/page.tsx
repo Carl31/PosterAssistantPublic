@@ -103,7 +103,7 @@ export default function PosterHistoryPage() {
     //     }
     // };
 
-    const handleDelete = async (poster: any) => {
+    const handleDelete = async (poster: Poster) => {
         if (!uid) {
             console.error("Delete failed: uid is null");
             return;
