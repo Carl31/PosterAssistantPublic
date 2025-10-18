@@ -54,7 +54,7 @@ export default function DashboardPage() {
             SICKSHOTS AI
           </h1>
           <h2 className="text-sm sm:text-base md:text-lg text-gray-400 text-center">
-            Turn photos into posters in minutes.
+            Photos into posters in minutes.
           </h2>
         </div>
       </div>

@@ -135,7 +135,7 @@ export const detectCarDetailsWithGemini = functions
   "model": "",
   "year": ""
 }
-If the car is unclear, leave values empty. Do not include any extra explanation.`,
+If the car is unclear, leave values empty. Do not include any extra explanation. If you don't know the exact year, provide a possible year instead of a range of years.`,
             },
           ];
 
