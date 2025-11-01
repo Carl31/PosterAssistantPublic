@@ -170,7 +170,7 @@ export default function PosterHistoryPage() {
                                     Template: {poster.templateId}
                                 </p>
                                 <p className="text-xs sm:text-sm text-gray-300 mb-1">
-                                    Created: {poster.createdAt.toDate().toLocaleDateString()}
+                                    Created: {poster.createdAt.toDate().toLocaleDateString('en-GB')}
                                 </p>
                             </div>
 

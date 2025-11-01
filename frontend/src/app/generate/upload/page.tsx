@@ -1,102 +1,174 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
-// Page is for uploading user image
-
 'use client'
 
 import { motion } from 'framer-motion'
 import { usePosterWizard } from '@/context/PosterWizardContext'
 import { useState, useCallback, useEffect } from 'react'
-import { getStorage, ref, uploadBytes, getDownloadURL, listAll } from 'firebase/storage'
+import {
+  getStorage,
+  ref,
+  uploadBytes,
+  getDownloadURL,
+  listAll,
+} from 'firebase/storage'
 import { auth } from '@/firebase/client'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Cropper from 'react-easy-crop'
 import { Area } from 'react-easy-crop'
-import { getCroppedImg } from '@/utils/cropImage'
+import { getAuth, onAuthStateChanged, User } from 'firebase/auth'
 import LoadingPage from '@/components/LoadingPage'
-import { onAuthStateChanged, User } from 'firebase/auth'
-import { getAuth } from 'firebase/auth'
-import { useSearchParams } from 'next/navigation';
-import { Archivo_Black } from "next/font/google";
-import Spinner from '@/components/Spinner';
+import Spinner from '@/components/Spinner'
+import { Archivo_Black } from 'next/font/google'
 
 const archivoBlack = Archivo_Black({
-  weight: "400", // Archivo Black only has 400
-  subsets: ["latin"],
-});
+  weight: '400',
+  subsets: ['latin'],
+})
 
+// ------------------ Helper: resize + compress ------------------
+async function resizeImage(
+  file: Blob,
+  maxLongSide = 2000,
+  quality = 0.85
+): Promise<Blob> {
+  const url = URL.createObjectURL(file)
+  const img = await createImage(url)
+  const ratio = img.width / img.height
+  let w = img.width
+  let h = img.height
+
+  if (Math.max(w, h) > maxLongSide) {
+    if (w > h) {
+      w = maxLongSide
+      h = Math.round(maxLongSide / ratio)
+    } else {
+      h = maxLongSide
+      w = Math.round(maxLongSide * ratio)
+    }
+  }
+
+  const canvas = document.createElement('canvas')
+  canvas.width = w
+  canvas.height = h
+  const ctx = canvas.getContext('2d')!
+  ctx.drawImage(img, 0, 0, w, h)
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (b) => (b ? resolve(b) : reject(new Error('toBlob failed'))),
+      'image/jpeg',
+      quality
+    )
+  })
+}
+
+function createImage(url: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      img.decode().then(() => resolve(img)).catch(reject)
+    }
+    img.onerror = (err) => reject(err)
+    img.src = url
+  })
+}
+
+// ------------------ Helper: crop ------------------
+async function getCroppedImg(
+  imageSrc: string,
+  croppedAreaPixels: Area
+): Promise<Blob> {
+  const image = await createImage(imageSrc)
+  const canvas = document.createElement('canvas')
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('Canvas ctx failed')
+  const { x, y, width, height } = croppedAreaPixels
+  canvas.width = width
+  canvas.height = height
+  ctx.fillStyle = '#fff'
+  ctx.fillRect(0, 0, width, height)
+  ctx.drawImage(image, x, y, width, height, 0, 0, width, height)
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (b) => (b ? resolve(b) : reject(new Error('crop blob fail'))),
+      'image/jpeg',
+      0.95
+    )
+  })
+}
+
+// ------------------ Component ------------------
 export default function UploadImageStep() {
   const { setuserImgDownloadUrl, setuserImgThumbDownloadUrl } = usePosterWizard()
   const [image, setImage] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
-  const storage = getStorage()
-
-  // Cropper states
   const [crop, setCrop] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(1)
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null)
-
-  // Auth + user images
   const [user, setUser] = useState<User | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
-  const [userImages, setUserImages] = useState<{ thumbUrl: string; originalUrl: string; }[]>([]);
+  const [userImages, setUserImages] = useState<
+    { thumbUrl: string; originalUrl: string }[]
+  >([])
   const [imagesLoading, setImagesLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const router = useRouter()
+  const storage = getStorage()
+  const searchParams = useSearchParams()
+  const cameFromSelectPage = searchParams?.get('imageUploaded') === 'true'
 
-  const searchParams = useSearchParams();
-  const cameFromSelectPage = searchParams!.get('imageUploaded') === 'true';
-
-  // --- Auth ---
+  // ---------- Auth ----------
   useEffect(() => {
     const auth = getAuth()
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser)
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setUser(u)
       setAuthLoading(false)
     })
-    return () => unsubscribe()
+    return () => unsub()
   }, [])
 
-  // --- Fetch images when logged in ---
+  // ---------- Reuse preview URL ----------
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl)
+    }
+  }, [previewUrl])
+
+  // ---------- Fetch gallery ----------
   useEffect(() => {
     const fetchImages = async () => {
       if (authLoading || !user) {
         setUserImages([])
         return
       }
-
       setImagesLoading(true)
       setError(null)
-
       try {
         const imagesRef = ref(storage, `user_uploads/${user.uid}/`)
         const res = await listAll(imagesRef)
-        // const urls = await Promise.all(res.items.map((imageRef) => getDownloadURL(imageRef)))
-        // setUserImages(urls)
-
         const urls = await Promise.all(
           res.items
-            .filter((item) => item.name.includes('_thumb'))
+            .filter((i) => i.name.includes('_thumb'))
             .map(async (thumbRef) => {
-              const thumbUrl = await getDownloadURL(thumbRef);
-              const originalName = thumbRef.name.replace('_thumb', '');
-              const originalRef = ref(storage, `user_uploads/${user.uid}/${originalName}`);
-              const originalUrl = await getDownloadURL(originalRef);
-
-              return { thumbUrl, originalUrl, name: originalName };
+              const thumbUrl = await getDownloadURL(thumbRef)
+              const originalName = thumbRef.name.replace('_thumb', '')
+              const originalRef = ref(
+                storage,
+                `user_uploads/${user.uid}/${originalName}`
+              )
+              const originalUrl = await getDownloadURL(originalRef)
+              return { thumbUrl, originalUrl, name: originalName }
             })
-        );
-
-        // Sort by timestamp in name descending (most recent first)
+        )
         urls.sort((a, b) => {
-          const timestampA = parseInt(a.name.split('_')[0]); // assuming timestamp is first
-          const timestampB = parseInt(b.name.split('_')[0]);
-          return timestampB - timestampA;
-        });
-
-        setUserImages(urls); // [{ thumbUrl, originalUrl }, ...]
-      } catch (err: any) {
-        setError(`Failed to load images: ${err.message}`)
+          const A = parseInt(a.name.split('_')[0])
+          const B = parseInt(b.name.split('_')[0])
+          return B - A
+        })
+        setUserImages(urls)
+      } catch (e: any) {
+        setError(`Failed to load images: ${e.message}`)
         setUserImages([])
       } finally {
         setImagesLoading(false)
@@ -104,26 +176,23 @@ export default function UploadImageStep() {
     }
 
     fetchImages()
-
-    // Re-fetch images again after 3s delay - to catch the most recently uploaded image if it was uploaded just now
     if (cameFromSelectPage) {
-      const timer = setTimeout(fetchImages, 3000); // double-check after 3s
-      return () => clearTimeout(timer);
+      const t = setTimeout(fetchImages, 3000)
+      return () => clearTimeout(t)
     }
   }, [authLoading, user])
 
-  // --- Handlers ---
+  // ---------- Handlers ----------
   const onSelectFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-
     if (!file.type.startsWith('image/')) {
       alert('Please select an image file.')
-      const imageInput = document.getElementById('imageInput') as HTMLInputElement
-      imageInput.value = ''
       return
     }
     setImage(file)
+    const url = URL.createObjectURL(file)
+    setPreviewUrl(url)
   }
 
   const handleSelectExisting = (thumbUrl: string, imageUrl: string) => {
@@ -132,9 +201,10 @@ export default function UploadImageStep() {
     router.push('/generate/select')
   }
 
-  const onCropComplete = useCallback((_croppedArea: Area, croppedAreaPixels: Area) => {
-    setCroppedAreaPixels(croppedAreaPixels)
-  }, [])
+  const onCropComplete = useCallback(
+    (_c: Area, p: Area) => setCroppedAreaPixels(p),
+    []
+  )
 
   const handleBack = () => {
     setImage(null)
@@ -142,99 +212,60 @@ export default function UploadImageStep() {
     router.push('/account/dashboard')
   }
 
-  const compressImageInWorker = (file: Blob, options: any) => {
-    return new Promise<Blob>((resolve, reject) => {
-      const worker = new Worker(new URL('../../../../public/workers/imageCompressor.js', import.meta.url), {
-        type: 'module',
-      })
-
-      worker.onmessage = (e) => {
-        if (e.data.error) reject(new Error(e.data.error))
-        else resolve(new Blob([e.data], { type: 'image/jpeg' }))
-      }
-      worker.onerror = reject
-      worker.postMessage({ file, options })
-    })
-  }
-
+  // ---------- Upload ----------
   const handleImageUpload = async () => {
-    if (!image || !auth.currentUser || !croppedAreaPixels) return
+    if (!image || !auth.currentUser || !croppedAreaPixels || !previewUrl) return
     setLoading(true)
     const user = auth.currentUser
-
     try {
-      const croppedBlob = await getCroppedImg(URL.createObjectURL(image), croppedAreaPixels)
-
-      let finalBlob: Blob = croppedBlob
-      if (croppedBlob.size / (1024 * 1024) > 4) {
-        finalBlob = await compressImageInWorker(croppedBlob, {
-          maxSizeMB: 4,
-          maxWidthOrHeight: 5000,
-          fileType: 'image/jpeg',
-          initialQuality: 0.9,
-        })
-      }
-
-      // Old
-      // const storageRef = ref(storage, `user_uploads/${user.uid}/${image.name}`)
-
-      // New (saving image names with timeestamps)
-      // Add timestamp prefix to the filename
-      const timestamp = Date.now();
-      const filename = `${timestamp}_${image.name.replace(/\s+/g, '_')}`;
-
-
-      const storageRef = ref(
+      const cropped = await getCroppedImg(previewUrl, croppedAreaPixels)
+      const [fullBlob, thumbBlob] = await Promise.all([
+        resizeImage(cropped, 2000, 0.85),
+        resizeImage(cropped, 800, 0.7),
+      ])
+      const ts = Date.now()
+      const base = `${ts}_${image.name.replace(/\s+/g, '_')}`
+      const fullRef = ref(storage, `user_uploads/${user.uid}/${base}`)
+      const thumbRef = ref(
         storage,
-        `user_uploads/${user.uid}/${filename}`
-      );
-      const snapshot = await uploadBytes(storageRef, finalBlob);
-      const downloadURL = await getDownloadURL(snapshot.ref);
+        `user_uploads/${user.uid}/${base.replace(/\.(?=[^.]+$)/, '_thumb.')}`
+      )
 
-      setuserImgDownloadUrl(downloadURL)
+      const [fullSnap, thumbSnap] = await Promise.all([
+        uploadBytes(fullRef, fullBlob),
+        uploadBytes(thumbRef, thumbBlob),
+      ])
 
-      let retryCount = 0;
-      const maxRetries = 3;
-      const delay = 2000; // 2 seconds
+      const [fullUrl, thumbUrl] = await Promise.all([
+        getDownloadURL(fullSnap.ref),
+        getDownloadURL(thumbSnap.ref),
+      ])
 
-      while (retryCount <= maxRetries) {
-        try {
-          const storageThumbRef = ref(storage, `user_uploads/${user.uid}/${filename.replace(/\.(?=[^.]+$)/, '_thumb.')}`)
-          await new Promise(resolve => setTimeout(resolve, delay))
-          const downloadThumbURL = await getDownloadURL(storageThumbRef)
-          setuserImgThumbDownloadUrl(downloadThumbURL)
-          console.log("Thumb url", downloadThumbURL);
-          break; // success, exit the loop
-        } catch (error: any) {
-          retryCount++;
-          console.log(`Attempt ${retryCount} failed: ${error.message}`);
-          if (retryCount > maxRetries) {
-            throw error; // rethrow the error if all retries fail
-          }
-        }
-      }
-
+      setuserImgDownloadUrl(fullUrl)
+      setuserImgThumbDownloadUrl(thumbUrl)
       router.push('/generate/select?upload=true')
-    } catch (err) {
-      console.error('Upload failed:', err)
-      alert('Image processing failed.')
-    } finally {
-      // setLoading(false)
+    } catch (e) {
+      console.error('Upload failed', e)
+      alert('Image upload failed.')
     }
   }
 
-  // --- Render ---
+  // ---------- Render ----------
   if (authLoading) return <p>Authenticating...</p>
   if (!user) return <p>Please log in to see and upload images.</p>
 
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.3 }}
+    >
       <div className="p-2 mx-auto">
         {loading ? (
           <LoadingPage text="Uploading image..." />
         ) : (
           <>
-            {/* Upload & Crop Section */}
             <section id="upload image" className="mb-8 mt-5">
               <div className="border-3 border-blue-400 max-w-md mx-auto p-4 px-4 py-2 mb-12 flex flex-col items-center shadow-[0_0_14px_rgba(59,130,246,0.7)]">
                 <h1 className={`text-2xl text-gray-200 ${archivoBlack.className}`}>
@@ -244,21 +275,14 @@ export default function UploadImageStep() {
 
               <h1 className="text-xl font-bold mb-4">Upload Your Image</h1>
               {!image ? (
-                <label
-                  htmlFor="imageInput"
-                  className="cursor-pointer text-black"
-                >
+                <label htmlFor="imageInput" className="cursor-pointer text-black">
                   <div className="bg-blue-300 text-black px-4 py-4 rounded-xl flex flex-col items-center">
                     <img
                       className="w-9 h-9 mt-2 mb-2"
                       src="/svg/upload.svg"
                       alt="uploadSVG"
                     />
-
-
                     Upload Image
-
-
                     <input
                       id="imageInput"
                       type="file"
@@ -268,12 +292,11 @@ export default function UploadImageStep() {
                     />
                   </div>
                 </label>
-
               ) : (
                 <>
                   <div className="relative w-full h-140 bg-gray-100">
                     <Cropper
-                      image={URL.createObjectURL(image)}
+                      image={previewUrl!}
                       crop={crop}
                       zoom={zoom}
                       aspect={5 / 7}
@@ -282,35 +305,34 @@ export default function UploadImageStep() {
                       onCropComplete={onCropComplete}
                     />
                   </div>
-                  <button onClick={handleImageUpload} disabled={!image} className="mt-4 text-white bg-gradient-to-br from-purple-600 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2">
+                  <button
+                    onClick={handleImageUpload}
+                    disabled={!image}
+                    className="mt-4 text-white bg-gradient-to-br from-purple-600 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2"
+                  >
                     Confirm and Upload
                   </button>
                 </>
               )}
             </section>
 
-            {/* Gallery Section */}
             <section id="user images">
               <h1 className="text-xl font-bold mb-4">Your Uploaded Images</h1>
               {imagesLoading ? (
-                <span>
-                  <Spinner />
-                </span>
-
+                <Spinner />
               ) : error ? (
                 <p style={{ color: 'red' }}>{error}</p>
               ) : userImages.length === 0 ? (
                 <p>No images found for your account. Time to upload some!</p>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                  {userImages.length > 0 && userImages.map(({ thumbUrl, originalUrl }) => (
+                  {userImages.map(({ thumbUrl, originalUrl }) => (
                     <img
                       key={thumbUrl}
                       src={thumbUrl}
                       alt="User Upload"
                       onClick={() => handleSelectExisting(thumbUrl, originalUrl)}
-                      className="rounded-md object-cover w-full h-60 cursor-pointer  transform transition active:scale-95 
-             hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                      className="rounded-md object-cover w-full h-60 cursor-pointer transform transition active:scale-95 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
                     />
                   ))}
                 </div>
@@ -328,4 +350,3 @@ export default function UploadImageStep() {
     </motion.div>
   )
 }
-

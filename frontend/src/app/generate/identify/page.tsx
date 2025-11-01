@@ -69,71 +69,54 @@ export default function IdentifyVehicleStep() {
         router.push('/generate/select')
     }
 
-    // Detect car details in image using cloud function
+    // Detect car details in image using cloud function (final optimized version)
     const detectCar = async () => {
         if (!userImgThumbDownloadUrl) return
         setloading(true)
-
-        // Below 2 lines for dummy data
-        // const result = await mockDetectCarDetails(image) // dummy data
-        // setCarDetails(result as any); // dummy data set
-
 
         if (!user) {
             console.error('User is not authenticated.')
             return <ErrorPage text="User is not authenticated." />
         }
-        // For sending request to backnend with authorisation:
-        const token = user && (await user.getIdToken())
 
         try {
-            // 1. Convert the image file to a Base64 string
-            // const base64Image = await fileToBase64(image);
-            // const mimeType = image.type;
+            // Get Firebase ID token for authorization
+            const token = await user.getIdToken()
 
-            const { base64Image, mimeType } = await convertImageUrlToBase64(userImgThumbDownloadUrl);
-            // 2. Prepare the data to send in the request body
-            const requestBody = {
-                base64Image: base64Image,
-                mimeType: mimeType,
-            };
+            // Prepare minimal payload — only send the image URL
+            const requestBody = { imageUrl: userImgThumbDownloadUrl }
 
-            // 3. Make the HTTP POST request using fetch
-            const response = await fetch("https://us-central1-posterassistant-aebf0.cloudfunctions.net/detectCarDetailsWithGemini", {
-                method: 'POST', // We configured the function to accept POST
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify(requestBody), // Send the data as a JSON string
-            });
+            // Call backend Cloud Function
+            const response = await fetch(
+                "https://us-central1-posterassistant-aebf0.cloudfunctions.net/detectCarDetailsWithGemini",
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify(requestBody),
+                }
+            )
 
-            // 4. Handle the response
             if (!response.ok) {
-                // If the server responded with an error status (e.g., 400, 500)
-                const errorText = await response.text(); // Get the error message from the body
-                console.error(`HTTP error! status: ${response.status}`, errorText);
-                throw new Error(`Function returned error: ${response.status} - ${errorText}`);
+                const errorText = await response.text()
+                console.error(`HTTP error! status: ${response.status}`, errorText)
+                throw new Error(`Function returned error: ${response.status} - ${errorText}`)
             }
 
-            // 5. Parse the JSON response from the function
-            const result = await response.json(); // The function sends back JSON
-
-            // console.log("Received result from Cloud Function:", result);
-
-            updateCarDetailsFromApiResponse(result);
+            // Parse result and update UI
+            const result = await response.json()
+            updateCarDetailsFromApiResponse(result)
 
         } catch (error) {
-            console.error("Error calling Cloud Function:", error);
+            console.error("Error calling Cloud Function:", error)
             return <ErrorPage text="Error calling Gemini Cloud Function." />
-            // Propagate the error or return a default value/structure as needed
-            throw error; // Or return { make: "", model: "", year: "", warning: "Client-side error calling function." };
         } finally {
             setloading(false)
             setGeminiChecked(true)
         }
     }
-
 
     return (
         <motion.div
@@ -344,57 +327,36 @@ export default function IdentifyVehicleStep() {
     }
 
     // Necessary for formatting and setting car details with no errors
-    function updateCarDetailsFromApiResponse(
-        responseData: any) { // Use a more specific type if you have one for the full response
-        {
-            // Check if the responseData has the expected structure
-            if (!responseData) {
-                console.error("API response is missing:", responseData);
-                return;
+    function updateCarDetailsFromApiResponse(responseData: { make: string; model: string; year: string }) {
+        if (!responseData) {
+            console.error("API response is missing:", responseData);
+            return;
+        }
+
+        // Use the object directly
+        const carDetails = responseData;
+
+        // Update state
+        setCarDetails(carDetails);
+        console.log("Car details state updated successfully:", carDetails);
+
+        const missingMake = carDetails.make === "";
+        const missingModel = carDetails.model === "";
+        const missingYear = carDetails.year === "";
+
+        if (missingMake && missingModel && missingYear) {
+            notify("warning", "Our AI could not identify the car. Please input the details manually.");
+        } else {
+            if (missingMake) {
+                notify("info", "Our AI could not identify the make of the car. Please input the details manually.");
             }
-
-            const responseObject = responseData.json;
-
-            try {
-                // Attempt to parse the string value of the 'message' property
-                //const parsedDetails = JSON.parse(jsonString);
-
-                // Basic validation to ensure the parsed object looks like car details
-                if (typeof responseObject === "object" && responseObject !== null) {
-                    // Update the state with the parsed JSON object
-                    setCarDetails(responseObject);
-                    console.log("Car details state updated successfully:", responseObject);
-
-                    const missingMake = responseObject.make === "";
-                    const missingModel = responseObject.model === "";
-                    const missingYear = responseObject.year === "";
-
-                    if (missingMake && missingModel && missingYear) {
-                        // All missing → show warning
-                        console.log("All missing");
-                        notify("warning", "Our AI could not identify the car. Please input the details manually.");
-                    } else {
-                        if (missingMake) {
-                            notify("info", "Our AI could not identify the make of the car. Please input the details manually.");
-                        }
-                        if (missingModel) {
-                            notify("info", "Our AI could not identify the model of the car. Please input the details manually.");
-                        }
-                        if (missingYear) {
-                            notify("info", "Our AI could not identify the year of the car. Please input the details manually.");
-                        }
-                    }
-                }
-                else {
-                    console.error("Parsed content from 'message' is not an object:", responseObject);
-                }
-
-
-            } catch (error) {
-                // Handle cases where JSON.parse fails (e.g., the string isn't valid JSON)
-                console.error("Failed to set car details from API response:", error, "Object received:", responseObject);
+            if (missingModel) {
+                notify("info", "Our AI could not identify the model of the car. Please input the details manually.");
             }
-        };
+            if (missingYear) {
+                notify("info", "Our AI could not identify the year of the car. Please input the details manually.");
+            }
+        }
     }
 
 }
