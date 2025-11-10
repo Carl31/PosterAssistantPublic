@@ -187,4 +187,6 @@ export const generatePosterThumbnail = functions.storage
 // How to export other functions:
 export {detectCarDetailsWithGemini} from '../scripts/carAnalyzer';
 export {generateCarDescriptionWithGemini} from '../scripts/carDescriptor';
+export {detectCarPlate} from "../scripts/plateAnalyzer";
 export {generatePosterOnJobCreate} from "../scripts/generatePoster";
+export {fetchPlateWithCarJam} from "../scripts/carJam";

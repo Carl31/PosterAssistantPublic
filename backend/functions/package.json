@@ -12,6 +12,7 @@
     "deployGenerateThumbnails": "npx eslint . --fix && npm run build && firebase deploy --only functions:generatePosterThumbnail",
     "deployGemini": "npx eslint . --fix && npm run build && firebase deploy --only functions:detectCarDetailsWithGemini && firebase deploy --only functions:generateCarDescriptionWithGemini",
     "deployhosting": "cd .. && firebase deploy --only hosting",
+    "deployCarJam": "npx eslint . --fix && npm run build && firebase deploy --only functions:fetchPlateWithCarJam",
     "logs": "firebase functions:log"
   },
   "engines": {
