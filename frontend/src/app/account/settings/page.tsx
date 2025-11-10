@@ -99,6 +99,17 @@ export default function AccountSettingsPage() {
         setPendingAction(null)
     }
 
+    const handleDiscardSave = async () => {
+        setShowSavePopup(false)
+        if (pendingAction === 'logout') {
+            // After saving changes, show logout confirmation popup
+            setShowLogoutPopup(true)
+        } else if (pendingAction === 'back') {
+            router.replace('/account/dashboard')
+        }
+        setPendingAction(null)
+    }
+
     const handleCancelSave = () => {
         setShowSavePopup(false)
         setPendingAction(null)
@@ -130,13 +141,16 @@ export default function AccountSettingsPage() {
 
                 <div>
                     <p className="text-sm text-gray-500">Instagram Handle</p>
-                    <input
-                        type="text"
-                        value={instagramHandle}
-                        onChange={(e) => setInstagramHandle(e.target.value)}
-                        placeholder="@yourhandle"
-                        className="w-full mt-1 p-2 rounded-md bg-gray-800 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                    <div className="relative">
+                        <span className="absolute inset-y-0 left-0 pl-3 pt-3 text-gray-300">@</span>
+                        <input
+                            type="text"
+                            value={instagramHandle}
+                            onChange={(e) => setInstagramHandle(e.target.value)}
+                            placeholder="yourhandle"
+                            className="w-full mt-1 p-2 pl-8 rounded-md bg-gray-800 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
                 </div>
 
                 <div>
@@ -187,16 +201,24 @@ export default function AccountSettingsPage() {
                         <p className="mt-6 mb-4 text-gray-800 text-sm sm:text-base">
                             You have unsaved changes. Do you want to save them?
                         </p>
-                        <div className="flex space-x-2 justify-center">
-                            <button
-                                onClick={handleConfirmSave}
-                                className="px-3 py-2 rounded bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 transition-colors text-sm"
-                            >
-                                Save
-                            </button>
+                        <div className="flex flex-col gap-2 justify-center">
+                            <div className="flex justify-center space-x-2">
+                                <button
+                                    onClick={handleConfirmSave}
+                                    className="px-10 py-2 rounded bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 transition-colors text-sm"
+                                >
+                                    Save
+                                </button>
+                                <button
+                                    onClick={handleDiscardSave}
+                                    className="px-6 py-2 rounded bg-gray-300 text-red-700 hover:bg-gray-400 transition-colors text-sm"
+                                >
+                                    Discard
+                                </button>
+                            </div>
                             <button
                                 onClick={handleCancelSave}
-                                className="px-3 py-2 rounded bg-gray-300 text-gray-700 hover:bg-gray-400 transition-colors text-sm"
+                                className="px-22 py-2 rounded bg-gray-300 text-gray-700 hover:bg-gray-400 transition-colors text-sm max-w-fit mx-auto"
                             >
                                 Cancel
                             </button>

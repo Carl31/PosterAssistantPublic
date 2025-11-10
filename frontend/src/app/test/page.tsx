@@ -50,8 +50,8 @@ export default function Page() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const html = await res.text();
       setResult(html.slice(0, 2000)); // show first 2000 chars only
-    } catch (err: any) {
-      setResult(`Error: ${err.message}`);
+    } catch (err) {
+      setResult(`Error: ${err}`);
     } finally {
       setLoading(false);
     }
