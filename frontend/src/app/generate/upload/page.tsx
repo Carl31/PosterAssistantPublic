@@ -19,8 +19,6 @@ import { getAuth, onAuthStateChanged, User } from 'firebase/auth'
 import LoadingPage from '@/components/LoadingPage'
 import Spinner from '@/components/Spinner'
 import { Archivo_Black } from 'next/font/google'
-import Notification from '@/components/Notification'
-import { notify } from '@/utils/notify'
 
 const archivoBlack = Archivo_Black({
   weight: '400',
