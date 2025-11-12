@@ -204,6 +204,10 @@ export default function IdentifyVehicleStep() {
 
       if (data.status === 'plate_not_found_in_carjam') {
           notify('info', `Plate ${detectedPlate} not found in CarJam. Please enter details manually.`);
+      } else if (data.status === 'no_credits_left') {
+        notify('error', `No credits left for CarJam API.`);
+      } else if (data.status === 'no_plate_provided') {
+        notify('error', `Plate ${detectedPlate} not provided.`);
       } else {
       updateCarDetailsFromApiResponse(data)
       updateCarJamData(data)
@@ -356,7 +360,7 @@ export default function IdentifyVehicleStep() {
               </div>
 
               <button
-                      disabled={(!geminiChecked && !manualInputClicked && !loading) || loading || !selectedTemplate || !userImgThumbDownloadUrl}
+                      disabled={manualInputClicked || geminiChecked || loading || !selectedTemplate || !userImgThumbDownloadUrl}
                     onClick={() => {
                          setUseAI(false);
                            setManualInputClicked(true)
@@ -372,7 +376,7 @@ export default function IdentifyVehicleStep() {
                                     {'Manually Input Car Details'}
                                 </button>
 
-              {(geminiChecked || !useAI || carJamClicked) && (
+              {(geminiChecked || manualInputClicked || carJamClicked) && (
                 <div className="mt-4 space-y-2 w-full">
                   <label className="block">Make</label>
                   <input
@@ -465,9 +469,8 @@ export default function IdentifyVehicleStep() {
                   Use CarJam
                 </button>
                 <ul className="mt-2 text-xs text-gray-400 list-disc list-outside pl-5 text-left leading-snug">
-                  <li>Needs number plate visible</li>
-                  <li>100% accurate</li>
                   <li>Only works in NZ</li>
+                  <li>100% accurate</li>
                 </ul>
               </div>
             </div>

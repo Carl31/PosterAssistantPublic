@@ -18,6 +18,8 @@ import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from "framer-motion";
 import { Archivo_Black } from "next/font/google";
 import TemplateKnob from '@/components/TemplateKnob'
+import Notification from '@/components/Notification'
+import { notify } from '@/utils/notify'
 
 const archivoBlack = Archivo_Black({
     weight: "400", // Archivo Black only has 400
@@ -26,7 +28,7 @@ const archivoBlack = Archivo_Black({
 
 export default function SelectTemplatePage() {
     const [templates, setTemplates] = useState<Template[]>([])
-    const { selectedTemplate, setSelectedTemplate, setInstagramHandle, userImgDownloadUrl, templateIndex, setTemplateIndex, setGeminiChecked, setCarDetails } = usePosterWizard()
+    const { selectedTemplate, setSelectedTemplate, setInstagramHandle, userImgDownloadUrl, templateIndex, setTemplateIndex, setGeminiChecked, setCarDetails, credits, setCredits } = usePosterWizard()
     const { user } = useAuth()
     const [favoriteTemplates, setFavoriteTemplates] = useState<string[]>([])
     const [loading, setLoading] = useState(false)
@@ -99,6 +101,23 @@ export default function SelectTemplatePage() {
         router.push('/generate/upload')
     }
 
+    useEffect(() => {
+        if (!hasNotifiedRef.current) {
+            if (credits.posterGen == null) {
+                setTimeout(() => {
+                    if (credits.posterGen != null) {
+                        notify("info", `You have ${credits.posterGen} credits left.`);
+                        hasNotifiedRef.current = true;
+                    }
+                }, 1000);
+            } else {
+                notify("info", `You have ${credits.posterGen} credits left.`);
+                hasNotifiedRef.current = true;
+            }
+        }
+    }, [credits.posterGen])
+    const hasNotifiedRef = useRef(false);
+
     // Load all templates
     useEffect(() => {
         const fetchTemplates = async () => {
@@ -120,6 +139,7 @@ export default function SelectTemplatePage() {
             const userRef = doc(db, 'users', user.uid)
             const userSnap = await getDoc(userRef)
             const data = userSnap.data()
+            setCredits(data?.credits)
             setFavoriteTemplates(data?.settings?.favouriteTemplates || [])
             setInstagramHandle(data?.instagramHandle || '')
         }
@@ -163,6 +183,7 @@ export default function SelectTemplatePage() {
             transition={{ duration: 0.3 }}
         >
             <section id="select template" className="">
+                <Notification />
                 <div className="p-2 max-w-xl mx-auto pt-5">
                     <div className="border-3 border-blue-400 px-4 py-2 mb-9 flex flex-col items-center shadow-[0_0_14px_rgba(59,130,246,0.7)]">
                         <h1 className={`text-2xl text-gray-200 ${archivoBlack.className}`}>

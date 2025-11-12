@@ -29,13 +29,26 @@ export const fetchPlateWithCarJam = functions
         const decodedToken = await admin.auth().verifyIdToken(idToken);
         console.log("User ID:", decodedToken.uid);
 
+        // Check if plate exists
         const {plate} = req.body as { plate: string };
-        if (! plate ) throw new functions.https.HttpsError("invalid-argument", "plate required");
-
-
+        if (!plate) return res.status(200).json({status: "no_plate_provided"});
+        // if (! plate ) throw new functions.https.HttpsError("invalid-argument", "plate required");
         // const plate = "L0DI";
         console.log("Plate:", plate);
-        if (!plate) return res.status(200).json({status: "plate_not_found_by_gemini"});
+
+
+        // User credit update
+        const userRef = admin.firestore().collection("users").doc(decodedToken.uid);
+        const userSnap = await userRef.get();
+
+        const remaining = userSnap.get("credits.carJam") ?? 0;
+        if (remaining <= 0) return res.status(200).json({status: "no_credits_left"});
+
+        // Deduct 1 credit atomically
+        await userRef.update({
+          "credits.carJam": admin.firestore.FieldValue.increment(-1),
+        });
+
 
         const url = `https://www.carjam.co.nz/a/vehicle:abcd?key=${key}&plate=${plate}&mvr=0`;
 

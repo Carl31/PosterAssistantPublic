@@ -49,6 +49,18 @@ export const generatePosterOnJobCreate = functions
         status: "in-progress",
       });
 
+      // User credit update
+      const userRef = admin.firestore().collection("users").doc(uid);
+      const userSnap = await userRef.get();
+
+      const remaining = userSnap.get("credits.posterGen") ?? 0;
+      if (remaining <= 0) throw new functions.https.HttpsError("resource-exhausted", "No credits left");
+
+      // Deduct 1 credit atomically
+      await userRef.update({
+        "credits.posterGen": admin.firestore.FieldValue.increment(-1),
+      });
+
       // ✅ 2. Generate poster
       const imageBuffer = await renderPoster({
         psdUrl,

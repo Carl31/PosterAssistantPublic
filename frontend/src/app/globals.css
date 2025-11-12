@@ -117,3 +117,13 @@ body {
   --tw-shadow: 0 10px 20px -8px rgba(0, 0, 0, 0.7); /* increase opacity */
   box-shadow: var(--tw-shadow);
 }
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+
+.animate-shake {
+  animation: shake 0.5s;
+}

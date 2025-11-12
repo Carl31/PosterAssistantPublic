@@ -6,6 +6,7 @@
 import React, { createContext, useContext, useState } from 'react'
 import { Template } from '@/types/template'
 import { useEffect } from 'react';
+import { Credit } from '@/types/credit'
 
 type CarDetails = {
   make: string
@@ -38,6 +39,8 @@ type PosterWizardContextType = {
   setTemplateIndex: (index: number) => void
   useAI: boolean
   setUseAI: (value: boolean) => void
+  credits: Credit
+  setCredits: (credit: Credit) => void
 }
 
 export type PosterWizardState = {
@@ -64,6 +67,7 @@ export const PosterWizardProvider = ({ children }: { children: React.ReactNode }
   const [progress, setProgress] = useState<string | null>("Starting...")
   const [templateIndex, setTemplateIndex] = useState(0)
   const [useAI, setUseAI] = useState(true)
+  const [credits, setCredits] = useState<Credit>()
 
   useEffect(() => {
     setState({
@@ -98,7 +102,9 @@ return (
     templateIndex,
     setTemplateIndex,
     useAI,
-    setUseAI
+    setUseAI,
+    credits : credits ?? {} as Credit,
+    setCredits
   }}>
     {children}
   </PosterWizardContext.Provider>

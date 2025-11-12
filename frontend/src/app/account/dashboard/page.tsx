@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/firebase/client'
 import { useState, useEffect } from 'react'
+import { Credit } from '@/types/credit'
+import Notification from '@/components/Notification'
+import { notify } from '@/utils/notify'
 
 import { Anton } from 'next/font/google';
 const anton = Anton({
@@ -20,6 +23,7 @@ export default function DashboardPage() {
   const router = useRouter()
   const [displayName, setDisplayName] = useState('')
   const [loading, setLoading] = useState(false)
+  const [credits, setCredits] = useState({} as Credit)
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -28,6 +32,7 @@ export default function DashboardPage() {
       const userRef = doc(db, 'users', user.uid)
       const userSnap = await getDoc(userRef)
       const data = userSnap.data()
+      setCredits(data?.credits)
       // console.log(data)
       setDisplayName(data?.displayName || []) // if needing more user data, fetch it here too.
       setLoading(false)
@@ -36,10 +41,27 @@ export default function DashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
+  const handleCreatePoster = async () => {
+    if (!user) {
+      router.push('/login')
+    }
+
+    console.log("Credits:", credits)
+    if (credits.posterGen <= 0) {
+      notify('error', 'You have no credits left.')
+      return
+    } else if (credits.posterGen > 0) {
+      //alert("You have " + credits.posterGen + " credits left.")
+    }
+
+    router.push('/generate/upload')
+  }
+
   if (!user || loading) return <div className="p-8">Loading...</div>
 
   return (
     <div className="p-4 sm:p-6 md:p-8 mx-auto w-full max-w-3xl">
+      <Notification />
       <div
         className="flex flex-col items-center 
     relative 
@@ -66,7 +88,18 @@ export default function DashboardPage() {
       {/* Button container */}
       <div className="flex flex-col gap-4 mb-2 w-full max-w-2xl mx-auto">
         <button
-          onClick={() => router.replace("/generate/upload")}
+          onClick={() => {
+            if (credits.posterGen <= 0) {
+              const btn = document.getElementById("createPosterBtn");
+              if (btn) {
+                btn.classList.add("animate-shake");
+                setTimeout(() => btn.classList.remove("animate-shake"), 500);
+              }
+              handleCreatePoster();
+            }
+            handleCreatePoster();
+          }}
+          id="createPosterBtn"
           className="relative inline-flex items-center justify-center p-0.5 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group w-full bg-gradient-to-br from-cyan-500 to-blue-500 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-cyan-200 dark:focus:ring-cyan-800"
         >
           <span className="relative w-full px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent flex flex-col items-center">
