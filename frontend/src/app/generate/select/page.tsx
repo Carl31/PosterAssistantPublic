@@ -28,7 +28,7 @@ const archivoBlack = Archivo_Black({
 
 export default function SelectTemplatePage() {
     const [templates, setTemplates] = useState<Template[]>([])
-    const { selectedTemplate, setSelectedTemplate, setInstagramHandle, userImgDownloadUrl, templateIndex, setTemplateIndex, setGeminiChecked, setCarDetails, credits, setCredits } = usePosterWizard()
+    const { selectedTemplate, setSelectedTemplate, setInstagramHandle, userImgThumbDownloadUrl, templateIndex, setTemplateIndex, setGeminiChecked, setCarDetails, credits, setCredits } = usePosterWizard()
     const { user } = useAuth()
     const [favoriteTemplates, setFavoriteTemplates] = useState<string[]>([])
     const [loading, setLoading] = useState(false)
@@ -200,9 +200,9 @@ export default function SelectTemplatePage() {
                     >
                         <div className="relative w-full max-w-[600px] aspect-[3/4] rounded-md overflow-hidden shadow-lg">
                             {/* User's uploaded image — STATIC */}
-                            {userImgDownloadUrl && (
+                            {userImgThumbDownloadUrl && (
                                 <img
-                                    src={userImgDownloadUrl}
+                                    src={userImgThumbDownloadUrl}
                                     alt="Preview"
                                     className="absolute inset-0 w-full h-full object-cover pointer-events-none"
                                 />
