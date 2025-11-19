@@ -244,6 +244,7 @@ export default function UploadImageStep() {
 
       setuserImgDownloadUrl(fullUrl)
       setuserImgThumbDownloadUrl(thumbUrl)
+      await new Promise(r => setTimeout(r, 0))
       router.push('/generate/select?upload=true')
     } catch (e) {
       console.error('Upload failed', e)
