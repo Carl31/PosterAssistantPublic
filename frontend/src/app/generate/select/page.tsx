@@ -45,9 +45,6 @@ export default function SelectTemplatePage() {
     const [showHeart, setShowHeart] = useState(false);
     const lastTap = useRef(0);
 
-    const localThumb = sessionStorage.getItem('localThumb')
-    const src = localThumb && localThumb !== 'null' ? localThumb : userImgThumbDownloadUrl || undefined
-
     const handleDoubleTap = () => {
         if (!currentTemplate) return;
         const now = Date.now();
@@ -203,9 +200,9 @@ export default function SelectTemplatePage() {
                     >
                         <div className="relative w-full max-w-[600px] aspect-[3/4] rounded-md overflow-hidden shadow-lg">
                             {/* User's uploaded image — STATIC */}
-                            {(src) && (
+                            {userImgThumbDownloadUrl && (
                                 <img
-                                    src={src}
+                                    src={userImgThumbDownloadUrl}
                                     alt="Preview"
                                     className="absolute inset-0 w-full h-full object-cover pointer-events-none"
                                 />

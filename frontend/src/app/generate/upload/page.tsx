@@ -216,44 +216,100 @@ export default function UploadImageStep() {
   // ---------- Upload ----------
   const handleImageUpload = async () => {
     if (!image || !auth.currentUser || !croppedAreaPixels || !previewUrl) return
+
     setLoading(true)
     const user = auth.currentUser
+
     try {
+      // crop + resize
       const cropped = await getCroppedImg(previewUrl, croppedAreaPixels)
       const [fullBlob, thumbBlob] = await Promise.all([
         resizeImage(cropped, 2000, 0.85),
         resizeImage(cropped, 800, 0.7),
       ])
 
-      const thumbLocal = URL.createObjectURL(thumbBlob);
-      sessionStorage.setItem('localThumb', thumbLocal)
-
+      // filenames
       const ts = Date.now()
       const base = `${ts}_${image.name.replace(/\s+/g, '_')}`
-      const fullRef = ref(storage, `user_uploads/${user.uid}/${base}`)
-      const thumbRef = ref(
-        storage,
-        `user_uploads/${user.uid}/${base.replace(/\.(?=[^.]+$)/, '_thumb.')}`
-      )
+      const fullPath = `user_uploads/${user.uid}/${base}`
+      const thumbPath = `user_uploads/${user.uid}/${base.replace(/\.(?=[^.]+$)/, '_thumb.')}`
 
+      const fullRef = ref(storage, fullPath)
+      const thumbRef = ref(storage, thumbPath)
+
+      // upload both fast
       const [fullSnap, thumbSnap] = await Promise.all([
         uploadBytes(fullRef, fullBlob),
         uploadBytes(thumbRef, thumbBlob),
       ])
 
-      const [fullUrl, thumbUrl] = await Promise.all([
-        getDownloadURL(fullSnap.ref),
-        getDownloadURL(thumbSnap.ref),
-      ])
-
+      // full URL always resolves immediately
+      const fullUrl = await getDownloadURL(fullSnap.ref)
       setuserImgDownloadUrl(fullUrl)
-      setuserImgThumbDownloadUrl(thumbUrl)
+
+      // thumbnail requires the old reliable retry loop
+      let retries = 0
+      const maxRetries = 3
+      const delay = 2000
+
+      while (true) {
+        try {
+          await new Promise(r => setTimeout(r, delay))
+          const thumbUrl = await getDownloadURL(thumbRef)
+          setuserImgThumbDownloadUrl(thumbUrl)
+          break
+        } catch (e) {
+          retries++
+          if (retries > maxRetries) throw e
+        }
+      }
+
       router.push('/generate/select?upload=true')
     } catch (e) {
-      console.error('Upload failed', e)
+      console.error('Upload failed:', e)
       alert('Image upload failed.')
     }
   }
+
+
+
+
+  // const handleImageUpload = async () => {
+  //   if (!image || !auth.currentUser || !croppedAreaPixels || !previewUrl) return
+  //   setLoading(true)
+  //   const user = auth.currentUser
+  //   try {
+  //     const cropped = await getCroppedImg(previewUrl, croppedAreaPixels)
+  //     const [fullBlob, thumbBlob] = await Promise.all([
+  //       resizeImage(cropped, 2000, 0.85),
+  //       resizeImage(cropped, 800, 0.7),
+  //     ])
+  //     const ts = Date.now()
+  //     const base = `${ts}_${image.name.replace(/\s+/g, '_')}`
+  //     const fullRef = ref(storage, `user_uploads/${user.uid}/${base}`)
+  //     const thumbRef = ref(
+  //       storage,
+  //       `user_uploads/${user.uid}/${base.replace(/\.(?=[^.]+$)/, '_thumb.')}`
+  //     )
+
+  //     const [fullSnap, thumbSnap] = await Promise.all([
+  //       uploadBytes(fullRef, fullBlob),
+  //       uploadBytes(thumbRef, thumbBlob),
+  //     ])
+
+  //     const [fullUrl, thumbUrl] = await Promise.all([
+  //       getDownloadURL(fullSnap.ref),
+  //       getDownloadURL(thumbSnap.ref),
+  //     ])
+
+  //     setuserImgDownloadUrl(fullUrl)
+  //     setuserImgThumbDownloadUrl(thumbUrl)
+  //     router.push('/generate/select?upload=true')
+  //   } catch (e) {
+  //     console.error('Upload failed', e)
+  //     alert('Image upload failed.')
+  //   }
+  // }
 
   // ---------- Render ----------
   if (authLoading) return <p>Authenticating...</p>
