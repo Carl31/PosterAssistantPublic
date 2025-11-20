@@ -56,6 +56,9 @@ export default function IdentifyVehicleStep() {
   const [detailsFromCarJam, setDetailsFromCarJam] = useState({ make: '', model: '', year: '' })
   const [detailsFromAI, setDetailsFromAI] = useState({ make: '', model: '', year: '' })
 
+  const localThumb = sessionStorage.getItem('localThumb')
+  const src = localThumb && localThumb !== 'null' ? localThumb : userImgThumbDownloadUrl || undefined
+
   // Navigation
   const handleBack = () => router.push('/generate/select')
 
@@ -323,10 +326,10 @@ export default function IdentifyVehicleStep() {
             </h1>
           </div>
 
-          {userImgThumbDownloadUrl && (
+          {src && (
             <div className="w-full aspect-[3/4] relative shadow-lg overflow-hidden">
               <img
-                src={userImgThumbDownloadUrl!}
+                src={src!}
                 alt="Preview"
                 className="absolute inset-0 w-full h-full object-cover"
               />
