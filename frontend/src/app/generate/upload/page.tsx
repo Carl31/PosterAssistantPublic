@@ -224,6 +224,10 @@ export default function UploadImageStep() {
         resizeImage(cropped, 2000, 0.85),
         resizeImage(cropped, 800, 0.7),
       ])
+
+      const thumbLocal = URL.createObjectURL(thumbBlob);
+      sessionStorage.setItem('localThumb', thumbLocal)
+
       const ts = Date.now()
       const base = `${ts}_${image.name.replace(/\s+/g, '_')}`
       const fullRef = ref(storage, `user_uploads/${user.uid}/${base}`)
