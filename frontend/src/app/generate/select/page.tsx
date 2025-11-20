@@ -20,6 +20,13 @@ import { Archivo_Black } from "next/font/google";
 import TemplateKnob from '@/components/TemplateKnob'
 import Notification from '@/components/Notification'
 import { notify } from '@/utils/notify'
+import {
+  getStorage,
+  ref,
+  uploadBytes,
+  getDownloadURL,
+  listAll,
+} from 'firebase/storage'
 
 const archivoBlack = Archivo_Black({
     weight: "400", // Archivo Black only has 400
@@ -44,6 +51,8 @@ export default function SelectTemplatePage() {
 
     const [showHeart, setShowHeart] = useState(false);
     const lastTap = useRef(0);
+
+    const storage = getStorage()
 
     const handleDoubleTap = () => {
         if (!currentTemplate) return;
@@ -117,6 +126,42 @@ export default function SelectTemplatePage() {
         }
     }, [credits.posterGen])
     const hasNotifiedRef = useRef(false);
+
+    // thumbPath: the path in Firebase Storage
+    // userImgThumbDownloadUrl: initial URL (from context), may be invalid early
+    // storage: firebase storage instance
+
+    const [stableThumbUrl, setStableThumbUrl] = useState<string | null>(null)
+
+    useEffect(() => {
+        if (!userImgThumbDownloadUrl) return
+
+        let cancelled = false
+        let attempts = 0
+        const maxAttempts = 5
+        const delay = 1500 // 1.5 seconds
+
+        const tryResolve = async () => {
+            if (cancelled) return
+
+            try {
+                const url = await getDownloadURL(ref(storage, userImgThumbDownloadUrl))
+                if (!cancelled) setStableThumbUrl(url)
+            } catch (_) {
+                attempts++
+                if (attempts <= maxAttempts && !cancelled) {
+                    setTimeout(tryResolve, delay)
+                }
+            }
+        }
+
+        tryResolve()
+
+        return () => {
+            cancelled = true
+        }
+    }, [userImgThumbDownloadUrl])
+
 
     // Load all templates
     useEffect(() => {
@@ -200,9 +245,9 @@ export default function SelectTemplatePage() {
                     >
                         <div className="relative w-full max-w-[600px] aspect-[3/4] rounded-md overflow-hidden shadow-lg">
                             {/* User's uploaded image — STATIC */}
-                            {userImgThumbDownloadUrl && (
+                            {stableThumbUrl && (
                                 <img
-                                    src={userImgThumbDownloadUrl}
+                                    src={stableThumbUrl}
                                     alt="Preview"
                                     className="absolute inset-0 w-full h-full object-cover pointer-events-none"
                                 />
