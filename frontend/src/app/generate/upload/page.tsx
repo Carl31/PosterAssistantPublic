@@ -221,14 +221,13 @@ export default function UploadImageStep() {
     const user = auth.currentUser
 
     try {
-      // crop + resize
       const cropped = await getCroppedImg(previewUrl, croppedAreaPixels)
+
       const [fullBlob, thumbBlob] = await Promise.all([
         resizeImage(cropped, 2000, 0.85),
         resizeImage(cropped, 800, 0.7),
       ])
 
-      // filenames
       const ts = Date.now()
       const base = `${ts}_${image.name.replace(/\s+/g, '_')}`
       const fullPath = `user_uploads/${user.uid}/${base}`
@@ -237,17 +236,16 @@ export default function UploadImageStep() {
       const fullRef = ref(storage, fullPath)
       const thumbRef = ref(storage, thumbPath)
 
-      // upload both fast
-      const [fullSnap, thumbSnap] = await Promise.all([
+      // Upload both — only need the fullSnap
+      const [fullSnap] = await Promise.all([
         uploadBytes(fullRef, fullBlob),
         uploadBytes(thumbRef, thumbBlob),
       ])
 
-      // full URL always resolves immediately
       const fullUrl = await getDownloadURL(fullSnap.ref)
       setuserImgDownloadUrl(fullUrl)
 
-      // thumbnail requires the old reliable retry loop
+      // Retry loop for thumbnail (old working behaviour)
       let retries = 0
       const maxRetries = 3
       const delay = 2000
@@ -270,6 +268,7 @@ export default function UploadImageStep() {
       alert('Image upload failed.')
     }
   }
+
 
 
 
