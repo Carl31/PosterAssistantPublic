@@ -48,6 +48,7 @@ export default function DashboardPage() {
 
     console.log("Credits:", credits)
     if (credits.posterGen <= 0) {
+router.push('/generate/upload')
       notify('error', 'You have no credits left.')
       return
     } else if (credits.posterGen > 0) {
