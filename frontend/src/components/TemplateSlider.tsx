@@ -6,7 +6,7 @@ interface TemplateSliderProps {
   length: number;      // number of templates in filtered array
   index: number;       // current template index
   onSwipe: (direction: number) => void; // called with -1 or 1
-  selectedStyle: String;
+  selectedStyle: string;
 }
 
 export default function TemplateSlider({ length, index, onSwipe, selectedStyle }: TemplateSliderProps) {

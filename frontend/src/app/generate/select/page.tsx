@@ -284,7 +284,7 @@ export default function SelectTemplatePage() {
                             length={filteredTemplates.length}
                             index={index}
                             onSwipe={paginate}
-                            selectedStyle={selectedStyle}
+                            selectedStyle={selectedStyle.toString()}
                         />
                     ) : selectedStyle === "Favourites" ? (
                         <div className="text-sm text-gray-400 text-center mt-2 mb-5">
