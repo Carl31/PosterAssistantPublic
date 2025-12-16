@@ -20,6 +20,7 @@ import { Archivo_Black } from "next/font/google";
 import TemplateKnob from '@/components/TemplateKnob'
 import Notification from '@/components/Notification'
 import { notify } from '@/utils/notify'
+import TemplateSlider from '@/components/TemplateSlider'
 
 const archivoBlack = Archivo_Black({
     weight: "400", // Archivo Black only has 400
@@ -40,10 +41,27 @@ export default function SelectTemplatePage() {
 
     const [index, setIndex] = useState(templateIndex);
     const [direction, setDirection] = useState(0); // -1 left, 1 right
-    const currentTemplate = templates[index];
+    //const currentTemplate = templates[index];
+
+    const STYLES = ["Brands", "Minimalist", "Magazine", "Events", "Favourites"]
+    const [selectedStyle, setSelectedStyle] = useState<String>("Brands")
+    const filteredTemplates = templates.filter(t => {
+        if (selectedStyle === "Favourites") {
+            return favoriteTemplates.includes(t.id);
+        }
+        return t.style === selectedStyle;
+    });
+    const active = "px-4 py-1 rounded-lg bg-blue-600 text-white font-semibold";
+    const inactive = "px-4 py-1 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300";
+
+    const currentTemplate = filteredTemplates[index];
 
     const [showHeart, setShowHeart] = useState(false);
     const lastTap = useRef(0);
+
+    useEffect(() => {
+        setIndex(0);
+    }, [selectedStyle, filteredTemplates.length]);
 
     const handleDoubleTap = () => {
         if (!currentTemplate) return;
@@ -65,10 +83,11 @@ export default function SelectTemplatePage() {
         : false;
 
     const paginate = (newDirection: number) => {
-        const newIndex = (index + newDirection + templates.length) % templates.length;
+        if (!filteredTemplates.length) return;
+        const newIndex = (index + newDirection + filteredTemplates.length) % filteredTemplates.length;
         setDirection(newDirection);
         setIndex(newIndex);
-        setSelectedTemplate(templates[newIndex]);
+        setSelectedTemplate(filteredTemplates[newIndex]);
     };
 
 
@@ -255,11 +274,50 @@ export default function SelectTemplatePage() {
                     </div>
 
 
-                    <TemplateKnob
-                        templates={templates}
+                    {/* <TemplateKnob
+                        templates={filteredTemplates}
                         index={index}
                         paginate={paginate}
-                    />
+                    /> */}
+                    {filteredTemplates.length > 0 ? (
+                        <TemplateSlider
+                            length={filteredTemplates.length}
+                            index={index}
+                            onSwipe={paginate}
+                            selectedStyle={selectedStyle}
+                        />
+                    ) : selectedStyle === "Favourites" ? (
+                        <div className="text-sm text-gray-400 text-center mt-2 mb-5">
+                            No favourites. Double tap a template to favourite!
+                        </div>
+                    ) : <div className="text-sm text-gray-400 text-center mt-2 mb-5">
+                        No templates here.
+                    </div>}
+
+                    <div className="flex overflow-x-auto snap-x gap-2 mt-2">
+                        {STYLES.map(style => {
+                            let className = style === selectedStyle ? active : inactive;
+
+                            // Override color for Favourites
+                            if (style === "Favourites") {
+                                className = style === selectedStyle
+                                    ? "px-4 py-1 rounded-lg bg-red-600 text-white font-semibold"
+                                    : "px-4 py-1 rounded-lg bg-red-200 text-red-800 hover:bg-red-300";
+                            }
+
+                            return (
+                                <button
+                                    key={style}
+                                    onClick={() => setSelectedStyle(style)}
+                                    className={className}
+                                >
+                                    {style}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+
 
                     {/* Floating heart animation */}
                     <AnimatePresence>
@@ -279,7 +337,7 @@ export default function SelectTemplatePage() {
                     </AnimatePresence>
 
                     {/* Permanent toggle heart */}
-                    <div className="flex flex-col items-center w-full h-[2rem]">
+                    {/* <div className="flex flex-col items-center w-full h-[2rem]">
                         {isFavorite && (
                             <button
                                 onClick={() => currentTemplate && toggleFavorite(currentTemplate.id)}
@@ -288,7 +346,7 @@ export default function SelectTemplatePage() {
                                 ❤️
                             </button>
                         )}
-                    </div>
+                    </div> */}
                 </div>
 
                 <div className="flex justify-between">

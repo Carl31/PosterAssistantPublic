@@ -7,5 +7,6 @@ export type Template = {
   createdBy: string
   isActive: boolean
   supportedTexts: string[]
+  style: string
   // etc. Can add more here if wanting to use them on this page.
 }
