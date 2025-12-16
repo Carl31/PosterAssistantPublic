@@ -45,7 +45,7 @@ export default function SelectTemplatePage() {
     //const currentTemplate = templates[index];
 
     const STYLES = ["Brands", "Minimalist", "Magazine", "Events", "Favourites"]
-    const [selectedStyle, setSelectedStyle] = useState<String>("Brands")
+    const [selectedStyle, setSelectedStyle] = useState<string>("Brands")
     const filteredTemplates = templates.filter(t => {
         if (selectedStyle === "Favourites") {
             return favoriteTemplates.includes(t.id);
