@@ -16,7 +16,7 @@ import LoadingPage from '@/components/LoadingPage'
 import ErrorPage from '@/components/ErrorPage'
 import Notification from '@/components/Notification'
 import { notify } from '@/utils/notify'
-import { carData, modelExists } from '@/pages/api/carData'
+import { carData, modelExists } from '@/utils/carData'
 
 const archivoBlack = Archivo_Black({
   weight: '400',
