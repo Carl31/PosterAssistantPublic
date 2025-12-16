@@ -15,7 +15,7 @@
     "firebase-functions": "^6.3.2",
     "framer-motion": "^12.18.1",
     "ldrs": "^1.1.7",
-    "next": "^15.3.5",
+    "next": "^15.3.6",
     "qrcode.react": "^4.2.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
