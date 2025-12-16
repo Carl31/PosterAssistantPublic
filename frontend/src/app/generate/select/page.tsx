@@ -31,7 +31,8 @@ export default function SelectTemplatePage() {
     const [templates, setTemplates] = useState<Template[]>([])
     const { selectedTemplate, setSelectedTemplate, setInstagramHandle, userImgThumbDownloadUrl, templateIndex, setTemplateIndex, setGeminiChecked, setCarDetails, credits, setCredits } = usePosterWizard()
     const { user } = useAuth()
-    const [favoriteTemplates, setFavoriteTemplates] = useState<String[]>([])
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    const [favoriteTemplates, setFavoriteTemplates] = useState<string[]>([])
     const [loading, setLoading] = useState(false)
     const router = useRouter()
     const { state } = usePosterWizard()
