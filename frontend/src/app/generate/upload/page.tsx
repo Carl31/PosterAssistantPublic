@@ -377,6 +377,7 @@ export default function UploadImageStep() {
                       crop={crop}
                       zoom={zoom}
                       rotation={rotation}
+                      onRotationChange={setRotation}
                       aspect={5 / 7}
                       onCropChange={setCrop}
                       onZoomChange={setZoom}
