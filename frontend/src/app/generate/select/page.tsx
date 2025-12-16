@@ -191,7 +191,8 @@ export default function SelectTemplatePage() {
                         </h1>
                     </div>
 
-                    <p className="text-sm text-gray-500 mx-auto mb-2">**Placeholder text only**</p>
+                    <p className="text-sm text-gray-500 mx-auto">**Placeholder text only**</p>
+                    <p className="text-sm text-gray-500 mx-auto mb-2">**Output will be higher quality**</p>
 
                     {/* WRAPPER for double-tap (no drag here) */}
                     <div

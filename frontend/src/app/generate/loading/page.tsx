@@ -55,7 +55,7 @@ export default function LoadingPage() {
                 } else if (data.status === "error") {
                     unsubscribe();
                     console.log("Error generating poster:", data.error);
-                    // TODO: redirect to dedicated error page?
+                    throw new Error("Error generating poster:", data.error);
                 } else if (data.status === "queued") {
                     // Frontend to ignore this
                     console.log("Job queued:", data.progress);
