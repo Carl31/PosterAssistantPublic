@@ -127,3 +127,43 @@ body {
 .animate-shake {
   animation: shake 0.5s;
 }
+
+.active {
+  background: linear-gradient(to right, #0095ff, #0062cc);
+  color: white;
+  padding: 6px;
+  border-radius: 8px;
+  font-weight: bold;
+}
+
+.inactive {
+  /* background: linear-gradient(to right, #b4b6ba, #7b7b7b); */
+  border: 2px solid #ccc;
+  padding: 4px 8px;
+  border-radius: 4px;
+  color: #f7f7f7;
+  padding: 6px;
+  border-radius: 8px;
+}
+
+.inactive:hover {
+  background: linear-gradient(to right, #b4b6ba, #7b7b7b) darken(40%);
+}
+
+.activeFavourite {
+  background: linear-gradient(to right, #e90000, #870000);
+  color: white;
+  padding: 4px;
+  border-radius: 8px;
+  font-weight: bold;
+}
+
+.inactiveFavourite {
+  /* background: linear-gradient(to right, #ffe0e0, #ffcccc); */
+  border: 2px solid #d00;
+  padding: 4px;
+  border-radius: 8px;
+  color: #da3e3e;
+  padding: 6px;
+  border-radius: 8px;
+}

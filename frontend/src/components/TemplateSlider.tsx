@@ -30,12 +30,13 @@ export default function TemplateSlider({ length, index, onSwipe, selectedStyle }
   const indicatorPosition = indicatorWidth * index;
 
   // Conditional color
-  const indicatorColor = selectedStyle === "Favourites" ? "#8B0000" : "#2563EB"; // dark red vs blue
+  const indicatorColor = "#0095ff";
+  //const indicatorColor = selectedStyle === "Favourites" ? "#910a00" : "#0095ff"; // dark red vs blue
 
   return (
     <div
       ref={sliderRef}
-      className="relative w-full h-2 bg-blue-200 rounded-full mt-4 touch-none"
+      className="relative w-full h-2 bg-blue-900 rounded-full mt-4 touch-none"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >

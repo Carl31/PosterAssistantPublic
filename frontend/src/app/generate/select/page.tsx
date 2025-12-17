@@ -44,7 +44,7 @@ export default function SelectTemplatePage() {
     const [direction, setDirection] = useState(0); // -1 left, 1 right
     //const currentTemplate = templates[index];
 
-    const STYLES = ["Brands", "Minimalist", "Magazine", "Events", "Favourites"]
+    const STYLES = ["Brands", "Magazine", "Events", "Favourites"]
     const [selectedStyle, setSelectedStyle] = useState<string>("Brands")
     const filteredTemplates = templates.filter(t => {
         if (selectedStyle === "Favourites") {
@@ -52,8 +52,6 @@ export default function SelectTemplatePage() {
         }
         return t.style === selectedStyle;
     });
-    const active = "px-4 py-1 rounded-lg bg-blue-600 text-white font-semibold";
-    const inactive = "px-4 py-1 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300";
 
     const currentTemplate = filteredTemplates[index];
 
@@ -297,13 +295,13 @@ export default function SelectTemplatePage() {
 
                     <div className="flex overflow-x-auto snap-x gap-2 mt-2">
                         {STYLES.map(style => {
-                            let className = style === selectedStyle ? active : inactive;
+                            let className = style === selectedStyle ? "active" : "inactive";
 
                             // Override color for Favourites
                             if (style === "Favourites") {
                                 className = style === selectedStyle
-                                    ? "px-4 py-1 rounded-lg bg-red-600 text-white font-semibold"
-                                    : "px-4 py-1 rounded-lg bg-red-200 text-red-800 hover:bg-red-300";
+                                    ? "activeFavourite"
+                                    : "inactiveFavourite";
                             }
 
                             return (
