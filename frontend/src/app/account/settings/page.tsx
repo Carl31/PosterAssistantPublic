@@ -7,7 +7,6 @@ import { doc, getDoc, getFirestore, updateDoc } from 'firebase/firestore'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { onAuthStateChanged } from 'firebase/auth'
-import { Changa } from 'next/font/google'
 
 export default function AccountSettingsPage() {
     const [email, setEmail] = useState<string | null>(null)
