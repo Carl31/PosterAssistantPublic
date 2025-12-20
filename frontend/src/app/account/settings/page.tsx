@@ -7,6 +7,7 @@ import { doc, getDoc, getFirestore, updateDoc } from 'firebase/firestore'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { onAuthStateChanged } from 'firebase/auth'
+import { Changa } from 'next/font/google'
 
 export default function AccountSettingsPage() {
     const [email, setEmail] = useState<string | null>(null)
@@ -19,6 +20,7 @@ export default function AccountSettingsPage() {
     const [showSavePopup, setShowSavePopup] = useState(false)
     const [showLogoutPopup, setShowLogoutPopup] = useState(false)
     const [pendingAction, setPendingAction] = useState<'back' | 'logout' | null>(null)
+    const [showOverlay, setShowOverlay] = useState(false)
 
     const router = useRouter()
     const auth = getAuth()
@@ -46,7 +48,12 @@ export default function AccountSettingsPage() {
         return () => unsubscribe()
     }, [])
 
-    const hasChanges = () => name !== originalName || instagramHandle !== originalInstagram
+    const hasChanges = () => name !== originalName || instagramHandle !== originalInstagram;
+
+    const isProfileComplete = (): boolean => {
+        return name.trim() !== '' && instagramHandle.trim() !== ''
+    }
+
 
     const handleSaveChanges = async () => {
         if (!auth.currentUser) return
@@ -68,23 +75,34 @@ export default function AccountSettingsPage() {
     }
 
     const handleBack = async () => {
+        if (!isProfileComplete()) {
+            setShowOverlay(true)
+            return
+        }
+
         if (hasChanges()) {
             setPendingAction('back')
             setShowSavePopup(true)
-        } else {
-            router.replace('/account/dashboard')
+            return
         }
+
+        router.replace('/account/dashboard')
     }
 
+
     const handleLogout = async () => {
+        if (!isProfileComplete()) {
+            setShowOverlay(true)
+            return
+        }
+
         if (hasChanges()) {
-            // Unsaved changes exist → show save popup first
             setPendingAction('logout')
             setShowSavePopup(true)
-        } else {
-            // No changes → show logout confirmation popup
-            setShowLogoutPopup(true)
+            return
         }
+
+        setShowLogoutPopup(true)
     }
 
     const handleConfirmSave = async () => {
@@ -100,6 +118,10 @@ export default function AccountSettingsPage() {
     }
 
     const handleDiscardSave = async () => {
+         if ((originalInstagram === '' || originalName === '') && hasChanges()) {
+            setShowOverlay(true)
+            return
+        }
         setShowSavePopup(false)
         if (pendingAction === 'logout') {
             // After saving changes, show logout confirmation popup
@@ -130,7 +152,7 @@ export default function AccountSettingsPage() {
 
             <div className="bg-gray-900 rounded-xl shadow-md p-4 space-y-3">
                 <div>
-                    <p className="text-sm text-gray-500">Name</p>
+                    <p className="text-sm text-gray-500">Username</p>
                     <input
                         type="text"
                         value={name}
@@ -170,7 +192,8 @@ export default function AccountSettingsPage() {
 
                 <div>
                     <p className="text-sm text-gray-500">Need help?</p>
-                    <p className="text-sm text-gray-500">Message the app discord server :)</p>
+                    <p className="text-sm text-gray-500">Message me on Instagram :)</p>
+                    <p className="text-sm text-gray-500">@sickshotsnz</p>
                 </div>
             </div>
 
@@ -247,6 +270,26 @@ export default function AccountSettingsPage() {
                             >
                                 Cancel
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* TUTORIAL OVERLAY */}
+            {showOverlay && (
+                <div
+                    className="fixed inset-0 z-50"
+                    onClick={() => setShowOverlay(false)}
+                >
+                    {/* Dark overlay */}
+                    <div className="absolute inset-0 bg-black/70" />
+
+                    {/* Message */}
+                    <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
+                        <div className="bg-gray-900 border border-cyan-500 rounded-xl px-6 py-4 max-w-sm text-white text-sm">
+                            Add your username and Instagram handle here.
+                            <br /><br />
+                            Your handle will appear on your posters!
                         </div>
                     </div>
                 </div>

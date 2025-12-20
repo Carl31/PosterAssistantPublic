@@ -41,6 +41,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                             favouriteTemplates: [],
                             displayMessage: 'If you like my poster, follow me on Instagram!',
                             toggleUseAI: true, // currently no use case for this
+                        },
+                        credits : {
+                            ai: 10,
+                            posterGen: 10,
+                            posterGenAI: 10,
                         }
                     })
                 }

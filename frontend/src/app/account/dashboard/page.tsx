@@ -1,10 +1,10 @@
 'use client'
 
 import { useAuth } from '@/context/AuthContext'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/firebase/client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Credit } from '@/types/credit'
 import Notification from '@/components/Notification'
 import { notify } from '@/utils/notify'
@@ -24,6 +24,53 @@ export default function DashboardPage() {
   const [displayName, setDisplayName] = useState('')
   const [loading, setLoading] = useState(false)
   const [credits, setCredits] = useState({} as Credit)
+
+
+  const searchParams = useSearchParams();
+  const showTutorialFlag = searchParams!.get('signup') === 'true';
+
+  const [tutorialStep, setTutorialStep] = useState<number | null>(
+    showTutorialFlag ? 0 : null
+  )
+
+  const createBtnRef = useRef<HTMLButtonElement | null>(null)
+  const postersBtnRef = useRef<HTMLButtonElement | null>(null)
+  const settingsBtnRef = useRef<HTMLButtonElement | null>(null)
+
+  const getHighlightStyle = (el: HTMLElement | null) => {
+    if (!el) return {}
+    const r = el.getBoundingClientRect()
+    return {
+      top: r.top + window.scrollY,
+      left: r.left + window.scrollX,
+      width: r.width,
+      height: r.height,
+    }
+  }
+
+  const stepConfig = [
+    {
+      text: 'Hey! Welcome to SickShotsAI.\nTap anywhere for a quick walk-through.',
+      highlight: null,
+      onNext: () => setTutorialStep(1),
+    },
+    {
+      text: 'This is how you make posters.',
+      highlight: createBtnRef.current,
+      onNext: () => setTutorialStep(2),
+    },
+    {
+      text: 'This is where you see your poster library.',
+      highlight: postersBtnRef.current,
+      onNext: () => setTutorialStep(3),
+    },
+    {
+      text: 'This is your account settings.\nWe’ll go there now so you can add your name and Instagram.',
+      highlight: settingsBtnRef.current,
+      onNext: () => router.replace('/account/settings'),
+    },
+  ]
+
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -99,6 +146,7 @@ export default function DashboardPage() {
             }
             handleCreatePoster();
           }}
+          ref={createBtnRef}
           id="createPosterBtn"
           className="relative inline-flex items-center justify-center p-0.5 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group w-full bg-gradient-to-br from-cyan-500 to-blue-500 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-cyan-200 dark:focus:ring-cyan-800"
         >
@@ -110,6 +158,7 @@ export default function DashboardPage() {
 
         <button
           onClick={() => router.replace("/account/posters")}
+          ref={postersBtnRef}
           className="relative inline-flex items-center justify-center p-0.5 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group w-full bg-gradient-to-br from-cyan-500 to-blue-500 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-cyan-200 dark:focus:ring-cyan-800"
         >
           <span className="relative w-full px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent flex flex-col items-center">
@@ -120,6 +169,7 @@ export default function DashboardPage() {
 
         <button
           onClick={() => router.replace("/account/settings")}
+          ref={settingsBtnRef}
           className="relative inline-flex items-center justify-center p-0.5 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group w-full bg-gradient-to-br from-cyan-500 to-blue-500 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-cyan-200 dark:focus:ring-cyan-800"
         >
           <span className="relative w-full px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent flex flex-col items-center">
@@ -129,8 +179,34 @@ export default function DashboardPage() {
         </button>
       </div>
 
+      {tutorialStep !== null && (
+        <div
+          className="fixed inset-0 z-50"
+          onClick={() => stepConfig[tutorialStep].onNext()}
+        >
+          {/* Dark overlay */}
+          <div className="absolute inset-0 bg-black/70" />
 
+          {/* Highlight cutout */}
+          {stepConfig[tutorialStep].highlight && (
+            <div
+              className="absolute rounded-xl border-2 border-cyan-400 pointer-events-none"
+              style={getHighlightStyle(stepConfig[tutorialStep].highlight)}
+            />
+          )}
+
+          {/* Text */}
+          <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
+            <div className="bg-gray-900 border border-cyan-500 rounded-xl px-6 py-4 max-w-sm text-white text-sm whitespace-pre-line">
+              {stepConfig[tutorialStep].text}
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   )
 }
+
+
+
