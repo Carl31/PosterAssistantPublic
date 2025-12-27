@@ -17,6 +17,7 @@ import ErrorPage from '@/components/ErrorPage'
 import Notification from '@/components/Notification'
 import { notify } from '@/utils/notify'
 import { carData, modelExists } from '@/utils/carData'
+import { Credit } from '@/types/credit'
 
 const archivoBlack = Archivo_Black({
   weight: '400',
@@ -36,6 +37,8 @@ export default function IdentifyVehicleStep() {
     setGeminiChecked,
     useAI,
     setUseAI,
+    credits, 
+    setCredits,
   } = usePosterWizard()
 
   const router = useRouter()
@@ -82,6 +85,7 @@ export default function IdentifyVehicleStep() {
       console.log('No image selected. Redirecting.')
       router.replace('/generate/upload')
     }
+    console.log(selectedTemplate?.name);
   }, [state, router])
 
   // Popups
@@ -91,7 +95,6 @@ export default function IdentifyVehicleStep() {
   const handleUseAi = () => {
     setShowOptionsPopup(false)
     detectCar()
-    setAiInputClicked(true)
   }
 
   const handleUseCarJam = async () => {
@@ -103,6 +106,15 @@ export default function IdentifyVehicleStep() {
     }
     
     setShowOptionsPopup(false)
+
+     if (credits.carJam <= 0) {
+      notify('error', 'You have no CarJam credits left.')
+      return
+    } else {
+      setCredits(prev => ({ ...prev, carJam: prev.carJam - 1 } as Credit)); // no reason to do this, as this only updates state. Not firestore.
+    }
+
+
     setPlateLoading(true)
     setShowPlatePopup(true)
 
@@ -273,6 +285,17 @@ export default function IdentifyVehicleStep() {
       return <ErrorPage text="User is not authenticated." />
     }
 
+    if (credits.ai <= 0) {
+      notify('error', 'You have no AI credits left.')
+      setGeminiLoading(false)
+      setLoading(false)
+      return
+    } else {
+      setCredits(prev => ({ ...prev, ai: prev.ai - 1 } as Credit)); // no reason to do this, as this only updates state. Not firestore.
+    }
+
+    setAiInputClicked(true)
+
     try {
       const token = await user.getIdToken()
       const response = await fetch(
@@ -294,12 +317,19 @@ export default function IdentifyVehicleStep() {
       }
 
       const result = await response.json()
+
+      if (result.status === 'no_credits_left') {
+        notify('error', 'You have no AI credits left.')
+        return
+      }
+
       updateCarDetailsFromApiResponse(result)
       updateAiData(result)
     } catch (error) {
       console.error('Error calling Cloud Function:', error)
       return <ErrorPage text="Error calling Gemini Cloud Function." />
     } finally {
+      console.log('Done detecting car.')
       setGeminiLoading(false)
       setLoading(false)
       setGeminiChecked(true)

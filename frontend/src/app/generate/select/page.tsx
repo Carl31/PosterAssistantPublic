@@ -99,15 +99,23 @@ export default function SelectTemplatePage() {
     }, [state, router])
 
     const handleNext = () => {
-        setTemplateIndex(index)
-        setSelectedTemplate(templates[index]);
+        setSelectedTemplate(currentTemplate);
         // if (selectedTemplate === null) {
         //     alert('No template selected');
         //     return
         // } else {
         //     router.push('/generate/identify')
         // }
-        router.push('/generate/identify')
+
+        if (selectedTemplate === null || selectedTemplate === undefined) {
+            alert('No template selected');
+            return
+        } else {
+            console.log(selectedStyle + ", " + selectedTemplate?.name);
+            router.push('/generate/identify')
+        }
+        
+        
     }
 
     const handleBack = () => {
@@ -119,22 +127,22 @@ export default function SelectTemplatePage() {
         router.push('/generate/upload')
     }
 
-    useEffect(() => {
-        if (!hasNotifiedRef.current) {
-            if (credits.posterGen == null) {
-                setTimeout(() => {
-                    if (credits.posterGen != null) {
-                        notify("info", `You have ${credits.posterGen} credits left.`);
-                        hasNotifiedRef.current = true;
-                    }
-                }, 1000);
-            } else {
-                notify("info", `You have ${credits.posterGen} credits left.`);
-                hasNotifiedRef.current = true;
-            }
-        }
-    }, [credits.posterGen])
-    const hasNotifiedRef = useRef(false);
+    // useEffect(() => {
+    //     if (!hasNotifiedRef.current) {
+    //         if (credits.posterGen == null) {
+    //             setTimeout(() => {
+    //                 if (credits.posterGen != null) {
+    //                     notify("info", `You have ${credits.posterGen} credits left.`);
+    //                     hasNotifiedRef.current = true;
+    //                 }
+    //             }, 1000);
+    //         } else {
+    //             notify("info", `You have ${credits.posterGen} credits left.`);
+    //             hasNotifiedRef.current = true;
+    //         }
+    //     }
+    // }, [credits.posterGen])
+    // const hasNotifiedRef = useRef(false);
 
     // Load all templates
     useEffect(() => {
@@ -307,7 +315,10 @@ export default function SelectTemplatePage() {
                             return (
                                 <button
                                     key={style}
-                                    onClick={() => setSelectedStyle(style)}
+                                    onClick={() => {
+                                        setSelectedStyle(style);
+                                        setSelectedTemplate(currentTemplate);
+                                    }}
                                     className={className}
                                 >
                                     {style}

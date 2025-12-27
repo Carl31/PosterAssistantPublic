@@ -40,7 +40,7 @@ type PosterWizardContextType = {
   useAI: boolean
   setUseAI: (value: boolean) => void
   credits: Credit
-  setCredits: (credit: Credit) => void
+  setCredits: React.Dispatch<React.SetStateAction<Credit>>
 }
 
 export type PosterWizardState = {
@@ -67,7 +67,11 @@ export const PosterWizardProvider = ({ children }: { children: React.ReactNode }
   const [progress, setProgress] = useState<string | null>("Starting...")
   const [templateIndex, setTemplateIndex] = useState(0)
   const [useAI, setUseAI] = useState(true)
-  const [credits, setCredits] = useState<Credit>()
+  const [credits, setCredits] = useState<Credit>({
+  carJam: 0,
+  ai: 0,
+  posterGen: 0,
+})
 
   useEffect(() => {
     setState({
@@ -103,7 +107,7 @@ return (
     setTemplateIndex,
     useAI,
     setUseAI,
-    credits : credits ?? {} as Credit,
+    credits,
     setCredits
   }}>
     {children}

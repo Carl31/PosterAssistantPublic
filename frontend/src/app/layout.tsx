@@ -6,7 +6,7 @@ import { AuthProvider } from '@/context/AuthContext'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Poster Assistant',
+  title: 'SickShotsAI',
   description: 'Create custom AI car posters',
 }
 

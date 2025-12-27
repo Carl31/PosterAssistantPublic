@@ -17,7 +17,7 @@ const Spinner = () => {
       stroke-length="0.25"
       bg-opacity="0.1"
       speed="1.2"
-      color="grey"
+      color="black"
     ></Square>
   );
 };

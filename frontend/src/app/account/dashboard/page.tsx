@@ -95,7 +95,7 @@ export default function DashboardPage() {
 
     console.log("Credits:", credits)
     if (credits.posterGen <= 0) {
-      notify('error', 'You have no credits left.')
+      notify('error', 'You have no poster credits left.')
       return
     } else if (credits.posterGen > 0) {
       //alert("You have " + credits.posterGen + " credits left.")
@@ -133,7 +133,7 @@ export default function DashboardPage() {
       </h1>
 
       {/* Button container */}
-      <div className="flex flex-col gap-4 mb-2 w-full max-w-2xl mx-auto">
+      <div className="flex flex-col gap-4 w-full max-w-2xl mx-auto">
         <button
           onClick={() => {
             if (credits.posterGen <= 0) {
@@ -142,9 +142,9 @@ export default function DashboardPage() {
                 btn.classList.add("animate-shake");
                 setTimeout(() => btn.classList.remove("animate-shake"), 500);
               }
-              handleCreatePoster();
             }
-            handleCreatePoster();
+            handleCreatePoster()
+            
           }}
           ref={createBtnRef}
           id="createPosterBtn"
@@ -155,6 +155,9 @@ export default function DashboardPage() {
             Make Poster
           </span>
         </button>
+        <p className="text-xs text-gray-300 mx-auto">
+          You have {credits.posterGen} poster credits left.
+        </p>
 
         <button
           onClick={() => router.replace("/account/posters")}

@@ -2,29 +2,43 @@
 
 'use client'
 
-import { getAuth, signOut, updateProfile } from 'firebase/auth'
-import { doc, getDoc, getFirestore, updateDoc } from 'firebase/firestore'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { onAuthStateChanged } from 'firebase/auth'
+import { getAuth, onAuthStateChanged, signOut, updateProfile } from 'firebase/auth'
+import { doc, getDoc, getFirestore, updateDoc } from 'firebase/firestore'
 
 export default function AccountSettingsPage() {
+    /* ---------------------------------------------------------------------
+       State: user identity
+    --------------------------------------------------------------------- */
     const [email, setEmail] = useState<string | null>(null)
     const [uid, setUid] = useState<string | null>(null)
-    const [name, setName] = useState<string>('')
-    const [instagramHandle, setInstagramHandle] = useState<string>('')
-    const [originalName, setOriginalName] = useState<string>('')
-    const [originalInstagram, setOriginalInstagram] = useState<string>('')
 
-    const [showSavePopup, setShowSavePopup] = useState(false)
+    /* ---------------------------------------------------------------------
+       State: editable profile fields
+    --------------------------------------------------------------------- */
+    const [name, setName] = useState('')
+    const [instagramHandle, setInstagramHandle] = useState('')
+
+    /* ---------------------------------------------------------------------
+       State: original values (used to detect unsaved changes)
+    --------------------------------------------------------------------- */
+    const [originalName, setOriginalName] = useState('')
+    const [originalInstagram, setOriginalInstagram] = useState('')
+
+    /* ---------------------------------------------------------------------
+       UI state
+    --------------------------------------------------------------------- */
     const [showLogoutPopup, setShowLogoutPopup] = useState(false)
-    const [pendingAction, setPendingAction] = useState<'back' | 'logout' | null>(null)
     const [showOverlay, setShowOverlay] = useState(false)
 
     const router = useRouter()
     const auth = getAuth()
     const db = getFirestore()
 
+    /* ---------------------------------------------------------------------
+       Load user data on auth change
+    --------------------------------------------------------------------- */
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             if (!user) return
@@ -32,14 +46,14 @@ export default function AccountSettingsPage() {
             setEmail(user.email)
             setUid(user.uid)
 
-            // Load user info from Firestore
-            const userDoc = doc(db, 'users', user.uid)
-            const userSnap = await getDoc(userDoc)
-            if (userSnap.exists()) {
-                const data = userSnap.data()
+            const userRef = doc(db, 'users', user.uid)
+            const snap = await getDoc(userRef)
+
+            if (snap.exists()) {
+                const data = snap.data()
                 setName(data.displayName || '')
-                setOriginalName(data.displayName || '')
                 setInstagramHandle(data.instagramHandle || '')
+                setOriginalName(data.displayName || '')
                 setOriginalInstagram(data.instagramHandle || '')
             }
         })
@@ -47,93 +61,59 @@ export default function AccountSettingsPage() {
         return () => unsubscribe()
     }, [])
 
-    const hasChanges = () => name !== originalName || instagramHandle !== originalInstagram;
+    /* ---------------------------------------------------------------------
+       Derived state helpers
+    --------------------------------------------------------------------- */
+    const hasChanges =
+        name != originalName || instagramHandle != originalInstagram
 
-    const isProfileComplete = (): boolean => {
-        return name.trim() !== '' && instagramHandle.trim() !== ''
-    }
+    const isProfileComplete =
+        name.trim() !== '' && instagramHandle.trim() !== ''
 
+    const isProfileSaved =
+        originalName.trim() !== '' && originalInstagram.trim() !== ''
 
+    // Save button enabled only when changes exist AND profile is valid
+    const canSave = hasChanges && isProfileComplete
+
+    /* ---------------------------------------------------------------------
+       Actions
+    --------------------------------------------------------------------- */
     const handleSaveChanges = async () => {
-        if (!auth.currentUser) return
-        const userDoc = doc(db, 'users', auth.currentUser.uid)
+        if (!auth.currentUser || !canSave) return
+
+        const userRef = doc(db, 'users', auth.currentUser.uid)
 
         // Update Firestore
-        await updateDoc(userDoc, {
+        await updateDoc(userRef, {
             displayName: name,
             instagramHandle: instagramHandle,
         })
 
-        // Optionally update Firebase Auth display name
+        // Keep Firebase Auth display name in sync
         if (auth.currentUser.displayName !== name) {
             await updateProfile(auth.currentUser, { displayName: name })
         }
 
+        // Mark current values as saved
         setOriginalName(name)
         setOriginalInstagram(instagramHandle)
     }
 
-    const handleBack = async () => {
-        if (!isProfileComplete()) {
+    const handleBack = () => {
+        if (!isProfileSaved) {
             setShowOverlay(true)
             return
         }
-
-        if (hasChanges()) {
-            setPendingAction('back')
-            setShowSavePopup(true)
-            return
-        }
-
         router.replace('/account/dashboard')
     }
 
-
-    const handleLogout = async () => {
-        if (!isProfileComplete()) {
+    const handleLogout = () => {
+        if (!isProfileSaved) {
             setShowOverlay(true)
             return
         }
-
-        if (hasChanges()) {
-            setPendingAction('logout')
-            setShowSavePopup(true)
-            return
-        }
-
         setShowLogoutPopup(true)
-    }
-
-    const handleConfirmSave = async () => {
-        await handleSaveChanges()
-        setShowSavePopup(false)
-        if (pendingAction === 'logout') {
-            // After saving changes, show logout confirmation popup
-            setShowLogoutPopup(true)
-        } else if (pendingAction === 'back') {
-            router.replace('/account/dashboard')
-        }
-        setPendingAction(null)
-    }
-
-    const handleDiscardSave = async () => {
-         if ((originalInstagram === '' || originalName === '') && hasChanges()) {
-            setShowOverlay(true)
-            return
-        }
-        setShowSavePopup(false)
-        if (pendingAction === 'logout') {
-            // After saving changes, show logout confirmation popup
-            setShowLogoutPopup(true)
-        } else if (pendingAction === 'back') {
-            router.replace('/account/dashboard')
-        }
-        setPendingAction(null)
-    }
-
-    const handleCancelSave = () => {
-        setShowSavePopup(false)
-        setPendingAction(null)
     }
 
     const handleConfirmLogout = async () => {
@@ -141,39 +121,42 @@ export default function AccountSettingsPage() {
         router.push('/login')
     }
 
-    const handleCancelLogout = () => {
-        setShowLogoutPopup(false)
-    }
-
+    /* ---------------------------------------------------------------------
+       Render
+    --------------------------------------------------------------------- */
     return (
         <div className="p-4 max-w-lg mx-auto">
             <h1 className="text-2xl font-bold mb-4 ml-1">Account Settings</h1>
 
             <div className="bg-gray-900 rounded-xl shadow-md p-4 space-y-3">
+                {/* Username */}
                 <div>
                     <p className="text-sm text-gray-500">Username</p>
                     <input
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        className="w-full mt-1 p-2 rounded-md bg-gray-800 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full mt-1 p-2 rounded-md bg-gray-800 text-white border border-gray-700 focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
 
+                {/* Instagram */}
                 <div>
                     <p className="text-sm text-gray-500">Instagram Handle</p>
                     <div className="relative">
-                        <span className="absolute inset-y-0 left-0 pl-3 pt-3 text-gray-300">@</span>
+                        <span className="absolute inset-y-0 left-0 pl-3 pt-3 text-gray-300">
+                            @
+                        </span>
                         <input
                             type="text"
                             value={instagramHandle}
                             onChange={(e) => setInstagramHandle(e.target.value)}
-                            placeholder="yourhandle"
-                            className="w-full mt-1 p-2 pl-8 rounded-md bg-gray-800 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full mt-1 p-2 pl-8 rounded-md bg-gray-800 text-white border border-gray-700 focus:ring-2 focus:ring-blue-500"
                         />
                     </div>
                 </div>
 
+                {/* Read-only fields */}
                 <div>
                     <p className="text-sm text-gray-500">Email</p>
                     <p className="text-base font-medium">{email || '—'}</p>
@@ -189,83 +172,55 @@ export default function AccountSettingsPage() {
                     <p className="text-base">Early Access</p>
                 </div>
 
-                <div>
-                    <p className="text-sm text-gray-500">Need help?</p>
-                    <p className="text-sm text-gray-500">Message me on Instagram :)</p>
-                    <p className="text-sm text-gray-500">@sickshotsnz</p>
-                </div>
+                {/* Save button */}
+                <button
+                    onClick={handleSaveChanges}
+                    disabled={!canSave}
+                    className={`
+                        w-full mt-4 py-2 rounded-md text-sm font-medium transition-all
+                        ${canSave
+                            ? 'bg-green-600 hover:bg-green-700 text-white'
+                            : 'bg-green-900/40 text-green-300 cursor-not-allowed'}
+                    `}
+                >
+                    Save changes
+                </button>
             </div>
 
-            <div className="flex justify-between">
+            {/* Navigation buttons */}
+            <div className="flex justify-between mt-4">
                 <button
                     onClick={handleBack}
-                    className="self-end relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-purple-600 to-blue-500 group-hover:from-purple-600 group-hover:to-blue-500 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800"
+                    className="px-5 py-2 rounded-lg bg-gradient-to-br from-purple-600 to-blue-500 text-white"
                 >
-                    <span className="relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent">
-                        Back
-                    </span>
+                    Back
                 </button>
 
                 <button
                     onClick={handleLogout}
-                    className="self-start mt-6 relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-pink-500 to-orange-400 group-hover:from-pink-500 group-hover:to-orange-400 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-pink-200 dark:focus:ring-pink-800"
+                    className="px-5 py-2 rounded-lg bg-gradient-to-br from-pink-500 to-orange-400 text-white"
                 >
-                    <span className="relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent">
-                        Sign Out
-                    </span>
+                    Sign Out
                 </button>
             </div>
 
-            {/* Unsaved changes popup */}
-            {showSavePopup && (
-                <div className="p-2 fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50 fade-in">
-                    <div className="m-2 popup-content p-4 rounded-lg max-w-sm min-h-37 text-center bg-gray-100 relative">
-                        <p className="mt-6 mb-4 text-gray-800 text-sm sm:text-base">
-                            You have unsaved changes. Do you want to save them?
-                        </p>
-                        <div className="flex flex-col gap-2 justify-center">
-                            <div className="flex justify-center space-x-2">
-                                <button
-                                    onClick={handleConfirmSave}
-                                    className="px-10 py-2 rounded bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 transition-colors text-sm"
-                                >
-                                    Save
-                                </button>
-                                <button
-                                    onClick={handleDiscardSave}
-                                    className="px-6 py-2 rounded bg-gray-300 text-red-700 hover:bg-gray-400 transition-colors text-sm"
-                                >
-                                    Discard
-                                </button>
-                            </div>
-                            <button
-                                onClick={handleCancelSave}
-                                className="px-22 py-2 rounded bg-gray-300 text-gray-700 hover:bg-gray-400 transition-colors text-sm max-w-fit mx-auto"
-                            >
-                                Cancel
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Logout confirmation popup */}
+            {/* Logout confirmation */}
             {showLogoutPopup && (
-                <div className="p-2 fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50 fade-in">
-                    <div className="m-2 popup-content p-4 rounded-lg max-w-sm min-h-37 text-center bg-gray-100 relative">
-                        <p className="mt-6 mb-4 text-gray-800 text-sm sm:text-base">
+                <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50">
+                    <div className="p-4 rounded-lg bg-gray-100 text-center">
+                        <p className="mb-4 text-gray-800">
                             Are you sure you want to sign out?
                         </p>
-                        <div className="flex space-x-2 justify-center">
+                        <div className="flex gap-2 justify-center">
                             <button
                                 onClick={handleConfirmLogout}
-                                className="px-3 py-2 rounded bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 transition-colors text-sm"
+                                className="px-4 py-2 bg-red-600 text-white rounded"
                             >
                                 Sign Out
                             </button>
                             <button
-                                onClick={handleCancelLogout}
-                                className="px-3 py-2 rounded bg-gray-300 text-gray-700 hover:bg-gray-400 transition-colors text-sm"
+                                onClick={() => setShowLogoutPopup(false)}
+                                className="px-4 py-2 bg-gray-300 rounded"
                             >
                                 Cancel
                             </button>
@@ -274,21 +229,19 @@ export default function AccountSettingsPage() {
                 </div>
             )}
 
-            {/* TUTORIAL OVERLAY */}
+            {/* Profile completion overlay */}
             {showOverlay && (
                 <div
                     className="fixed inset-0 z-50"
                     onClick={() => setShowOverlay(false)}
                 >
-                    {/* Dark overlay */}
                     <div className="absolute inset-0 bg-black/70" />
-
-                    {/* Message */}
                     <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
-                        <div className="bg-gray-900 border border-cyan-500 rounded-xl px-6 py-4 max-w-sm text-white text-sm">
+                        <div className="bg-gray-900 border border-cyan-500 rounded-xl px-6 py-4 text-white text-sm">
                             Add your username and Instagram handle here.
-                            <br /><br />
-                            Your handle will appear on your posters!
+                            <br />
+                            <br />
+                            Your handle will appear on your posters.
                         </div>
                     </div>
                 </div>

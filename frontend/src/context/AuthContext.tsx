@@ -45,7 +45,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                         credits : {
                             ai: 10,
                             posterGen: 10,
-                            posterGenAI: 10,
+                            carJam: 10,
                         }
                     })
                 }

@@ -1,4 +1,3 @@
-
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 'use client'
@@ -8,6 +7,7 @@ import { auth } from '@/firebase/client'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import LoadingPage from '@/components/LoadingPage'
+
 
 export default function SignupPage() {
   const [email, setEmail] = useState('')
