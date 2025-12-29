@@ -14,7 +14,7 @@ export default function GenerateLayout({ children }: { children: React.ReactNode
 
     if (!user && isAuthChecked) {
       alert('You must be logged in to generate a poster.');
-      router.replace('/login')
+      router.replace('/')
     }
 
   }, [user, isAuthChecked, router])
