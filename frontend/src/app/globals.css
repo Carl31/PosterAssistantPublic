@@ -31,6 +31,7 @@ body {
       opacity: 0;
       transform: translateY(-20px);
     }
+
     100% {
       opacity: 1;
       transform: translateY(0);
@@ -42,6 +43,7 @@ body {
       opacity: 1;
       transform: translateY(0);
     }
+
     100% {
       opacity: 0;
       transform: translateY(-20px);
@@ -67,36 +69,50 @@ body {
   }
 
   @keyframes fadeIn {
-    from { opacity: 0; }
-    to   { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
   }
 
   @keyframes fadeOut {
-    from { opacity: 1; }
-    to   { opacity: 0; }
+    from {
+      opacity: 1;
+    }
+
+    to {
+      opacity: 0;
+    }
   }
 }
 
 .animate-btn {
-	background: linear-gradient(-45deg, #4f5bd599, #4f5bd599, #962fbf99, #d6297699, #fa7e1e99, #feda7599);
-	background-size: 200% 200%;
-	animation: gradient 6s ease infinite;
-	height: 10vh;
+  background: linear-gradient(-45deg, #4f5bd599, #4f5bd599, #962fbf99, #d6297699, #fa7e1e99, #feda7599);
+  background-size: 200% 200%;
+  animation: gradient 6s ease infinite;
+  height: 10vh;
 }
 
 @keyframes gradient {
-	0% {
-		background-position: 0% 0%;
-	}
-	25% {
-		background-position: 50% 50%;
-	}
-	50% {
-		background-position: 100% 100%;
-	}
+  0% {
+    background-position: 0% 0%;
+  }
+
+  25% {
+    background-position: 50% 50%;
+  }
+
+  50% {
+    background-position: 100% 100%;
+  }
+
   75% {
     background-position: 50% 50%;
   }
+
   100% {
     background-position: 0% 0%;
   }
@@ -108,20 +124,40 @@ body {
   }
 
   @keyframes customPulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.2; }
+
+    0%,
+    100% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: 0.2;
+    }
   }
 }
 
 .shadow-darker {
-  --tw-shadow: 0 10px 20px -8px rgba(0, 0, 0, 0.7); /* increase opacity */
+  --tw-shadow: 0 10px 20px -8px rgba(0, 0, 0, 0.7);
+  /* increase opacity */
   box-shadow: var(--tw-shadow);
 }
 
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  20%, 60% { transform: translateX(-6px); }
-  40%, 80% { transform: translateX(6px); }
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  20%,
+  60% {
+    transform: translateX(-6px);
+  }
+
+  40%,
+  80% {
+    transform: translateX(6px);
+  }
 }
 
 .animate-shake {
@@ -129,45 +165,117 @@ body {
 }
 
 .active {
-  background: linear-gradient(to right, #0095ff, #0062cc);
+  background: linear-gradient(to right, #06b6d4, #3b82f6);
+  /* cyan → blue gradient */
   color: white;
-  padding: 6px;
-  border-radius: 8px;
-  font-weight: bold;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-weight: 600;
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.4);
+  /* subtle shadow */
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.active:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
 }
 
 .inactive {
-  /* background: linear-gradient(to right, #b4b6ba, #7b7b7b); */
-  border: 2px solid #ccc;
-  padding: 4px 8px;
-  border-radius: 4px;
-  color: #f7f7f7;
-  padding: 6px;
-  border-radius: 8px;
+  background-color: white;
+  color: #374151;
+  /* dark gray text */
+  border: 2px solid #cbd5e1;
+  /* light gray border */
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-weight: 500;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, filter 0.2s ease;
 }
 
 .inactive:hover {
-  background: linear-gradient(to right, #b4b6ba, #7b7b7b) darken(40%);
+  filter: brightness(0.95);
+  transform: translateY(-1px);
 }
 
 .activeFavourite {
-  background: linear-gradient(to right, #e90000, #870000);
+  background: linear-gradient(to right, #dc2626, #b91c1c);
+  /* red gradient */
   color: white;
-  padding: 4px;
-  border-radius: 8px;
-  font-weight: bold;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-weight: 600;
+  box-shadow: 0 4px 10px rgba(220, 38, 38, 0.4);
+  /* subtle shadow */
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.activeFavourite:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
 }
 
 .inactiveFavourite {
-  /* background: linear-gradient(to right, #ffe0e0, #ffcccc); */
-  border: 2px solid #d00;
-  padding: 4px;
-  border-radius: 8px;
-  color: #da3e3e;
-  padding: 6px;
-  border-radius: 8px;
+  background-color: white;
+  color: #b91c1c;
+  /* dark red text */
+  border: 2px solid #f87171;
+  /* light red border */
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-weight: 500;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, filter 0.2s ease;
 }
+
+.inactiveFavourite:hover {
+  filter: brightness(0.95);
+  transform: translateY(-1px);
+}
+
 
 button:active {
   transform: scale(0.95);
+}
+
+@keyframes spin-slow {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.animated-border {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  /* matches rounded-lg */
+}
+
+.animated-border::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 0.5rem;
+  padding: 2px;
+  /* border thickness */
+  background: conic-gradient(from 0deg at 50% 50%, #60a5fa, #06b6d4, #60a5fa, #06b6d4);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: spin-slow 4s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.animated-border>* {
+  position: relative;
+  z-index: 10;
+  /* ensures text is above the border */
 }

@@ -19,7 +19,7 @@ export default function GenerateLayout({ children }: { children: React.ReactNode
   if (!isAuthChecked) return <LoadingPage />
 
   return isAuthChecked && user ? (
-    <div className="px-4 bg-gray-800 h-full min-h-screen">
+    <div className="px-4 bg-white h-full min-h-screen">
       <div className="flex flex-col items-center">
         <div className="">
           {children}

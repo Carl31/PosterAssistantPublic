@@ -337,29 +337,34 @@ export default function UploadImageStep() {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-      <div className="p-2 mx-auto">
+      <div className="p-4 sm:p-6 md:p-8 mx-auto w-full max-w-3xl">
         <Notification />
+
+        {/* Upload Section */}
         {loading ? (
           <LoadingPage text="Uploading image..." />
         ) : (
           <>
-            <section id="upload image" className="mb-8 mt-5">
-              <div className="border-3 border-blue-400 max-w-md mx-auto p-4 px-4 py-2 mb-12 flex flex-col items-center shadow-[0_0_14px_rgba(59,130,246,0.7)]">
-                <h1 className={`text-2xl text-gray-200 ${archivoBlack.className}`}>
-                  Choose an image
-                </h1>
+            <section id="upload image" className="mb-8 mt-4">
+              <div className="flex flex-col items-center 
+                        relative p-[4px] 
+                        bg-gradient-to-br from-cyan-500 to-blue-500
+                        rounded-2xl mb-6">
+                <div className="flex flex-col items-center bg-white rounded-xl px-6 py-6 w-full">
+                  <h1 className={`text-3xl sm:text-4xl md:text-5xl mb-2 text-blue-400 text-center ${archivoBlack.className}`}>
+                    Choose an Image
+                  </h1>
+                  <p className="text-sm sm:text-base md:text-lg text-gray-800 text-center">
+                    Upload your photo to turn it into a poster.
+                  </p>
+                </div>
               </div>
 
-              <h1 className="text-xl font-bold mb-4">Upload Your Image</h1>
               {!image ? (
-                <label htmlFor="imageInput" className="cursor-pointer text-black">
-                  <div className="bg-blue-300 text-black px-4 py-4 rounded-xl flex flex-col items-center">
-                    <img
-                      className="w-9 h-9 mt-2 mb-2"
-                      src="/svg/upload.svg"
-                      alt="uploadSVG"
-                    />
-                    Upload Image
+                <label htmlFor="imageInput" className="cursor-pointer w-full max-w-md mx-auto">
+                  <div className="bg-white border-3 border-black shadow-2xl rounded-xl px-6 py-4 flex flex-col items-center hover:shadow-xl transition">
+                    <img className="w-9 h-9 mb-2" src="/svg/upload.svg" alt="Upload" />
+                    <span className="text-gray-800 font-semibold text-sm">Upload Image</span>
                     <input
                       id="imageInput"
                       type="file"
@@ -368,10 +373,11 @@ export default function UploadImageStep() {
                       className="hidden"
                     />
                   </div>
+
                 </label>
               ) : (
-                <>
-                  <div className="relative w-full h-140 bg-gray-100">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="relative w-full max-w-md h-140 bg-gray-100 rounded-xl overflow-hidden shadow-sm">
                     <Cropper
                       image={previewUrl!}
                       crop={crop}
@@ -387,22 +393,24 @@ export default function UploadImageStep() {
                   <button
                     onClick={handleImageUpload}
                     disabled={!image}
-                    className="mt-4 text-white bg-gradient-to-br from-purple-600 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2"
+                    className="w-full max-w-xs inline-flex justify-center gap-2 px-6 py-3 text-sm font-semibold text-white rounded-lg
+                         bg-gradient-to-r from-cyan-500 to-blue-500 hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-cyan-300 transition"
                   >
                     Confirm and Upload
                   </button>
-                </>
+                </div>
               )}
             </section>
 
-            <section id="user images">
-              <h1 className="text-xl font-bold mb-4">Your Uploaded Images</h1>
+            {/* User Images Section */}
+            <section id="user images" className="mt-8">
+              <h1 className="text-xl font-bold mb-4 text-black">Your Uploaded Images</h1>
               {imagesLoading ? (
                 <Spinner />
               ) : error ? (
-                <p style={{ color: 'red' }}>{error}</p>
+                <p className="text-red-500">{error}</p>
               ) : userImages.length === 0 ? (
-                <p>No images found for your account. Time to upload some!</p>
+                <p className="text-gray-700">No images found for your account. Time to upload some!</p>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-4">
                   {userImages.map(({ thumbUrl, originalUrl }) => (
@@ -411,21 +419,29 @@ export default function UploadImageStep() {
                       src={thumbUrl}
                       alt="User Upload"
                       onClick={() => handleSelectExisting(thumbUrl, originalUrl)}
-                      className="rounded-md object-cover w-full h-60 cursor-pointer transform transition active:scale-95 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                      className="rounded-xl object-cover w-full h-60 cursor-pointer transform transition active:scale-95 hover:brightness-105 focus:outline-none focus:ring-2 focus:ring-cyan-300"
                     />
                   ))}
                 </div>
               )}
             </section>
 
-            <button onClick={handleBack} className="mt-8 relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-pink-500 to-orange-400 group-hover:from-pink-500 group-hover:to-orange-400 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-pink-200 dark:focus:ring-pink-800">
-              <span className="relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent">
-                Back
-              </span>
+            {/* Back Button */}
+            <button
+              onClick={handleBack}
+              className="relative w-full inline-flex justify-center gap-2 px-6 py-3 mt-8 text-sm font-semibold rounded-lg
+                       bg-white text-gray-800 shadow-md
+                border border-gray-200
+                hover:bg-gray-50
+                disabled:opacity-50 mb-4"
+            >
+              
+              Back
             </button>
           </>
         )}
       </div>
+
     </motion.div>
   )
 }

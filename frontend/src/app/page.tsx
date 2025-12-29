@@ -21,7 +21,7 @@ export default function Page() {
   const [password, setPassword] = useState('')
 
 
-  const MIN_HEIGHT = 15;
+  const MIN_HEIGHT = 10;
   const MAX_HEIGHT = 35;
   const MAX_SWIPE_RATIO = 0.4;
 
@@ -34,8 +34,8 @@ export default function Page() {
 
   const GLOBAL_SCALE = 1.15; // 5% bigger than original
 
-  const GLOBAL_VERTICAL_OFFSET_VH = -7; // positive = moves down, negative = moves up
-  
+  const GLOBAL_VERTICAL_OFFSET_VH = -1; // positive = moves down, negative = moves up
+
 
   const router = useRouter()
 
@@ -156,7 +156,7 @@ export default function Page() {
   }
 
   function animateTo(target: number) {
-    const duration = 260;
+    const duration = 290;
     const start = progress;
     const startTime = performance.now();
 
@@ -208,9 +208,16 @@ export default function Page() {
         className="relative h-screen w-screen overflow-hidden touch-none bg-white"
       >
         {/* Scaled object */}
-        <div className="absolute inset-0 flex items-center justify-center">
+        <div className="absolute inset-0 flex items-center justify-center"
+          style={{
+            marginTop:
+              progress === 0
+                ? `${IMAGE_OFFSET_VH + GLOBAL_VERTICAL_OFFSET_VH - 8}vh`
+                : `${IMAGE_OFFSET_VH + (1 - imageScale) * 6 + GLOBAL_VERTICAL_OFFSET_VH - 8}vh`,
+
+          }}>
           <div
-            className="absolute inset-0 origin-top flex items-center justify-center"
+            className="absolute inset-0 origin-top flex justify-center"
             style={{
               transform: `scale(${GLOBAL_SCALE * Math.min(imageScale, MAX_IMAGE_SCALE)})`,
               marginTop:
@@ -262,7 +269,7 @@ export default function Page() {
           <div
             className="
     absolute left-1/2 top-1/2
-    -translate-x-1/2 -translate-y-[420%]
+    -translate-x-1/2 -translate-y-[310%]
     px-5 py-3
     rounded-2xl
     bg-black/80 backdrop-blur
@@ -274,10 +281,10 @@ export default function Page() {
     max-w-[90vw]
     border-2 border-white
   "
-            style={{ opacity: clamp(1 - progress * 1.2, 0, 1) }}
+            style={{ opacity: clamp(1 - progress, 0, 1) }}
           >
             <p className="text-sm sm:text-base font-medium mr-1">
-              Your photos are just the start...
+              Photos are just the start...
             </p>
 
             <div className="mt-2 text-[10px] sm:text-xs opacity-80">
@@ -296,45 +303,41 @@ export default function Page() {
 
           {/* Bottom sheet */}
           <div
-            className="absolute bottom-0 left-0 w-full bg-white rounded-t-3xl flex flex-col items-center justify-center"
+            className="absolute bottom-0 left-0 w-full bg-white/70 rounded-t-3xl flex flex-col items-center pt-10 backdrop-blur-sm"
+
             style={{ height: `${sheetHeight}%` }}
           >
-            <img src="/png/sickshotsai.png" alt="logo" className='h-9 w-35 mb-9 mr-1' style={{
-              opacity: progress > 0.6 ? (progress - 0.6) / 0.4 : 0,
-            }} />
-            {/* Header text */}
-            {/* <div
-              className="mb-4 text-lg font-semibold text-black"
+            <img
+              src="/png/sickshotsai.png"
+              alt="logo"
+              className="h-9 w-35 mb-6 mr-1"
               style={{
                 opacity: progress > 0.6 ? (progress - 0.6) / 0.4 : 0,
               }}
-            >
-              Welcome!
-            </div> */}
+            />
 
-            {/* Buttons */}
             <div
-              className="flex gap-4"
+              className="flex flex-col gap-4"
               style={{
                 opacity: progress > 0.6 ? (progress - 0.6) / 0.4 : 0,
               }}
             >
               <button
-                className="px-5 py-3 rounded-full bg-black text-white text-sm"
+                className="px-5 py-3 rounded-lg bg-black text-white text-sm min-w-40"
                 onClick={() => scrollToForm('signup-form')}
               >
                 Sign Up
               </button>
 
               <button
-                className="px-5 py-3 rounded-full bg-black text-white text-sm"
+                className="px-5 py-3 rounded-lg bg-black text-white text-sm min-w-40"
                 onClick={() => scrollToForm('login-form')}
               >
                 Log In
               </button>
-
             </div>
           </div>
+
 
         </div>
 

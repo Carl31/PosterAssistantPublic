@@ -37,7 +37,7 @@ export default function IdentifyVehicleStep() {
     setGeminiChecked,
     useAI,
     setUseAI,
-    credits, 
+    credits,
     setCredits,
   } = usePosterWizard()
 
@@ -99,15 +99,15 @@ export default function IdentifyVehicleStep() {
 
   const handleUseCarJam = async () => {
     if (carJamClicked) {
-        notify('info', 'CarJam already detected the car.');
-        setShowOptionsPopup(false)
-        setCarDetails(detailsFromCarJam);
-        return
+      notify('info', 'CarJam already detected the car.');
+      setShowOptionsPopup(false)
+      setCarDetails(detailsFromCarJam);
+      return
     }
-    
+
     setShowOptionsPopup(false)
 
-     if (credits.carJam <= 0) {
+    if (credits.carJam <= 0) {
       notify('error', 'You have no CarJam credits left.')
       return
     } else {
@@ -119,65 +119,65 @@ export default function IdentifyVehicleStep() {
     setShowPlatePopup(true)
 
     console.log('Using CarJam for plate detection.')
-    
-            try {
-            const token = await user!.getIdToken();
-            const response = await fetch(
-                "https://us-central1-posterassistant-aebf0.cloudfunctions.net/detectCarPlate",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
-                    },
-                    body: JSON.stringify({ imageUrl: userImgThumbDownloadUrl }),
-                }
-            );
 
-            if (!response.ok) {
-                const text = await response.text();
-                console.error("Plate detection failed:", text);
-                notify("error", "AI could not detect plate. Please enter manually.");
-                setDetectedPlate("");
-            } else {
-                const data = await response.json();
-                if(data.plate == "" || data.plate == null || data.plate == undefined) {
-                    notify("info", "AI could not detect plate. Please enter manually.");
-                }
-                setDetectedPlate(data.plate || "");
-                console.log("Detected plate:", data.plate);
-            }
-        } catch (err) {
-            console.error("Error calling detectPlateOnly:", err);
-            notify("error", "Error detecting plate.");
-        } finally {
-            console.log("Plate detection complete.");
-            setPlateLoading(false);
+    try {
+      const token = await user!.getIdToken();
+      const response = await fetch(
+        "https://us-central1-posterassistant-aebf0.cloudfunctions.net/detectCarPlate",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ imageUrl: userImgThumbDownloadUrl }),
         }
+      );
+
+      if (!response.ok) {
+        const text = await response.text();
+        console.error("Plate detection failed:", text);
+        notify("error", "AI could not detect plate. Please enter manually.");
+        setDetectedPlate("");
+      } else {
+        const data = await response.json();
+        if (data.plate == "" || data.plate == null || data.plate == undefined) {
+          notify("info", "AI could not detect plate. Please enter manually.");
+        }
+        setDetectedPlate(data.plate || "");
+        console.log("Detected plate:", data.plate);
+      }
+    } catch (err) {
+      console.error("Error calling detectPlateOnly:", err);
+      notify("error", "Error detecting plate.");
+    } finally {
+      console.log("Plate detection complete.");
+      setPlateLoading(false);
+    }
   }
 
   function updateCarJamData(responseData: { make: string; model: string; year: string }) {
-  if (!responseData) {
-    console.error('API response is missing:', responseData)
-    return
-  }
+    if (!responseData) {
+      console.error('API response is missing:', responseData)
+      return
+    }
 
-  setDetailsFromCarJam(responseData)
+    setDetailsFromCarJam(responseData)
   }
 
   function updateAiData(responseData: { make: string; model: string; year: string }) {
-  if (!responseData) {
-    console.error('API response is missing:', responseData)
-    return
-  }
+    if (!responseData) {
+      console.error('API response is missing:', responseData)
+      return
+    }
 
-  const capitalized = {
-    ...responseData,
-    make: responseData.make ? responseData.make.toUpperCase() : '',
-    model: responseData.model ? responseData.model.toUpperCase() : '',
-  };
+    const capitalized = {
+      ...responseData,
+      make: responseData.make ? responseData.make.toUpperCase() : '',
+      model: responseData.model ? responseData.model.toUpperCase() : '',
+    };
 
-  setDetailsFromAI(capitalized)
+    setDetailsFromAI(capitalized)
   }
 
   const handleConfirmCarJam = async () => {
@@ -215,17 +215,17 @@ export default function IdentifyVehicleStep() {
       console.log('CarJam response:', data)
 
       if (data.status === 'plate_not_found_in_carjam') {
-          notify('info', `Plate ${detectedPlate} not found in CarJam. Please enter details manually.`);
+        notify('info', `Plate ${detectedPlate} not found in CarJam. Please enter details manually.`);
       } else if (data.status === 'no_credits_left') {
         notify('error', `No credits left for CarJam API.`);
       } else if (data.status === 'no_plate_provided') {
         notify('error', `Plate ${detectedPlate} not provided.`);
       } else {
-      updateCarDetailsFromApiResponse(data)
-      updateCarJamData(data)
-      setGeminiChecked(true)
-      setCarJamClicked(true)
-      setShowPlatePopup(false)
+        updateCarDetailsFromApiResponse(data)
+        updateCarJamData(data)
+        setGeminiChecked(true)
+        setCarJamClicked(true)
+        setShowPlatePopup(false)
       }
 
     } catch (err) {
@@ -239,41 +239,41 @@ export default function IdentifyVehicleStep() {
   const handleCancelCarJam = () => setShowPlatePopup(false)
 
   function updateCarDetailsFromApiResponse(responseData: { make: string; model: string; year: string }) {
-  if (!responseData) {
-    console.error('API response is missing:', responseData);
-    return;
+    if (!responseData) {
+      console.error('API response is missing:', responseData);
+      return;
+    }
+
+    const capitalized = {
+      ...responseData,
+      make: responseData.make ? responseData.make.toUpperCase() : '',
+      model: responseData.model ? responseData.model.toUpperCase() : '',
+    };
+
+    setCarDetails(capitalized);
+
+    const missingMake = capitalized.make === '';
+    const missingModel = capitalized.model === '';
+    const missingYear = capitalized.year === '';
+
+    if (missingMake && missingModel && missingYear) {
+      notify('warning', 'Our AI could not identify the car. Please input the details manually.');
+    } else {
+      if (missingMake) notify('info', 'Our AI could not identify the make of the car.');
+      if (missingModel) notify('info', 'Our AI could not identify the model of the car.');
+      if (missingYear) notify('info', 'Our AI could not identify the year of the car.');
+    }
+
   }
-
-  const capitalized = {
-    ...responseData,
-    make: responseData.make ? responseData.make.toUpperCase() : '',
-    model: responseData.model ? responseData.model.toUpperCase() : '',
-  };
-
-  setCarDetails(capitalized);
-
-  const missingMake = capitalized.make === '';
-  const missingModel = capitalized.model === '';
-  const missingYear = capitalized.year === '';
-
-  if (missingMake && missingModel && missingYear) {
-    notify('warning', 'Our AI could not identify the car. Please input the details manually.');
-  } else {
-    if (missingMake) notify('info', 'Our AI could not identify the make of the car.');
-    if (missingModel) notify('info', 'Our AI could not identify the model of the car.');
-    if (missingYear) notify('info', 'Our AI could not identify the year of the car.');
-  }
-
-}
 
   // Cloud Functions
   const detectCar = async () => {
     console.log('Detecting car...')
     if (AiInputClicked) {
-        console.log('AI already detected the car.')
-        notify('info', 'AI already detected the car.')
-        setCarDetails(detailsFromAI);
-        return
+      console.log('AI already detected the car.')
+      notify('info', 'AI already detected the car.')
+      setCarDetails(detailsFromAI);
+      return
     }
 
     if (!userImgThumbDownloadUrl) return
@@ -344,228 +344,254 @@ export default function IdentifyVehicleStep() {
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.3 }}
     >
-      <div className="p-2 max-w-xl mx-auto">
+      <div className="p-4 max-w-xl mx-auto space-y-8">
         <Notification />
-        <section id="identify vehicle">
-          <div className="mt-4 border-3 border-blue-400 px-4 py-2 mb-12 flex flex-col items-center shadow-[0_0_14px_rgba(59,130,246,0.7)]">
-            <h1 className={`text-2xl text-gray-200 ${archivoBlack.className}`}>
-              Identify Your Vehicle
-            </h1>
+
+        {/* =======================
+        IDENTIFY VEHICLE HEADER
+       ======================= */}
+        <section id="identify-vehicle" className="space-y-6">
+          <div className="flex flex-col items-center mb-6 relative p-[4px] bg-gradient-to-br from-cyan-500 to-blue-500 rounded-2xl">
+            <div className="flex flex-col items-center bg-white rounded-xl px-6 py-6 w-full">
+              <h1 className={`text-3xl sm:text-4xl md:text-5xl text-blue-400 text-center mb-2 ${archivoBlack.className}`}>
+                Identify Your Vehicle
+              </h1>
+              <p className="text-sm sm:text-base md:text-lg text-gray-700 text-center">
+                Or let us identify it for you!
+              </p>
+            </div>
           </div>
 
+          {/* =======================
+            IMAGE PREVIEW
+           ======================= */}
           {userImgThumbDownloadUrl && (
-            <div className="w-full aspect-[3/4] relative shadow-lg overflow-hidden">
+            <div className="relative w-full max-w-xs mx-auto rounded-xl overflow-hidden shadow-lg">
               <img
-                src={userImgThumbDownloadUrl!}
+                src={userImgThumbDownloadUrl}
                 alt="Preview"
-                className="absolute inset-0 w-full h-full object-cover"
+                className="w-full h-auto object-contain"
               />
             </div>
           )}
 
+          {/* =======================
+            MAIN ACTION AREA
+           ======================= */}
           {pendingValidation ? (
-            <div className="flex justify-center m-4">
-              <div className="mt-3">
-                <Spinner />
-              </div>
+            <div className="flex justify-center py-8">
+              <Spinner />
             </div>
           ) : (
-            <div className="flex flex-col items-center">
+            <div className="space-y-6">
+              {/* AI DETECTION BUTTON */}
               <button
                 disabled={!userImgThumbDownloadUrl || !selectedTemplate || loading}
                 onClick={handleIdentify}
-                className={`w-full mt-6 text-white ${
-                  AiInputClicked || carJamClicked
-                    ? 'bg-purple-900 text-gray-200'
-                    : 'bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:bg-gradient-to-br'
-                } focus:ring-4 focus:outline-none focus:ring-purple-300 shadow-lg shadow-purple-500/50 font-medium rounded-lg text-sm py-2.5 text-center`}
+                className={`
+                        w-full rounded-xl py-3 text-sm font-semibold text-white
+                        bg-gradient-to-r from-cyan-500 to-blue-500
+                        hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-cyan-300
+                        disabled:opacity-50 disabled:cursor-not-allowed
+                        shadow-md
+                    `}
               >
-                {loading ? 'Detecting...' : 'Detect Car Info'}
+                {loading ? "Detecting..." : "Detect Car Info"}
               </button>
 
-              <div className="flex items-center my-4">
-                <div className="w-1 h-1 bg-purple-500 rounded-full"></div>
-                <p className="text-purple-500 mx-2">OR</p>
-                <div className="w-1 h-1 bg-purple-500 rounded-full"></div>
+              {/* OR DIVIDER */}
+              <div className="flex items-center justify-center gap-3 text-sm text-gray-400">
+                <span className="h-px w-12 bg-gray-300" />
+                OR
+                <span className="h-px w-12 bg-gray-300" />
               </div>
 
+              {/* MANUAL INPUT BUTTON */}
               <button
-                      disabled={manualInputClicked || geminiChecked || loading || !selectedTemplate || !userImgThumbDownloadUrl}
-                    onClick={() => {
-                         setUseAI(false);
-                           setManualInputClicked(true)
-                      }}
-                    className={`w-full text-white 
-      ${manualInputClicked || geminiChecked || carJamClicked
-                                            ? "bg-purple-900 text-gray-200" // permanent dark style
-                                            : "bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:bg-gradient-to-br"} 
-      focus:ring-4 focus:outline-none focus:ring-purple-300 dark:focus:ring-purple-800 
-      shadow-lg shadow-purple-500/50 dark:shadow-lg dark:shadow-purple-800/80 
-      font-medium rounded-lg text-sm py-2.5 text-center`}
-                                >
-                                    {'Manually Input Car Details'}
-                                </button>
+                disabled={manualInputClicked || geminiChecked || carJamClicked || loading}
+                onClick={() => {
+                  setUseAI(false);
+                  setManualInputClicked(true);
+                }}
+                className={`
+                        w-full rounded-xl py-3 text-sm font-semibold text-white
+                        bg-gradient-to-r from-cyan-500 to-blue-500
+                        hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-cyan-300
+                        disabled:opacity-50 disabled:cursor-not-allowed
+                        shadow-md
+                    `}
+              >
+                Manually Input Car Details
+              </button>
 
+              {/* =======================
+                    MANUAL INPUT FORM
+                   ======================= */}
               {(geminiChecked || manualInputClicked || carJamClicked) && (
-                <div className="mt-4 space-y-2 w-full">
-                  <label className="block">Make</label>
-                  <input
-                    value={carDetails.make}
-                    onChange={(e) =>
-                      setCarDetails({ ...carDetails, make: e.target.value })
-                    }
-                    className="border p-2 w-full"
-                    placeholder="Add make"
-                  />
-                  <label className="block">Model</label>
-                  <input
-                    value={carDetails.model}
-                    onChange={(e) =>
-                      setCarDetails({ ...carDetails, model: e.target.value })
-                    }
-                    className="border p-2 w-full"
-                    placeholder="Add model"
-                  />
-                  <label className="block">Year</label>
-                  <input
-                    value={carDetails.year}
-                    onChange={(e) =>
-                      setCarDetails({ ...carDetails, year: e.target.value })
-                    }
-                    className="border p-2 w-full"
-                    placeholder="Add year"
-                  />
+                <div className="space-y-4 rounded-2xl bg-white p-4 shadow-md">
+                  <div>
+                    <label className="block text-sm text-gray-900 mb-1">Make</label>
+                    <input
+                      value={carDetails.make}
+                      onChange={(e) =>
+                        setCarDetails({ ...carDetails, make: e.target.value })
+                      }
+                      className="w-full rounded-lg text-black border-2 border-gray-300 px-3 py-2 focus:ring-2 focus:ring-cyan-300 focus:outline-none"
+                      placeholder="e.g. Toyota"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm text-gray-900 mb-1">Model</label>
+                    <input
+                      value={carDetails.model}
+                      onChange={(e) =>
+                        setCarDetails({ ...carDetails, model: e.target.value })
+                      }
+                      className="w-full rounded-lg border-2 text-black border-gray-300 px-3 py-2 focus:ring-2 focus:ring-cyan-300 focus:outline-none"
+                      placeholder="e.g. Corolla"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm text-gray-900 mb-1">Year</label>
+                    <input
+                      value={carDetails.year}
+                      onChange={(e) =>
+                        setCarDetails({ ...carDetails, year: e.target.value })
+                      }
+                      className="w-full rounded-lg border-2 text-black border-gray-300 px-3 py-2 focus:ring-2 focus:ring-cyan-300 focus:outline-none"
+                      placeholder="e.g. 2018"
+                    />
+                  </div>
                 </div>
               )}
             </div>
           )}
         </section>
 
-        <div className="mt-5 flex justify-between">
-                     <button onClick={handleBack} disabled={loading} className="self-start mt-6 relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-pink-500 to-orange-400 group-hover:from-pink-500 group-hover:to-orange-400 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-pink-200 dark:focus:ring-pink-800">
-                         <span className="relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent">
-                             Back
-                         </span>
-                     </button>
+        {/* =======================
+        NAVIGATION BUTTONS
+       ======================= */}
+        <div className="flex justify-between gap-4">
+          <button
+            onClick={handleBack}
+            disabled={loading}
+            className="
+                w-full max-w-[140px] rounded-xl py-2 text-sm font-semibold
+                bg-white text-gray-800 shadow-md
+                border border-gray-200
+                hover:bg-gray-50
+                disabled:opacity-50
+            "
+          >
+            Back
+          </button>
 
-                     <button
-                         disabled={!geminiChecked && !manualInputClicked && !loading}
-                         onClick={handleNext}
-                         className={`self-end relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium rounded-lg 
-     ${!geminiChecked && !manualInputClicked && !loading ? 'opacity-50 cursor-not-allowed' : ''}
-     bg-gradient-to-br from-purple-600 to-blue-500 group-hover:from-purple-600 group-hover:to-blue-500 hover:text-white dark:text-white 
-     focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800`}
-                     >
-                         <span
-                             className={`relative px-5 py-2.5 transition-all ease-in duration-75 
-       ${!geminiChecked && !manualInputClicked && !loading ? 'bg-gray-400 dark:bg-gray-700' : 'bg-white dark:bg-gray-900'} 
-       rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent`}
-                         >
-                             Next
-                         </span>
-                     </button>
-                 </div>
-
-        {/* Options Popup (always mounted) */}
+          <button
+            onClick={handleNext}
+            disabled={!geminiChecked && !manualInputClicked && !loading}
+            className="
+                w-full max-w-[140px] rounded-xl py-2 text-sm font-semibold text-white
+                bg-gradient-to-r from-cyan-500 to-blue-500
+                hover:brightness-110
+                focus:outline-none focus:ring-2 focus:ring-cyan-300
+                disabled:opacity-50 disabled:cursor-not-allowed
+                shadow-md
+            "
+          >
+            Next
+          </button>
+        </div>
+        {/* =========================
+    OPTIONS POPUP (LIGHT)
+   ========================= */}
         <div
-          className={`p-2 fixed inset-0 flex items-center justify-center backdrop-blur-sm z-40 transition-opacity duration-200 ${
-            showOptionsPopup ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-          }`}
+          className={`fixed inset-0 z-50 flex items-center justify-center
+    bg-white/40 backdrop-blur-md transition-opacity
+    ${showOptionsPopup ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
         >
-          <div className="m-2 popup-content p-4 rounded-lg max-w-md text-center bg-gray-800 relative">
-            <p className="mt-4 mb-6 text-gray-400 text-lg sm:text-base">
-              How should we identify<br /> the vehicle?
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-[0_10px_40px_rgba(0,0,0,0.15)]">
+            <p className="mb-6 text-gray-800 text-lg font-semibold">
+              How should we identify the vehicle?
             </p>
 
-            <div className="flex flex-col sm:flex-row justify-center sm:space-x-6 space-y-4 sm:space-y-0">
-              <div className="flex flex-col items-center bg-gray-700 rounded-lg shadow p-3 w-40 mx-auto">
-                <button
-                  onClick={handleUseAi}
-                  className="px-3 py-2 rounded bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 transition-colors text-sm w-full"
-                >
-                  Use AI
-                </button>
-                <ul className="mt-2 text-xs text-gray-400 list-disc list-outside pl-5 text-left leading-snug">
-                  <li>Fast & always works</li>
-                  <li>Not 100% accurate</li>
-                </ul>
-              </div>
-
-              <div className="flex flex-col items-center bg-gray-700 rounded-lg shadow p-3 w-40 mx-auto">
-                <button
-                  onClick={handleUseCarJam}
-                  className="px-3 py-2 rounded bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 transition-colors text-sm w-full"
-                >
-                  Use CarJam
-                </button>
-                <ul className="mt-2 text-xs text-gray-400 list-disc list-outside pl-5 text-left leading-snug">
-                  <li>Only works in NZ</li>
-                  <li>100% accurate</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="mt-6 flex justify-center">
+            <div className="flex gap-4">
               <button
-                onClick={handleCancel}
-                className="px-4 py-2 rounded bg-gray-300 text-gray-700 hover:bg-gray-400 transition-colors text-sm"
+                onClick={handleUseAi}
+                className="flex-1 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 py-2 text-white font-medium hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-cyan-300"
               >
-                Cancel
+                Use AI
+              </button>
+              <button
+                onClick={handleUseCarJam}
+                className="flex-1 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 py-2 text-white font-medium hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-cyan-300"
+              >
+                Use CarJam
               </button>
             </div>
+
+            <button
+              onClick={handleCancel}
+              className="mt-6 w-full rounded-lg border border-gray-300 bg-white py-2 text-gray-700 hover:bg-gray-100"
+            >
+              Cancel
+            </button>
           </div>
         </div>
 
-        {/* Plate Popup */}
+        {/* =========================
+    AI LOADING POPUP (LIGHT)
+   ========================= */}
         {geminiLoading && (
-          <div className="p-2 fixed inset-0 flex items-center justify-center backdrop-blur-sm z-40 fade-in">
-            <div className="m-2 popup-content p-4 rounded-lg max-w-md text-center bg-gray-800 relative">
-                <div className="flex flex-col items-center space-y-4">
-                  <Spinner />
-                  <p className="text-gray-300">
-  Asking AI for car details...
-</p>
-                </div>
-                </div>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/40 backdrop-blur-md">
+            <div className="rounded-2xl bg-white p-6 text-center shadow-[0_10px_40px_rgba(0,0,0,0.15)]">
+              <Spinner />
+              <p className="mt-4 text-gray-700 font-medium">
+                Asking AI for car details…
+              </p>
+            </div>
           </div>
         )}
-        
 
-        {/* Plate Popup */}
+        {/* =========================
+    PLATE CONFIRM POPUP (LIGHT)
+   ========================= */}
         {showPlatePopup && (
-          <div className="p-2 fixed inset-0 flex items-center justify-center backdrop-blur-sm z-40 fade-in">
-            <div className="m-2 popup-content p-4 rounded-lg max-w-md text-center bg-gray-800 relative">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/40 backdrop-blur-md">
+            <div className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-[0_10px_40px_rgba(0,0,0,0.15)]">
               {plateLoading ? (
-                <div className="flex flex-col items-center space-y-4">
+                <>
                   <Spinner />
-                  <p className="text-gray-300">
-  {detectedPlate ? 'Fetching carjam data' : 'Detecting number plate...'}
-</p>
-                </div>
+                  <p className="mt-4 text-gray-700 font-medium">
+                    {detectedPlate ? "Fetching CarJam data…" : "Detecting plate…"}
+                  </p>
+                </>
               ) : (
                 <>
-                  <p className="mt-4 mb-6 text-gray-400 text-lg sm:text-base">
-                    Please confirm or enter the plate number
+                  <p className="mb-4 text-gray-800 font-semibold">
+                    Confirm plate number
                   </p>
+
                   <input
                     value={detectedPlate}
                     onChange={(e) => setDetectedPlate(e.target.value.toUpperCase())}
-                    className="border border-gray-500 rounded p-2 w-full bg-gray-700 text-white text-center"
-                    placeholder="Enter plate number"
+                    className="w-full rounded-lg border-2 border-gray-300 bg-white p-2 text-center text-gray-800 focus:outline-none focus:ring-2 focus:ring-cyan-300"
                   />
-                  <div className="mt-6 flex justify-center space-x-4">
-                    <button
-                      onClick={handleConfirmCarJam}
-                      className="px-4 py-2 rounded bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 transition-colors text-sm"
-                      disabled={plateLoading}
-                    >
-                      Confirm
-                    </button>
+
+                  <div className="mt-4 flex gap-4">
+
                     <button
                       onClick={handleCancelCarJam}
-                      className="px-4 py-2 rounded bg-gray-300 text-gray-700 hover:bg-gray-400 transition-colors text-sm"
+                      className="flex-1 rounded-lg border border-gray-300 bg-white py-2 text-gray-700 hover:bg-gray-100"
                     >
                       Cancel
+                    </button>
+                    <button
+                      onClick={handleConfirmCarJam}
+                      className="flex-1 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 py-2 text-white font-medium hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-cyan-300"
+                    >
+                      Confirm
                     </button>
                   </div>
                 </>
@@ -573,7 +599,9 @@ export default function IdentifyVehicleStep() {
             </div>
           </div>
         )}
+
       </div>
+
     </motion.div>
   )
 }
@@ -649,637 +677,3 @@ async function convertImageUrlToBase64(
 
 
 
-// /* eslint-disable @next/next/no-img-element */
-// /* eslint-disable @typescript-eslint/no-unused-vars */
-// /* eslint-disable @typescript-eslint/no-explicit-any */
-// // This is the main entry point for poster creation.
-
-// 'use client'
-
-// import { motion } from 'framer-motion'
-// import { usePosterWizard, isStepAccessible } from '@/context/PosterWizardContext'
-// import { useAuth } from '@/context/AuthContext'
-// import { useState, useEffect } from 'react'
-// import { useRouter } from 'next/navigation';
-// import Spinner from '@/components/Spinner';
-// import LoadingPage from '@/components/LoadingPage'
-// import { notify } from "@/utils/notify";
-// import Notification from "@/components/Notification";
-// import ErrorPage from '@/components/ErrorPage'
-// import { carData, modelExists } from "@/pages/api/carData";
-// import { Archivo_Black } from "next/font/google";
-
-// const archivoBlack = Archivo_Black({
-//     weight: "400", // Archivo Black only has 400
-//     subsets: ["latin"],
-// });
-
-// export default function IdentifyVehicleStep() {
-
-//     const { user } = useAuth()
-
-//     const {
-//         selectedTemplate,
-//         carDetails, setCarDetails,
-//         userImgThumbDownloadUrl, userImgDownloadUrl,
-//         geminiChecked, setGeminiChecked, useAI, setUseAI,
-//     } = usePosterWizard()
-//     const { state } = usePosterWizard();
-
-//     const [loading, setloading] = useState(false)
-//     const [pendingValidation, setpendingValidation] = useState(false)
-
-//     const [manualInputClicked, setManualInputClicked] = useState(false);
-//     const [AiInputClicked, setAiInputClicked] = useState(false);
-//     const [carJamClicked, setCarJamClicked] = useState(false);
-
-//     const [showOptionsPopup, setShowOptionsPopup] = useState(false)
-
-//     const router = useRouter()
-
-//     const handleNext = async () => {
-//         setpendingValidation(true);
-//         const { valid, reason } = await validateCarDetails(carDetails.make, carDetails.model, carDetails.year);
-
-//         if (!valid) {
-//             setpendingValidation(false);
-//             console.log("Invalid car details: " + reason);
-//             notify("error", "Invalid car details: " + reason);
-//             return;
-//         } else {
-//             router.push('/generate/overview')
-//         }
-
-//     }
-
-//     useEffect(() => {
-//         if (!isStepAccessible("identify", state)) {
-//             console.log("No image selected. Redirecting.");
-//             router.replace("/generate/upload");
-//         }
-//     }, [state, router]);
-
-//     const handleBack = () => {
-//         router.push('/generate/select')
-//     }
-
-//     const handleIdentify = async () => {
-//         setShowOptionsPopup(true)
-//     }
-
-//     const handleCancel = () => {
-//         setShowOptionsPopup(false)
-//     }
-
-//     const handleUseAi = () => {
-//         setShowOptionsPopup(false)
-//         detectCar();
-//         setAiInputClicked(true);
-//     }
-
-//     const [showPlatePopup, setShowPlatePopup] = useState(false);
-//     const [plateLoading, setPlateLoading] = useState(false);
-//     const [detectedPlate, setDetectedPlate] = useState("");
-
-//     // Called when "Use CarJam" is pressed in the first popup - uses AI to get plate from image.
-//     const handleUseCarJam = async () => {
-//         console.log("test");
-//         setShowOptionsPopup(false);
-//         console.log("test1");
-//         setPlateLoading(true);
-//         console.log("test2");
-//         setShowPlatePopup(true);
-//         console.log("test3");
-//         //setCarJamClicked(true);
-
-//         console.log("Clicked CarJam:", carJamClicked);
-//         if (carJamClicked) {
-//             console.log("Already detected plate:", detectedPlate);
-//             setPlateLoading(false);
-//             return
-//         }
-
-//         console.log("Using CarJam for plate detection.");
-
-//         // try {
-//         //     const token = await user!.getIdToken();
-//         //     const response = await fetch(
-//         //         "https://us-central1-posterassistant-aebf0.cloudfunctions.net/detectCarPlate",
-//         //         {
-//         //             method: "POST",
-//         //             headers: {
-//         //                 "Content-Type": "application/json",
-//         //                 Authorization: `Bearer ${token}`,
-//         //             },
-//         //             body: JSON.stringify({ imageUrl: userImgThumbDownloadUrl }),
-//         //         }
-//         //     );
-
-//         //     if (!response.ok) {
-//         //         const text = await response.text();
-//         //         console.error("Plate detection failed:", text);
-//         //         notify("error", "AI could not detect plate. Please enter manually.");
-//         //         setDetectedPlate("");
-//         //     } else {
-//         //         const data = await response.json();
-//         //         if(data.plate == "" || data.plate == null || data.plate == undefined) {
-//         //             notify("info", "AI could not detect plate. Please enter manually.");
-//         //         }
-//         //         setDetectedPlate(data.plate || "");
-//         //         console.log("Detected plate:", data.plate);
-//         //     }
-//         // } catch (err) {
-//         //     console.error("Error calling detectPlateOnly:", err);
-//         //     notify("error", "Error detecting plate.");
-//         // } finally {
-//         //     console.log("Plate detection complete.");
-//         //     setPlateLoading(false);
-//         // }
-
-//          console.log("Plate detection complete.");
-//             setPlateLoading(false);
-//     };
-
-//     const handleConfirmCarJam = async () => {
-//         console.log("Confirming CarJam plate:", detectedPlate);
-//         if (!detectedPlate) {
-//             notify("error", "Please enter a valid plate number.");
-//             return;
-//         }
-//         setPlateLoading(true);
-
-//         try {
-//             const token = await user!.getIdToken();
-//             const response = await fetch(
-//                 "https://us-central1-posterassistant-aebf0.cloudfunctions.net/detectCarDetailsWithGemini",
-//                 {
-//                     method: 'POST',
-//                     headers: {
-//                         'Content-Type': 'application/json',
-//                         Authorization: `Bearer ${token}`,
-//                     },
-//                     body: JSON.stringify({ plate: detectedPlate }),
-//                 }
-//             )
-
-//             if (!response.ok) {
-//                 const text = await response.text();
-//                 console.error("CarJam failed:", text);
-//                 notify("error", "Failed to fetch details from CarJam.");
-//                 return;
-//             }
-
-//             const data = await response.json();
-//             updateCarDetailsFromApiResponse(data);
-//             setGeminiChecked(true);
-//             setCarJamClicked(true);
-//             setShowPlatePopup(false);
-//         } catch (err) {
-//             console.error("Error calling CarJam:", err);
-//             notify("error", "CarJam request failed.");
-//         } finally {
-//             setPlateLoading(false);
-//         }
-//     };
-
-//     const handleCancelCarJam = () => {
-//         setShowPlatePopup(false);
-//         //setCarJamClicked(false);
-//     };
-
-
-//     // Detect car details in image using cloud function (final optimized version)
-//     const detectCar = async () => {
-//         if (!userImgThumbDownloadUrl) return
-//         setloading(true)
-
-//         if (!user) {
-//             console.error('User is not authenticated.')
-//             return <ErrorPage text="User is not authenticated." />
-//         }
-
-//         console.log("Using Gemini for car details detection.");
-
-//         try {
-//             // Get Firebase ID token for authorization
-//             const token = await user.getIdToken()
-
-//             // Prepare minimal payload — only send the image URL
-//             const requestBody = { imageUrl: userImgThumbDownloadUrl }
-
-//             // Call backend Cloud Function
-//             const response = await fetch(
-//                 "https://us-central1-posterassistant-aebf0.cloudfunctions.net/detectCarDetailsWithGemini",
-//                 {
-//                     method: 'POST',
-//                     headers: {
-//                         'Content-Type': 'application/json',
-//                         Authorization: `Bearer ${token}`,
-//                     },
-//                     body: JSON.stringify(requestBody),
-//                 }
-//             )
-
-//             if (!response.ok) {
-//                 const errorText = await response.text()
-//                 console.error(`HTTP error! status: ${response.status}`, errorText)
-//                 throw new Error(`Function returned error: ${response.status} - ${errorText}`)
-//             }
-
-//             // Parse result and update UI
-//             const result = await response.json()
-//             updateCarDetailsFromApiResponse(result)
-
-//         } catch (error) {
-//             console.error("Error calling Cloud Function:", error)
-//             return <ErrorPage text="Error calling Gemini Cloud Function." />
-//         } finally {
-//             setloading(false)
-//             setGeminiChecked(true)
-//         }
-//     }
-
-//     // Fetch car details from plate with CarJam
-//     const fetchFromCarJam = async () => {
-//         if (!userImgThumbDownloadUrl) return
-//         setloading(true)
-
-//         if (!user) {
-//             console.error('User is not authenticated.')
-//             return <ErrorPage text="User is not authenticated." />
-//         }
-
-//         try {
-//             // Get Firebase ID token for authorization
-//             const token = await user.getIdToken()
-
-//             // Prepare minimal payload — only send the image URL
-//             const requestBody = { plate: detectedPlate }
-
-//             // Call backend Cloud Function
-//             const response = await fetch(
-//                 "https://us-central1-posterassistant-aebf0.cloudfunctions.net/detectCarDetailsWithCarJam",
-//                 {
-//                     method: 'POST',
-//                     headers: {
-//                         'Content-Type': 'application/json',
-//                         Authorization: `Bearer ${token}`,
-//                     },
-//                     body: JSON.stringify(requestBody),
-//                 }
-//             )
-
-//             if (!response.ok) {
-//                 const errorText = await response.text()
-//                 console.error(`HTTP error! status: ${response.status}`, errorText)
-//                 throw new Error(`Function returned error: ${response.status} - ${errorText}`)
-//             }
-
-//             // Parse result and update UI
-//             const result = await response.json()
-//             updateCarDetailsFromApiResponse(result)
-
-//         } catch (error) {
-//             console.error("Error calling Cloud Function:", error)
-//             return <ErrorPage text="Error calling Gemini Cloud Function." />
-//         } finally {
-//             setloading(false)
-//             setGeminiChecked(true)
-//         }
-//     }
-
-//     return (
-//         <motion.div
-//             initial={{ opacity: 0, y: 10 }}
-//             animate={{ opacity: 1, y: 0 }}
-//             exit={{ opacity: 0, y: -10 }}
-//             transition={{ duration: 0.3 }}
-//         >
-            
-//             <div className="p-2 max-w-xl mx-auto">
-//                 <Notification />
-//                 <section id='identify vehicle'>
-//                     <div className="mt-4 border-3 border-blue-400 px-4 py-2 mb-12 flex flex-col items-center shadow-[0_0_14px_rgba(59,130,246,0.7)]">
-//                         <h1 className={`text-2xl text-gray-200 ${archivoBlack.className}`}>
-//                             Identify Your Vehicle
-//                         </h1>
-//                     </div>
-
-//                     {userImgThumbDownloadUrl && (
-//                         <div className="w-full aspect-[3/4] relative shadow-lg overflow-hidden">
-//                             <img
-//                                 src={userImgThumbDownloadUrl!}
-//                                 alt="Preview"
-//                                 className="absolute inset-0 w-full h-full object-cover"
-//                             />
-//                         </div>
-//                     )}
-
-//                     {pendingValidation ? <div className="flex justify-center m-4">
-//                         <div className='mt-3'>
-//                             <Spinner />
-//                         </div>
-//                     </div> : (
-//                         <div>
-
-//                             <div className="flex flex-col items-center">
-//                                 <button
-//                                     disabled={!userImgThumbDownloadUrl || !selectedTemplate || loading}
-//                                     onClick={handleIdentify}
-//                                     className={`w-full mt-6 text-white 
-//       ${AiInputClicked || carJamClicked
-//                                             ? "bg-purple-900 text-gray-200" // permanent dark style
-//                                             : "bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:bg-gradient-to-br"} 
-//       focus:ring-4 focus:outline-none focus:ring-purple-300 dark:focus:ring-purple-800 
-//       shadow-lg shadow-purple-500/50 dark:shadow-lg dark:shadow-purple-800/80 
-//       font-medium rounded-lg text-sm py-2.5 text-center`}
-//                                 >
-//                                     {loading ? 'Detecting...' : 'Detect Car Info'}
-//                                 </button>
-
-//                                 <div className="flex items-center my-4">
-//                                     <div className="w-1 h-1 bg-purple-500 rounded-full"></div>
-//                                     <p className="text-purple-500 mx-2">OR</p>
-//                                     <div className="w-1 h-1 bg-purple-500 rounded-full"></div>
-//                                 </div>
-
-//                                 <button
-//                                     disabled={!userImgThumbDownloadUrl || !selectedTemplate || loading}
-//                                     onClick={() => {
-//                                         setUseAI(false);
-//                                         setManualInputClicked(true)
-//                                     }}
-//                                     className={`w-full text-white 
-//       ${manualInputClicked || geminiChecked
-//                                             ? "bg-purple-900 text-gray-200" // permanent dark style
-//                                             : "bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:bg-gradient-to-br"} 
-//       focus:ring-4 focus:outline-none focus:ring-purple-300 dark:focus:ring-purple-800 
-//       shadow-lg shadow-purple-500/50 dark:shadow-lg dark:shadow-purple-800/80 
-//       font-medium rounded-lg text-sm py-2.5 text-center`}
-//                                 >
-//                                     {'Manually Input Car Details'}
-//                                 </button>
-//                             </div>
-
-//                             {(geminiChecked || !useAI) && (
-//                                 <div className="mt-4 space-y-2">
-//                                     <label className="block">Make</label>
-//                                     <input
-//                                         value={carDetails.make}
-//                                         onChange={(e) => setCarDetails({ ...carDetails, make: e.target.value })}
-//                                         className="border p-2 w-full"
-//                                         placeholder="Add make"
-//                                     />
-//                                     <label className="block">Model</label>
-//                                     <input
-//                                         value={carDetails.model}
-//                                         onChange={(e) => setCarDetails({ ...carDetails, model: e.target.value })}
-//                                         className="border p-2 w-full"
-//                                         placeholder="Add model"
-//                                     />
-//                                     <label className="block">Year</label>
-//                                     <input
-//                                         value={carDetails.year}
-//                                         onChange={(e) => setCarDetails({ ...carDetails, year: e.target.value })}
-//                                         className="border p-2 w-full"
-//                                         placeholder="Add year"
-//                                     />
-//                                 </div>
-//                             )}
-//                         </div>
-//                     )}
-
-//                 </section>
-
-//                 <div className="mt-5 flex justify-between">
-//                     <button onClick={handleBack} disabled={loading} className="self-start mt-6 relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-pink-500 to-orange-400 group-hover:from-pink-500 group-hover:to-orange-400 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-pink-200 dark:focus:ring-pink-800">
-//                         <span className="relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent">
-//                             Back
-//                         </span>
-//                     </button>
-
-//                     <button
-//                         disabled={!geminiChecked && !manualInputClicked && !loading}
-//                         onClick={handleNext}
-//                         className={`self-end relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium rounded-lg 
-//     ${!geminiChecked && !manualInputClicked && !loading ? 'opacity-50 cursor-not-allowed' : ''}
-//     bg-gradient-to-br from-purple-600 to-blue-500 group-hover:from-purple-600 group-hover:to-blue-500 hover:text-white dark:text-white 
-//     focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800`}
-//                     >
-//                         <span
-//                             className={`relative px-5 py-2.5 transition-all ease-in duration-75 
-//       ${!geminiChecked && !manualInputClicked && !loading ? 'bg-gray-400 dark:bg-gray-700' : 'bg-white dark:bg-gray-900'} 
-//       rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent`}
-//                         >
-//                             Next
-//                         </span>
-//                     </button>
-//                 </div>
-
-//                 {/* Unsaved changes popup */}
-//                 {showOptionsPopup && (
-//                     <div className="p-2 fixed inset-0 flex items-center justify-center backdrop-blur-sm z-40 fade-in">
-//                         <div className="m-2 popup-content p-4 rounded-lg max-w-md text-center bg-gray-800 relative">
-//                             <p className="mt-4 mb-6 text-gray-400 text-lg sm:text-base">
-//                                 How should we identify<br></br> the vehicle?
-//                             </p>
-
-//                             <div className="flex flex-col sm:flex-row justify-center sm:space-x-6 space-y-4 sm:space-y-0">
-//                                 <div className="flex flex-col items-center bg-gray-700 rounded-lg shadow p-3 w-40 mx-auto">
-//                                     <button
-//                                         onClick={handleUseAi}
-//                                         className="px-3 py-2 rounded bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 transition-colors text-sm w-full"
-//                                     >
-//                                         Use AI
-//                                     </button>
-//                                     <ul className="mt-2 text-xs text-gray-400 list-disc list-outside pl-5 text-left leading-snug">
-//                                         <li>Fast & always works</li>
-//                                         <li>Not 100% accurate</li>
-//                                     </ul>
-//                                 </div>
-
-//                                 <div className="flex flex-col items-center bg-gray-700 rounded-lg shadow p-3 w-40 mx-auto">
-//                                     <button
-//                                         onClick={handleUseCarJam}
-//                                         className="px-3 py-2 rounded bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 transition-colors text-sm w-full"
-//                                     >
-//                                         Use CarJam
-//                                     </button>
-//                                     <ul className="mt-2 text-xs text-gray-400 list-disc list-outside pl-5 text-left leading-snug">
-//                                         <li>Needs number plate visible</li>
-//                                         <li>100% accurate</li>
-//                                         <li>Only works in NZ</li>
-//                                     </ul>
-//                                 </div>
-//                             </div>
-
-//                             <div className="mt-6 flex justify-center">
-//                                 <button
-//                                     onClick={handleCancel}
-//                                     className="px-4 py-2 rounded bg-gray-300 text-gray-700 hover:bg-gray-400 transition-colors text-sm"
-//                                 >
-//                                     Cancel
-//                                 </button>
-//                             </div>
-//                         </div>
-//                     </div>
-//                 )}
-
-//                 {showPlatePopup && (
-//                     <div className="p-2 fixed inset-0 flex items-center justify-center backdrop-blur-sm z-40 fade-in">
-//                         <div className="m-2 popup-content p-4 rounded-lg max-w-md text-center bg-gray-800 relative">
-//                             {plateLoading ? (
-//                                 <div className="flex flex-col items-center space-y-4">
-//                                     <Spinner />
-//                                     <p className="text-gray-300">Detecting number plate...</p>
-//                                 </div>
-//                             ) : (
-//                                 <>
-//                                     <p className="mt-4 mb-6 text-gray-400 text-lg sm:text-base">
-//                                         Please confirm or enter the plate number
-//                                     </p>
-
-//                                     <input
-//                                         value={detectedPlate}
-//                                         onChange={(e) => setDetectedPlate(e.target.value.toUpperCase())}
-//                                         className="border border-gray-500 rounded p-2 w-full bg-gray-700 text-white text-center"
-//                                         placeholder="Enter plate number"
-//                                     />
-
-//                                     <div className="mt-6 flex justify-center space-x-4">
-//                                         <button
-//                                             onClick={handleConfirmCarJam}
-//                                             className="px-4 py-2 rounded bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 transition-colors text-sm"
-//                                             disabled={plateLoading}
-//                                         >
-//                                             Confirm
-//                                         </button>
-//                                         <button
-//                                             onClick={handleCancelCarJam}
-//                                             className="px-4 py-2 rounded bg-gray-300 text-gray-700 hover:bg-gray-400 transition-colors text-sm"
-//                                         >
-//                                             Cancel
-//                                         </button>
-//                                     </div>
-//                                 </>
-//                             )}
-//                         </div>
-//                     </div>
-//                 )}
-
-
-
-
-//             </div>
-
-//         </motion.div>
-//     )
-
-//     // UTLITY FUNCTIONS:
-
-//     // For validating car data
-//     // Validate car make, model, and year using NHTSA API
-//     async function validateCarDetails(make: string, model: string, year: string): Promise<{ valid: boolean; reason?: string }> {
-//         try {
-//             // Normalize inputs
-//             make = make.trim().toLowerCase();
-//             model = model.split(' ')[0].trim().toLowerCase();
-
-//             if (!/^\d{4}$/.test(year)) return { valid: false, reason: "Invalid year" };
-//             if (make.length === 0) return { valid: false, reason: "Make is required" };
-//             if (model.length === 0) return { valid: false, reason: "Model is required" };
-
-//             // 1. Validate Make
-//             const makeRes = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/GetAllMakes?format=json`);
-//             const makesData = await makeRes.json();
-//             const validMakes = makesData.Results.map((m: any) => m.Make_Name.toLowerCase());
-//             if (!validMakes.includes(make)) {
-//                 return { valid: false, reason: `Unrecognized make: "${make}"` };
-//             }
-
-//             // 2. Validate Model for Make
-//             const modelRes = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/GetModelsForMake/${make}?format=json`);
-//             const modelData = await modelRes.json();
-//             const validModels = modelData.Results.map((m: any) => m.Model_Name.toLowerCase());
-//             if (!validModels.includes(model)) {
-//                 const exists = modelExists(make, model); // If model is not present on american car database, check if it exists in Japanese db (locally stored).
-//                 if (true) return { valid: true }; // This "true" is a placeholder. Its meant to be "exists". But temporarily allowing all models for makes, as the database is not comprehensive enough and blocks some models from being used in app.
-//                 return { valid: false, reason: `Model "${model}" is not valid for make "${make}"` };
-//             }
-
-//             // 3. Validate Year for Make+Model (TODO: Somehow rewrite this year validation without using NHTSA API, it's not comprehensive enough.)
-//             // const yearRes = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/GetModelsForMakeYear/make/${make}/modelyear/${year}?format=json`);
-//             // const yearData = await yearRes.json();
-//             // const modelsThisYear = yearData.Results.map((m: any) => m.Model_Name.toLowerCase());
-//             // if (!modelsThisYear.includes(model)) {
-//             //     return { valid: false, reason: `Model "${model}" was not produced in year ${year}` };
-//             // }
-
-//             return { valid: true };
-//         } catch (error) {
-//             console.error("Validation error:", error);
-//             return { valid: false, reason: "Failed to validate vehicle details. Please try again." };
-//         }
-//     }
-
-
-//     // --- Utility function to convert File/Blob to Base64 ---
-//     function fileToBase64(file: File | Blob): Promise<string> {
-//         return new Promise((resolve, reject) => {
-//             const reader = new FileReader();
-//             reader.readAsDataURL(file);
-//             reader.onload = () => resolve((reader.result as string).split(',')[1]); // Get base64 string after "base64,"
-//             reader.onerror = error => reject(error);
-//         });
-//     }
-
-//     async function convertImageUrlToBase64(imageUrl: string): Promise<{ base64Image: string; mimeType: string }> {
-//         const response = await fetch(imageUrl);
-//         const blob = await response.blob();
-
-//         return new Promise((resolve, reject) => {
-//             const reader = new FileReader();
-//             reader.onloadend = () => {
-//                 const base64data = reader.result as string;
-//                 const mimeType = blob.type;
-//                 resolve({ base64Image: base64data.split(',')[1], mimeType }); // strip data URI prefix
-//             };
-//             reader.onerror = reject;
-//             reader.readAsDataURL(blob);
-//         });
-//     }
-
-//     // Necessary for formatting and setting car details with no errors
-//     function updateCarDetailsFromApiResponse(responseData: { make: string; model: string; year: string }) {
-//         if (!responseData) {
-//             console.error("API response is missing:", responseData);
-//             return;
-//         }
-
-//         // Use the object directly
-//         const carDetails = responseData;
-
-//         // Update state
-//         setCarDetails(carDetails);
-//         console.log("Car details state updated successfully:", carDetails);
-
-//         const missingMake = carDetails.make === "";
-//         const missingModel = carDetails.model === "";
-//         const missingYear = carDetails.year === "";
-
-//         if (missingMake && missingModel && missingYear) {
-//             notify("warning", "Our AI could not identify the car. Please input the details manually.");
-//         } else {
-//             if (missingMake) {
-//                 notify("info", "Our AI could not identify the make of the car. Please input the details manually.");
-//             }
-//             if (missingModel) {
-//                 notify("info", "Our AI could not identify the model of the car. Please input the details manually.");
-//             }
-//             if (missingYear) {
-//                 notify("info", "Our AI could not identify the year of the car. Please input the details manually.");
-//             }
-//         }
-//     }
-
-// }

@@ -114,8 +114,8 @@ export default function SelectTemplatePage() {
             console.log(selectedStyle + ", " + selectedTemplate?.name);
             router.push('/generate/identify')
         }
-        
-        
+
+
     }
 
     const handleBack = () => {
@@ -208,34 +208,37 @@ export default function SelectTemplatePage() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
         >
-            <section id="select template" className="">
+            <section id="select template" className="p-4 sm:p-6 md:p-8 mx-auto w-full max-w-3xl">
                 <Notification />
-                <div className="p-2 max-w-xl mx-auto pt-5">
-                    <div className="border-3 border-blue-400 px-4 py-2 mb-9 flex flex-col items-center shadow-[0_0_14px_rgba(59,130,246,0.7)]">
-                        <h1 className={`text-2xl text-gray-200 ${archivoBlack.className}`}>
+
+                <div className="flex flex-col items-center mb-6 relative p-[4px] bg-gradient-to-br from-cyan-500 to-blue-500 rounded-2xl">
+                    <div className="flex flex-col items-center bg-white rounded-xl px-6 py-6 w-full">
+                        <h1 className={`text-3xl sm:text-4xl md:text-5xl text-blue-400 text-center mb-2 ${archivoBlack.className}`}>
                             Choose A Template
                         </h1>
+                        <p className="text-sm sm:text-base md:text-lg text-gray-700 text-center">
+                            **Placeholder text only**
+                        </p>
                     </div>
+                </div>
 
-                    <p className="text-sm text-gray-500 mx-auto">**Placeholder text only**</p>
-                    <p className="text-sm text-gray-500 mx-auto mb-2">**Output will be higher quality**</p>
+                {/* Template Preview */}
+                <div
+                    className="relative flex flex-col items-center w-full max-w-xl mx-auto mb-6"
+                    onClick={handleDoubleTap}
+                >
+                    <div className="relative w-full max-w-xs mx-auto rounded-sm overflow-hidden shadow-[0_6px_20px_rgba(0,0,0,0.4)]">
+                        {/* Base image */}
+                        {userImgThumbDownloadUrl && (
+                            <img
+                                src={userImgThumbDownloadUrl}
+                                alt="Preview"
+                                className="w-full h-auto block pointer-events-none"
+                            />
+                        )}
 
-                    {/* WRAPPER for double-tap (no drag here) */}
-                    <div
-                        className="relative flex flex-col items-center w-full"
-                        onClick={handleDoubleTap}
-                    >
-                        <div className="relative w-full max-w-[600px] aspect-[3/4] rounded-md overflow-hidden shadow-lg">
-                            {/* User's uploaded image — STATIC */}
-                            {userImgThumbDownloadUrl && (
-                                <img
-                                    src={userImgThumbDownloadUrl}
-                                    alt="Preview"
-                                    className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-                                />
-                            )}
-
-                            {/* Template overlay — SWIPE ENABLED */}
+                        {/* Overlay AnimatePresence */}
+                        <div className="absolute inset-0 top-0 left-0 w-full h-full">
                             <AnimatePresence initial={false} custom={direction}>
                                 <motion.img
                                     key={currentTemplate?.id}
@@ -244,18 +247,9 @@ export default function SelectTemplatePage() {
                                     className="absolute inset-0 w-full h-full object-cover"
                                     custom={direction}
                                     variants={{
-                                        enter: (dir: number) => ({
-                                            x: dir > 0 ? 300 : -300,
-                                            opacity: 0,
-                                        }),
-                                        center: {
-                                            x: 0,
-                                            opacity: 1,
-                                        },
-                                        exit: (dir: number) => ({
-                                            x: dir > 0 ? -300 : 300,
-                                            opacity: 0,
-                                        }),
+                                        enter: (dir: number) => ({ x: dir > 0 ? 300 : -300, opacity: 0 }),
+                                        center: { x: 0, opacity: 1 },
+                                        exit: (dir: number) => ({ x: dir > 0 ? -300 : 300, opacity: 0 }),
                                     }}
                                     initial="enter"
                                     animate="center"
@@ -270,115 +264,104 @@ export default function SelectTemplatePage() {
                                         else if (offset.x > 50) paginate(-1)
                                     }}
                                 />
-
                             </AnimatePresence>
                         </div>
 
-                        {/* Template label */}
-                        <div className="mt-6 mb-2 mx-auto text-center bg-black/60 text-white px-4 py-1 rounded-lg text-sm">
-                            {currentTemplate?.name}
-                        </div>
+                    </div>
+
+                    {/* Template label */}
+                    <div className="mt-6 mb-2 mx-auto text-center bg-black/60 text-white px-4 py-1 rounded-lg text-sm">
+                        {currentTemplate?.name}
                     </div>
 
 
-                    {/* <TemplateKnob
-                        templates={filteredTemplates}
-                        index={index}
-                        paginate={paginate}
-                    /> */}
-                    {filteredTemplates.length > 0 ? (
-                        <TemplateSlider
-                            length={filteredTemplates.length}
-                            index={index}
-                            onSwipe={paginate}
-                            selectedStyle={selectedStyle.toString()}
-                        />
-                    ) : selectedStyle === "Favourites" ? (
-                        <div className="text-sm text-gray-400 text-center mt-2 mb-5">
-                            No favourites. Double tap a template to favourite!
-                        </div>
-                    ) : <div className="text-sm text-gray-400 text-center mt-2 mb-5">
-                        No templates here.
-                    </div>}
-
-                    <div className="flex overflow-x-auto snap-x gap-2 mt-2">
-                        {STYLES.map(style => {
-                            let className = style === selectedStyle ? "active" : "inactive";
-
-                            // Override color for Favourites
-                            if (style === "Favourites") {
-                                className = style === selectedStyle
-                                    ? "activeFavourite"
-                                    : "inactiveFavourite";
-                            }
-
-                            return (
-                                <button
-                                    key={style}
-                                    onClick={() => {
-                                        setSelectedStyle(style);
-                                        setSelectedTemplate(currentTemplate);
-                                    }}
-                                    className={className}
-                                >
-                                    {style}
-                                </button>
-                            );
-                        })}
-                    </div>
-
-
-
-                    {/* Floating heart animation */}
-                    <AnimatePresence>
-                        {showHeart && (
-                            <motion.div
-                                key="heart"
-                                initial={{ scale: 0, opacity: 0 }}
-                                animate={{ scale: 1.5, opacity: 1 }}
-                                exit={{ scale: 0, opacity: 0 }}
-                                transition={{ duration: 0.3 }}
-                                className="absolute text-red-500 text-3xl select-none pointer-events-none left-1/2"
-                                style={{ bottom: '18rem', transform: 'translateX(-50%)' }}
-                            >
-                                ❤️
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-
-                    {/* Permanent toggle heart */}
-                    {/* <div className="flex flex-col items-center w-full h-[2rem]">
-                        {isFavorite && (
-                            <button
-                                onClick={() => currentTemplate && toggleFavorite(currentTemplate.id)}
-                                className="opacity-70 text-2xl"
-                            >
-                                ❤️
-                            </button>
-                        )}
-                    </div> */}
                 </div>
 
-                <div className="flex justify-between">
+                {/* Template Styles Slider */}
+                {filteredTemplates.length > 0 ? (
+                    <TemplateSlider
+                        length={filteredTemplates.length}
+                        index={index}
+                        onSwipe={paginate}
+                        selectedStyle={selectedStyle.toString()}
+                    />
+                ) : (
+                    <div className="text-sm text-gray-400 text-center mt-2 mb-5">
+                        {selectedStyle === "Favourites" ? "No favourites. Double tap a template to favourite!" : "No templates here."}
+                    </div>
+                )}
+
+                <div className="flex flex-wrap justify-center gap-2 mt-2 mb-6">
+                    {STYLES.map((style) => {
+                        let className = style === selectedStyle ? "active" : "inactive";
+                        if (style === "Favourites") {
+                            className = style === selectedStyle ? "activeFavourite" : "inactiveFavourite";
+                        }
+                        return (
+                            <button
+                                key={style}
+                                onClick={() => {
+                                    setSelectedStyle(style);
+                                    setSelectedTemplate(currentTemplate);
+                                }}
+                                className={className}
+                            >
+                                {style}
+                            </button>
+                        );
+                    })}
+                </div>
+
+
+                {/* Floating heart animation */}
+                <AnimatePresence>
+                    {showHeart && (
+                        <motion.div
+                            key="heart"
+                            initial={{ scale: 0, opacity: 0 }}
+                            animate={{ scale: 1.5, opacity: 1 }}
+                            exit={{ scale: 0, opacity: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="absolute text-red-500 text-3xl select-none pointer-events-none left-1/2"
+                            style={{ bottom: '18rem', transform: 'translateX(-50%)' }}
+                        >
+                            ❤️
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Navigation Buttons */}
+                <div className="flex justify-center gap-4 mt-8">
                     <button
                         onClick={handleBack}
-                        className="self-start mt-6 relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-pink-500 to-orange-400 group-hover:from-pink-500 group-hover:to-orange-400 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-pink-200 dark:focus:ring-pink-800"
+                        className="
+                w-full max-w-[140px] rounded-xl py-2 text-sm font-semibold
+                bg-white text-gray-800 shadow-md
+                border border-gray-200
+                hover:bg-gray-50
+                disabled:opacity-50
+            "
                     >
-                        <span className="relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent">
-                            Back
-                        </span>
+                        Back
                     </button>
 
                     <button
                         onClick={handleNext}
-                        className="self-end relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-purple-600 to-blue-500 group-hover:from-purple-600 group-hover:to-blue-500 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800"
+                         className="
+                w-full max-w-[140px] rounded-xl py-2 text-sm font-semibold text-white
+                bg-gradient-to-r from-cyan-500 to-blue-500
+                hover:brightness-110
+                focus:outline-none focus:ring-2 focus:ring-cyan-300
+                disabled:opacity-50 disabled:cursor-not-allowed
+                shadow-md
+            "
                     >
-                        <span className="relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent">
-                            Next
-                        </span>
+                        Next
                     </button>
                 </div>
+
             </section>
+
         </motion.div>
     )
 

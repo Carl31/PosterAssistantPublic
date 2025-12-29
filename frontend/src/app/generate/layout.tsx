@@ -24,7 +24,7 @@ export default function GenerateLayout({ children }: { children: React.ReactNode
   return (
     <PosterWizardProvider>
       {(isAuthChecked && user) ? (<div className="">
-        <div className="px-4 bg-gray-800 h-full min-h-screen">
+        <div className="px-4 bg-white h-full min-h-screen">
           <div className=" items-center">
             <div className="">
               {children}

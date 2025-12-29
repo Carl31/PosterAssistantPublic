@@ -3,11 +3,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { getAuth, onAuthStateChanged, signOut, updateProfile } from 'firebase/auth'
 import { doc, getDoc, getFirestore, updateDoc } from 'firebase/firestore'
 
 export default function AccountSettingsPage() {
+    const searchParams = useSearchParams();
+    const showFinalTutorialFlag = searchParams!.get('final') === 'true';
+
     /* ---------------------------------------------------------------------
        State: user identity
     --------------------------------------------------------------------- */
@@ -105,6 +108,10 @@ export default function AccountSettingsPage() {
             setShowOverlay(true)
             return
         }
+        if (showFinalTutorialFlag) {
+            router.replace('/account/dashboard?final=true')
+            return
+        }
         router.replace('/account/dashboard')
     }
 
@@ -126,50 +133,50 @@ export default function AccountSettingsPage() {
     --------------------------------------------------------------------- */
     return (
         <div className="p-4 max-w-lg mx-auto">
-            <h1 className="text-2xl font-bold mb-4 ml-1">Account Settings</h1>
+            <h1 className="text-2xl font-bold mb-4 ml-1 text-black">Account Settings</h1>
 
-            <div className="bg-gray-900 rounded-xl shadow-md p-4 space-y-3">
+            <div className="bg-blue-200 border-3 border-black rounded-xl shadow-md p-4 space-y-3">
                 {/* Username */}
                 <div>
-                    <p className="text-sm text-gray-500">Username</p>
+                    <p className="text-sm text-black"><b>Username</b></p>
                     <input
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        className="w-full mt-1 p-2 rounded-md bg-gray-800 text-white border border-gray-700 focus:ring-2 focus:ring-blue-500"
+                        className="w-full mt-1 p-2 rounded-md bg-gray-100 text-black border-2 border-gray-700 focus:ring-2 focus:ring-black"
                     />
                 </div>
 
                 {/* Instagram */}
                 <div>
-                    <p className="text-sm text-gray-500">Instagram Handle</p>
+                    <p className="text-sm text-black"><b>Instagram Handle</b></p>
                     <div className="relative">
-                        <span className="absolute inset-y-0 left-0 pl-3 pt-3 text-gray-300">
+                        <span className="absolute inset-y-0 left-0 pl-3 pt-3 text-black">
                             @
                         </span>
                         <input
                             type="text"
                             value={instagramHandle}
                             onChange={(e) => setInstagramHandle(e.target.value)}
-                            className="w-full mt-1 p-2 pl-8 rounded-md bg-gray-800 text-white border border-gray-700 focus:ring-2 focus:ring-blue-500"
+                            className="w-full mt-1 p-2 pl-8 rounded-md bg-gray-100 text-black border-2 border-gray-700 focus:ring-2 focus:ring-black"
                         />
                     </div>
                 </div>
 
                 {/* Read-only fields */}
                 <div>
-                    <p className="text-sm text-gray-500">Email</p>
-                    <p className="text-base font-medium">{email || '—'}</p>
+                    <p className="text-sm text-black"><b>Email</b></p>
+                    <p className="text-base font-medium text-black">{email || '—'}</p>
                 </div>
 
                 <div>
-                    <p className="text-sm text-gray-500">User ID</p>
-                    <p className="text-base font-mono break-all">{uid || '—'}</p>
+                    <p className="text-sm text-black"><b>User ID</b></p>
+                    <p className="text-base font-mono break-all text-black">{uid || '—'}</p>
                 </div>
 
                 <div>
-                    <p className="text-sm text-gray-500">Subscription</p>
-                    <p className="text-base">Early Access</p>
+                    <p className="text-sm text-black"><b>Subscription</b></p>
+                    <p className="text-base text-black">Early Access</p>
                 </div>
 
                 {/* Save button */}
@@ -179,7 +186,7 @@ export default function AccountSettingsPage() {
                     className={`
                         w-full mt-4 py-2 rounded-md text-sm font-medium transition-all
                         ${canSave
-                            ? 'bg-green-600 hover:bg-green-700 text-white'
+                            ? 'bg-green-500 hover:bg-green-700 text-white'
                             : 'bg-green-900/40 text-green-300 cursor-not-allowed'}
                     `}
                 >
@@ -191,14 +198,17 @@ export default function AccountSettingsPage() {
             <div className="flex justify-between mt-4">
                 <button
                     onClick={handleBack}
-                    className="px-5 py-2 rounded-lg bg-gradient-to-br from-purple-600 to-blue-500 text-white"
+                    // bg-gradient-to-br from-purple-600 to-blue-500
+                    className="px-5 py-2 rounded-lg bg-white text-gray-800 shadow-md
+                border border-gray-200
+                hover:bg-gray-50 transition"
                 >
                     Back
                 </button>
 
                 <button
                     onClick={handleLogout}
-                    className="px-5 py-2 rounded-lg bg-gradient-to-br from-pink-500 to-orange-400 text-white"
+                   className="px-5 py-2 rounded-lg bg-white border-3 border-red-500 text-red-500 text-sm"
                 >
                     Sign Out
                 </button>
@@ -232,20 +242,39 @@ export default function AccountSettingsPage() {
             {/* Profile completion overlay */}
             {showOverlay && (
                 <div
-                    className="fixed inset-0 z-50"
+                    className="fixed inset-0 z-50 flex items-center justify-center px-6"
                     onClick={() => setShowOverlay(false)}
                 >
-                    <div className="absolute inset-0 bg-black/70" />
-                    <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
-                        <div className="bg-gray-900 border border-cyan-500 rounded-xl px-6 py-4 text-white text-sm">
+                    {/* Backdrop */}
+                    <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" />
+
+                    {/* Card */}
+                    <div
+                        className="
+        relative
+        max-w-sm w-full
+        rounded-2xl
+        bg-gradient-to-br from-gray-900 to-gray-800
+        border border-cyan-500/40
+        shadow-xl shadow-cyan-500/10
+        px-6 py-5
+        text-sm text-white
+        text-left
+      "
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <p className="font-medium">
                             Add your username and Instagram handle here.
-                            <br />
-                            <br />
+                        </p>
+
+                        <p className="mt-3 text-gray-300">
                             Your handle will appear on your posters.
-                        </div>
+                        </p>
                     </div>
                 </div>
             )}
+
+
         </div>
     )
 }

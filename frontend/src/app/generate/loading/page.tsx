@@ -92,7 +92,7 @@ export default function LoadingPage() {
 
                 <div className="relative w-full h-4 bg-gray-200 rounded-full overflow-hidden shadow-inner mt-4">
                     <div
-                        className="absolute top-0 left-0 h-full bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 transition-all duration-500 ease-out"
+                        className="absolute top-0 left-0 h-full  bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-500 ease-out"
                         style={{ width: getProgressPercentage(progress!) }}
                     ></div>
                 </div>

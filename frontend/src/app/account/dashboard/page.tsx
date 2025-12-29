@@ -28,9 +28,10 @@ export default function DashboardPage() {
 
   const searchParams = useSearchParams();
   const showTutorialFlag = searchParams!.get('signup') === 'true';
+  const showFinalTutorialFlag = searchParams!.get('final') === 'true';
 
   const [tutorialStep, setTutorialStep] = useState<number | null>(
-    showTutorialFlag ? 0 : null
+    showTutorialFlag ? 0 : (showFinalTutorialFlag ? 4 : null)
   )
 
   const createBtnRef = useRef<HTMLButtonElement | null>(null)
@@ -65,9 +66,14 @@ export default function DashboardPage() {
       onNext: () => setTutorialStep(3),
     },
     {
-      text: 'This is your account settings.\nWe’ll go there now so you can add your name and Instagram.',
+      text: 'This is your account settings.\n\nWe’ll go there now so you can add your name and Instagram.',
       highlight: settingsBtnRef.current,
-      onNext: () => router.replace('/account/settings'),
+      onNext: () => router.replace('/account/settings/?final=true'),
+    },
+    {
+      text: `You're all set!\n\nI hope you enjoy using SickShotsAI :)\n\n- Carlos`,
+      highlight: null,
+      onNext: () => setTutorialStep(null),
     },
   ]
 
@@ -116,24 +122,26 @@ export default function DashboardPage() {
     bg-gradient-to-br from-cyan-500 to-blue-500
     rounded-2xl mt-4"
       >
-        <div className="flex flex-col items-center bg-gray-900 rounded-xl px-4 sm:px-6 py-6 w-full">
+        <div className="flex flex-col items-center bg-white rounded-xl px-4 sm:px-6 py-6 w-full">
           <h1
             className={`text-4xl sm:text-5xl md:text-5xl lg:text-6xl mb-4 text-blue-400 text-center ${anton.className}`}
           >
             SICKSHOTS AI
           </h1>
-          <h2 className="text-sm sm:text-base md:text-lg text-gray-400 text-center">
+          <h2 className="text-sm sm:text-base md:text-lg text-gray-800 text-center">
             Photos into posters in minutes.
           </h2>
         </div>
       </div>
 
-      <h1 className="mt-6 text-xl font-bold mb-4">
+      <h1 className="mt-6 text-xl font-bold mb-4 text-black">
         Welcome, {displayName || user.email}
       </h1>
 
       {/* Button container */}
       <div className="flex flex-col gap-4 w-full max-w-2xl mx-auto">
+
+        {/* Make Poster */}
         <button
           onClick={() => {
             if (credits.posterGen <= 0) {
@@ -143,44 +151,75 @@ export default function DashboardPage() {
                 setTimeout(() => btn.classList.remove("animate-shake"), 500);
               }
             }
-            handleCreatePoster()
-            
+            handleCreatePoster();
           }}
           ref={createBtnRef}
           id="createPosterBtn"
-          className="relative inline-flex items-center justify-center p-0.5 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group w-full bg-gradient-to-br from-cyan-500 to-blue-500 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-cyan-200 dark:focus:ring-cyan-800"
+          className="relative
+      w-full
+      inline-flex justify-center
+      gap-3
+      px-6 py-3
+      text-sm font-semibold text-white
+      rounded-lg
+      bg-gradient-to-r from-cyan-500 to-blue-500
+      hover:brightness-110
+      focus:outline-none focus:ring-2 focus:ring-cyan-300
+      transition
+    "
         >
-          <span className="relative w-full px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent flex flex-col items-center">
-            <img className="w-9 h-9 mt-2 mb-1.5" src="/svg/add.svg" alt="addSVG" />
-            Make Poster
-          </span>
+          <img className="absolute left-10 w-5 h-5" src="/svg/add_white.svg" alt="add" />
+          <span className="text-center">Create</span>
         </button>
-        <p className="text-xs text-gray-300 mx-auto">
+
+        <p className="text-xs text-gray-600 mx-auto mt-[-7px]">
           You have {credits.posterGen} poster credits left.
         </p>
 
+        {/* My Posters */}
         <button
           onClick={() => router.replace("/account/posters")}
           ref={postersBtnRef}
-          className="relative inline-flex items-center justify-center p-0.5 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group w-full bg-gradient-to-br from-cyan-500 to-blue-500 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-cyan-200 dark:focus:ring-cyan-800"
+          className="relative 
+      w-full
+      inline-flex items-center justify-center
+      gap-3
+      px-6 py-3
+      text-sm font-semibold text-white
+      rounded-lg
+      bg-gradient-to-r from-cyan-500 to-blue-500
+      hover:brightness-110
+      focus:outline-none focus:ring-2 focus:ring-cyan-300
+      transition
+    "
         >
-          <span className="relative w-full px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent flex flex-col items-center">
-            <img className="w-9 h-9 mt-2 mb-1.5" src="/svg/application.svg" alt="myPostersSVG" />
-            My Posters
-          </span>
+          <img className="absolute left-10 w-5 h-5" src="/svg/application_white.svg" alt="my posters" />
+          <span className="text-center">Posters</span>
         </button>
 
+        {/* Account Settings */}
         <button
           onClick={() => router.replace("/account/settings")}
           ref={settingsBtnRef}
-          className="relative inline-flex items-center justify-center p-0.5 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group w-full bg-gradient-to-br from-cyan-500 to-blue-500 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-cyan-200 dark:focus:ring-cyan-800"
+          className="relative
+      w-full
+      inline-flex items-center justify-center
+      gap-3
+      px-6 py-3
+      text-sm font-semibold text-white
+      rounded-lg
+      bg-gradient-to-r from-cyan-500 to-blue-500
+      hover:brightness-110
+      focus:outline-none focus:ring-2 focus:ring-cyan-300
+      transition
+    "
         >
-          <span className="relative w-full px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent flex flex-col items-center">
-            <img className="w-9 h-9 mt-2 mb-1.5" src="/svg/setting.svg" alt="settingsSVG" />
-            Account Settings
-          </span>
+          <img className="absolute left-10 w-5 h-5" src="/svg/setting_white.svg" alt="settings" />
+          <span className="text-center">Settings</span>
         </button>
+
       </div>
+
 
       {tutorialStep !== null && (
         <div
@@ -200,7 +239,7 @@ export default function DashboardPage() {
 
           {/* Text */}
           <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
-            <div className="bg-gray-900 border border-cyan-500 rounded-xl px-6 py-4 max-w-sm text-white text-sm whitespace-pre-line">
+            <div className="bg-gray-700/50 backdrop-blur-sm border border-white rounded-xl px-6 py-4 max-w-sm text-white text-sm whitespace-pre-line mt-[-170px]">
               {stepConfig[tutorialStep].text}
             </div>
           </div>
