@@ -11,7 +11,7 @@ export default function GenerateLayout({ children }: { children: React.ReactNode
 
   useEffect(() => {
     if (isAuthChecked && !user) {
-      router.replace('/login')
+      router.replace('/')
     }
   }, [user, isAuthChecked, router])
 
