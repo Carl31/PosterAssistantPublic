@@ -125,7 +125,7 @@ export default function AccountSettingsPage() {
 
     const handleConfirmLogout = async () => {
         await signOut(auth)
-        router.push('/login')
+        router.push('/')
     }
 
     /* ---------------------------------------------------------------------
