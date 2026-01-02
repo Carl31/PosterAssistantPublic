@@ -26,6 +26,10 @@
     const supportedTexts = params.get("supportedTexts");
     const supportedTextsArray = supportedTexts.split(',');
 
+    const hexColour = params.get("hexColour");
+    const hexElements = params.get("hexElements");
+    const hexElementsArray = hexElements.split(',');
+
     const delay = (ms) => new Promise((r) => setTimeout(r, ms));
     const iframe = document.getElementById("pp");
     const ppWindow = iframe.contentWindow;
@@ -277,7 +281,57 @@ while(q.length){
       console.log("[Wrapper] Updated variables! Continuing...");
 
 
-      // Stage 3: Place user image
+      // Stage 3: Apply hex colour
+      console.log("[Wrapper] Applying hex colours...")
+      const applyHexScript = `
+        var names = [];
+        var hexElements = ${JSON.stringify(hexElements)};
+        var q=[app.activeDocument];
+        while(q.length){
+          var g=q.pop();
+          for(var i=0;i<g.layers.length;i++){
+            var l=g.layers[i];
+
+            if (hexElements.indexOf(l.name) !== -1) {
+              console.log("Layer found: " + l.name);
+
+              try {
+                  l.rasterize(RasterizeType.TEXTCONTENTS);
+              } catch (e) {
+                  console.log(e.toString());
+              }
+
+              l.transparentPixelsLocked = true;
+
+              var fillColor = new SolidColor();
+              console.log("t1.");
+              fillColor.rgb.hexValue = ${hexValue};
+              q[0].selection.selectAll();
+              q[0].selection.fill(fillColor, ColorBlendMode.NORMAL, 100, false);
+              console.log("t2.");
+              q[0].selection.deselect();
+
+              l.transparentPixelsLocked = false;
+            }
+
+            names.push(l.name);
+            if(l.layers) q.push(l);
+          }
+        }
+        `;
+
+       try {
+        ppWindow.postMessage(applyHexScript, "*");
+        await waitForDone(1);
+        console.log("[Wrapper] Applied hex colours! Continuing...");
+      } catch (e) {
+        console.log("[Wrapper] Error:");
+        console.log(e.toString());
+      }
+      
+
+
+      // Stage 4: Place user image
       console.log("[Photopea Progress] Carefully inserting your image");
       sendToPhotopea(`app.open("${userImageUrl}", null, true);`);
       await waitForDone(1);

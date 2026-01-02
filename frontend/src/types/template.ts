@@ -8,5 +8,6 @@ export type Template = {
   isActive: boolean
   supportedTexts: string[]
   style: string
+  hexElements: string[]
   // etc. Can add more here if wanting to use them on this page.
 }

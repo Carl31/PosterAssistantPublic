@@ -24,6 +24,8 @@ type CarDetails = {
 
 const DESCRIPTION_COOLDOWN_MS = 1000; // 1 second buffer between runs
 
+const hexValue = "0000FF";
+
 export default function OverviewPage() {
 
     const { user } = useAuth()
@@ -224,7 +226,9 @@ export default function OverviewPage() {
                     jobId,
                     token,
                     userId: user.uid,
-                    supportedTexts: selectedTemplate?.supportedTexts
+                    supportedTexts: selectedTemplate?.supportedTexts,
+                    hexColor: hexValue,
+                    hexElements: selectedTemplate?.hexElements
                 })
             })
 

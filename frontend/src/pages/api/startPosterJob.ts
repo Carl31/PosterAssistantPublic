@@ -14,7 +14,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     console.log("Recieved request:", req.method, req.url);
 
-    const { userId, token, jobId, psdUrl, userImageUrl, carDetails, description, instagramHandle, fontsUsed, templateId, supportedTexts } = req.body
+    const { userId, token, jobId, psdUrl, userImageUrl, carDetails, description, instagramHandle, fontsUsed, templateId, supportedTexts, hexColour, hexElements } = req.body
 
     try {
         // Old way
@@ -48,7 +48,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         token,
         createdAt: serverTimestamp(),
         templateId,
-        supportedTexts
+        supportedTexts,
+        hexColour,
+        hexElements
         });
 
         console.log('Job started:', jobId);
