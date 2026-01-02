@@ -227,7 +227,7 @@ export default function OverviewPage() {
                     token,
                     userId: user.uid,
                     supportedTexts: selectedTemplate?.supportedTexts,
-                    hexColor: hexValue,
+                    hexColour: hexValue,
                     hexElements: selectedTemplate?.hexElements
                 })
             })
