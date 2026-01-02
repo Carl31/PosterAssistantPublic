@@ -24,8 +24,6 @@ type CarDetails = {
 
 const DESCRIPTION_COOLDOWN_MS = 1000; // 1 second buffer between runs
 
-const hexValue = "0000FF";
-
 export default function OverviewPage() {
 
     const { user } = useAuth()
@@ -42,6 +40,8 @@ export default function OverviewPage() {
 
     const isGeneratingRef = useRef(false);
     const lastGeneratedAtRef = useRef<number>(0);
+
+    const hexValue = "0000FF";
 
     function deepEqual(carDetails1: CarDetails, carDetails2: CarDetails): boolean {
         return (
