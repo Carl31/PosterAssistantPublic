@@ -96,7 +96,7 @@ export default function DashboardPage() {
 
   const handleCreatePoster = async () => {
     if (!user) {
-      router.push('/login')
+      router.push('/')
     }
 
     console.log("Credits:", credits)
