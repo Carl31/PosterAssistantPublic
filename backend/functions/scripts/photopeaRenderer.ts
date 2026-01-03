@@ -51,6 +51,8 @@ export const renderPoster = async ({
 
   try {
 
+    console.log("[renderPoster] Launching browser...");
+
     // Save hex data in localStorage before navigating
     await page!.evaluate((data: { hexColour: string; hexElements: string[] }) => {
         localStorage.setItem('poster_hexColour', data.hexColour);
