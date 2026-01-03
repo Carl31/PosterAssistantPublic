@@ -83,6 +83,8 @@ export const renderPoster = async ({
 
     console.log(fontsUsed);
 
+    console.log(params.toString());
+
     const fullUrl = `https://posterassistant-aebf0.web.app/photopea-wrapper.html?${params.toString()}`;
     await page.goto(fullUrl);
 
