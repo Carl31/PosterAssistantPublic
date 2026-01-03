@@ -26,9 +26,14 @@
     const supportedTexts = params.get("supportedTexts");
     const supportedTextsArray = supportedTexts.split(',');
 
-    const hexColour = params.get("hexColour");
-    const hexElements = params.get("hexElements");
+    // const hexColour = params.get("hexColour");
+    // const hexElements = params.get("hexElements");
+    // const hexElementsArray = hexElements.split(',');
+
+    const hexColour = localStorage.getItem('poster_hexColour');
+    const hexElements = JSON.parse(localStorage.getItem('poster_hexElements'));
     const hexElementsArray = hexElements.split(',');
+
 
     const delay = (ms) => new Promise((r) => setTimeout(r, ms));
     const iframe = document.getElementById("pp");

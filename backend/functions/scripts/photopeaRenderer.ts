@@ -50,6 +50,13 @@ export const renderPoster = async ({
   let page;
 
   try {
+
+    // Save hex data in localStorage before navigating
+    await page!.evaluate((data: { hexColour: string; hexElements: string[] }) => {
+        localStorage.setItem('poster_hexColour', data.hexColour);
+        localStorage.setItem('poster_hexElements', JSON.stringify(data.hexElements));
+    }, { hexColour, hexElements });
+
     page = await browser.newPage();
 
     const timeZone = 'Pacific/Auckland'; // Use IANA timezone name
@@ -77,13 +84,11 @@ export const renderPoster = async ({
       date: formattedDate,
       fontsUsed: fontsUsed.join(','),
       supportedTexts: supportedTexts.join(','),
-      hexColour: hexColour,
-      hexElements: hexElements.join(','),
     });
 
     console.log(fontsUsed);
 
-    console.log(params.toString());
+    //console.log(params.toString());
 
     const fullUrl = `https://posterassistant-aebf0.web.app/photopea-wrapper.html?${params.toString()}`;
     await page.goto(fullUrl);
