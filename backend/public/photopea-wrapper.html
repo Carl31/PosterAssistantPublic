@@ -285,7 +285,7 @@ while(q.length){
       console.log("[Wrapper] Applying hex colours...")
       const applyHexScript = `
         var names = [];
-        var hexElements = ${JSON.stringify(hexElements)};
+        var hexElements = ${JSON.stringify(hexElementsArray)};
         var q=[app.activeDocument];
         while(q.length){
           var g=q.pop();
