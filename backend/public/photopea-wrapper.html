@@ -26,13 +26,13 @@
     const supportedTexts = params.get("supportedTexts");
     const supportedTextsArray = supportedTexts.split(',');
 
-    // const hexColour = params.get("hexColour");
-    // const hexElements = params.get("hexElements");
-    // const hexElementsArray = hexElements.split(',');
-
-    const hexColour = localStorage.getItem('poster_hexColour');
-    const hexElements = JSON.parse(localStorage.getItem('poster_hexElements'));
+    const hexColour = params.get("hexColour");
+    const hexElements = params.get("hexElements");
     const hexElementsArray = hexElements.split(',');
+
+    // const hexColour = localStorage.getItem('poster_hexColour');
+    // const hexElements = JSON.parse(localStorage.getItem('poster_hexElements'));
+    // const hexElementsArray = hexElements.split(',');
 
 
     const delay = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -236,7 +236,7 @@ while(q.length){
                     console.log("Found description layer! : " + subLayer.name);
                     console.log("Below kind must be 2 (for text layer)");
                     console.log("Sublayer kind: " + subLayer.kind);
-                    p[0].layers[i].layers[j].textItem.contents = "${description}"; // error here because description has quotes in it I think.
+                    p[0].layers[i].layers[j].textItem.contents = "${description}";
                 } else {
                     console.log("Skipping layer: " + subLayer.name);
                 }
@@ -284,48 +284,75 @@ while(q.length){
       //await waitForDone(1);
       // await delay(1000);
       console.log("[Wrapper] Updated variables! Continuing...");
-
+      await delay(1000);
 
       // Stage 3: Apply hex colour
-      console.log("[Wrapper] Applying hex colours...")
+      // console.log("[Wrapper] Applying hex colours...")
+      console.log(hexElementsArray.toString());
       const applyHexScript = `
+      console.log("=== SCRIPT START ===");
         var names = [];
-        var hexElements = ${JSON.stringify(hexElementsArray)};
-        var q=[app.activeDocument];
-        while(q.length){
-          var g=q.pop();
-          for(var i=0;i<g.layers.length;i++){
-            var l=g.layers[i];
+      var hexColor = "${hexColour}";
 
-            if (hexElements.indexOf(l.name) !== -1) {
-              console.log("Layer found: " + l.name);
+var hexElements = ${JSON.stringify(hexElementsArray)};
+console.log("hexElements:", hexElements);
+var q = [app.activeDocument];
 
-              try {
-                  l.rasterize(RasterizeType.TEXTCONTENTS);
-              } catch (e) {
-                  console.log(e.toString());
-              }
+while (q.length) {
 
-              l.transparentPixelsLocked = true;
+    var g = q.pop();
 
-              var fillColor = new SolidColor();
-              console.log("t1.");
-              fillColor.rgb.hexValue = ${hexValue};
-              q[0].selection.selectAll();
-              q[0].selection.fill(fillColor, ColorBlendMode.NORMAL, 100, false);
-              console.log("t2.");
-              q[0].selection.deselect();
+    for (var i = 0; i < g.layers.length; i++) {
+        var l = g.layers[i];
+        console.log("  > Layer name:", l.name);
+        console.log("  > Layer has sublayers:", !!l.layers);
 
-              l.transparentPixelsLocked = false;
-            }
+        if (hexElements.indexOf(l.name) !== -1) {
+            console.log("  >>> MATCH FOUND <<<");
+            console.log("  >>> Target layer:", l.name);
 
-            names.push(l.name);
-            if(l.layers) q.push(l);
-          }
+            
+                app.activeDocument.activeLayer = l;
+                console.log("  Rasterizing layer:", l.name);
+                l.rasterize(RasterizeType.TEXTCONTENTS);
+                console.log("  Rasterize OK");
+
+            console.log("  Locking transparency");
+            l.transparentPixelsLocked = true;
+
+            var fillColor = new SolidColor();
+            console.log("  Creating fill color");
+            fillColor.rgb.hexValue = hexColor;
+            console.log("  Fill color set:", hexColor);
+
+            console.log("  Selecting all");
+            app.activeDocument.selection.selectAll();
+
+            console.log("  Filling selection");
+            app.activeDocument.selection.fill(fillColor, ColorBlendMode.NORMAL, 100, false);
+
+
+            console.log("  Deselecting");
+            app.activeDocument.selection.deselect();
+
+            console.log("  Unlocking transparency");
+            l.transparentPixelsLocked = false;
+
+            console.log("  >>> FINISHED PROCESSING LAYER:", l.name);
         }
-        `;
 
-       try {
+        names.push(l.name);
+
+        if (l.layers) {
+            q.push(l);
+        }
+    }
+}
+
+console.log("=== SCRIPT END ===");
+`;
+
+      try {
         ppWindow.postMessage(applyHexScript, "*");
         await waitForDone(1);
         console.log("[Wrapper] Applied hex colours! Continuing...");
@@ -333,7 +360,7 @@ while(q.length){
         console.log("[Wrapper] Error:");
         console.log(e.toString());
       }
-      
+
 
 
       // Stage 4: Place user image
