@@ -38,7 +38,7 @@ export const generatePosterOnJobCreate = functions
         templateId,
         supportedTexts,
         hexColour,
-        hexElements
+        hexElements,
       } = data;
 
       // ✅ 1. Verify token and extract UID
