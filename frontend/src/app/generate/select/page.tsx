@@ -29,13 +29,15 @@ const archivoBlack = Archivo_Black({
 
 export default function SelectTemplatePage() {
     const [templates, setTemplates] = useState<Template[]>([])
-    const { selectedTemplate, setSelectedTemplate, setInstagramHandle, userImgThumbDownloadUrl, templateIndex, setTemplateIndex, setGeminiChecked, setCarDetails, credits, setCredits } = usePosterWizard()
+    const { selectedTemplate, setSelectedTemplate, setInstagramHandle, userImgThumbDownloadUrl, templateIndex, setTemplateIndex, setGeminiChecked, setCarDetails, credits, setCredits, hexValue, setHexValue } = usePosterWizard()
     const { user } = useAuth()
     // eslint-disable-next-line @typescript-eslint/naming-convention
     const [favoriteTemplates, setFavoriteTemplates] = useState<string[]>([])
     const [loading, setLoading] = useState(false)
     const router = useRouter()
     const { state } = usePosterWizard()
+
+    const [colorOpen, setColorOpen] = useState(false);
 
     const searchParams = useSearchParams();
     const imageUploaded_flag = searchParams!.get('upload') === 'true';
@@ -58,6 +60,129 @@ export default function SelectTemplatePage() {
     const [showHeart, setShowHeart] = useState(false);
     const lastTap = useRef(0);
 
+    //const containerRef = useRef<HTMLDivElement>(null);
+    //const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
+
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
+    const pickingRef = useRef(false);
+    const containerRef = useRef<HTMLDivElement>(null);
+
+
+    const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
+    const baseImgRef = useRef<HTMLImageElement>(null);
+
+    async function applyHexFillToOverlay(hex: string) {
+        const canvas = overlayCanvasRef.current;
+        if (!canvas || !selectedTemplate?.previewHexUrl) return;
+
+        const baseImg = baseImgRef.current;
+        if (!baseImg?.naturalWidth) return; // ensure base image is loaded
+
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+        if (!ctx) return;
+
+        // Set canvas to **match displayed size**
+        canvas.width = baseImg.clientWidth;
+        canvas.height = baseImg.clientHeight;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.src = selectedTemplate.previewHexUrl;
+
+        await new Promise<void>((resolve, reject) => {
+            img.onload = () => resolve();
+            img.onerror = () => reject();
+        });
+
+        // Draw the overlay PNG stretched to canvas
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        // Apply hex fill
+        ctx.globalCompositeOperation = "source-atop";
+        ctx.fillStyle = hex;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.globalCompositeOperation = "source-over";
+    }
+
+
+    useEffect(() => {
+        const canvas = overlayCanvasRef.current;
+        const baseImg = baseImgRef.current;
+        const overlayUrl = selectedTemplate?.previewHexUrl;
+        if (!canvas || !baseImg || !overlayUrl) return;
+
+        const drawOverlay = async () => {
+            const ctx = canvas.getContext("2d", { willReadFrequently: true });
+            if (!ctx) return;
+
+            // Set canvas size to match displayed base image
+            canvas.width = baseImg.clientWidth;
+            canvas.height = baseImg.clientHeight;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.src = overlayUrl;
+
+            await new Promise<void>((resolve, reject) => {
+                img.onload = () => resolve();
+                img.onerror = () => reject();
+            });
+
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            ctx.globalCompositeOperation = "source-atop";
+            ctx.fillStyle = hexValue;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.globalCompositeOperation = "source-over";
+        };
+
+        if (!baseImg.complete) {
+            baseImg.onload = drawOverlay;
+        } else {
+            drawOverlay();
+        }
+    }, [hexValue, selectedTemplate?.previewHexUrl]);
+
+
+
+
+    useEffect(() => {
+        if (!canvasRef.current) return;
+
+        ctxRef.current = canvasRef.current.getContext("2d", { willReadFrequently: true })!;
+    }, []);
+
+
+    // whenever user selects a color
+    useEffect(() => {
+        applyHexFillToOverlay(hexValue);
+    }, [hexValue, selectedTemplate?.previewHexUrl]);
+
+
+    useEffect(() => {
+        function handleClickOutside(e: MouseEvent | TouchEvent) {
+            if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+                setColorOpen(false);
+            }
+        }
+
+        document.addEventListener("mousedown", handleClickOutside);
+        document.addEventListener("touchstart", handleClickOutside);
+
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+            document.removeEventListener("touchstart", handleClickOutside);
+        };
+    }, [colorOpen]);
+
+
+
+
     useEffect(() => {
         setIndex(0);
     }, [selectedStyle, filteredTemplates.length]);
@@ -76,6 +201,111 @@ export default function SelectTemplatePage() {
         lastTap.current = now;
     };
 
+    //const canvasRef = useRef<HTMLCanvasElement>(null);
+
+
+    useEffect(() => {
+        if (!colorOpen || !canvasRef.current) return;
+
+        const canvas = canvasRef.current;
+
+        // Set actual pixel dimensions
+        canvas.width = 300;
+        canvas.height = 150;
+
+        // Get context with willReadFrequently only once
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+        if (!ctx) return;
+        ctxRef.current = ctx;
+
+        // Horizontal hue gradient
+        const hue = ctx.createLinearGradient(0, 0, canvas.width, 0);
+        hue.addColorStop(0, "red");
+        hue.addColorStop(0.17, "yellow");
+        hue.addColorStop(0.33, "lime");
+        hue.addColorStop(0.5, "cyan");
+        hue.addColorStop(0.67, "blue");
+        hue.addColorStop(0.83, "magenta");
+        hue.addColorStop(1, "red");
+        ctx.fillStyle = hue;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Vertical value/saturation overlay
+        const value = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        value.addColorStop(0, "rgba(255,255,255,1)");
+        value.addColorStop(0.5, "rgba(255,255,255,0)");
+        value.addColorStop(1, "rgba(0,0,0,1)");
+        ctx.fillStyle = value;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    }, [colorOpen]);
+
+
+
+
+    //const pickingRef = useRef(false);
+
+    function pickColor(clientX: number, clientY: number) {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+        if (!ctx) return;
+
+        const rect = canvas.getBoundingClientRect();
+        const x = Math.max(0, Math.min(canvas.width - 1, clientX - rect.left));
+        const y = Math.max(0, Math.min(canvas.height - 1, clientY - rect.top));
+
+        const [r, g, b] = ctx.getImageData(x, y, 1, 1).data;
+        const hex = ((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1);
+        setHexValue(`#${hex}`); // live update
+    }
+
+    function startPick(e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) {
+        pickingRef.current = true;
+
+        if ("touches" in e) {
+            pickColor(e.touches[0].clientX, e.touches[0].clientY);
+            // attach only to this canvas
+            const canvas = e.currentTarget as HTMLCanvasElement;
+            canvas.addEventListener("touchmove", onTouchMove, { passive: false });
+            canvas.addEventListener("touchend", stopPick);
+        } else {
+            pickColor(e.clientX, e.clientY);
+            window.addEventListener("mousemove", onMove);
+            window.addEventListener("mouseup", stopPick);
+        }
+    }
+
+    function onTouchMove(e: TouchEvent) {
+        if (!pickingRef.current) return;
+        e.preventDefault(); // only blocks scroll when touching picker
+        pickColor(e.touches[0].clientX, e.touches[0].clientY);
+    }
+
+    function stopPick() {
+        pickingRef.current = false;
+        window.removeEventListener("mousemove", onMove);
+        window.removeEventListener("mouseup", stopPick);
+
+        const canvas = canvasRef.current;
+        if (canvas) {
+            canvas.removeEventListener("touchmove", onTouchMove);
+            canvas.removeEventListener("touchend", stopPick);
+        }
+    }
+
+
+
+    function onMove(e: MouseEvent) {
+        if (!pickingRef.current) return;
+        pickColor(e.clientX, e.clientY);
+    }
+
+
+
+
+
+
 
     const isFavorite = currentTemplate
         ? favoriteTemplates.includes(currentTemplate.id)
@@ -87,6 +317,7 @@ export default function SelectTemplatePage() {
         setDirection(newDirection);
         setIndex(newIndex);
         setSelectedTemplate(filteredTemplates[newIndex]);
+        setHexValue('');
     };
 
 
@@ -211,7 +442,7 @@ export default function SelectTemplatePage() {
             <section id="select template" className="p-4 sm:p-6 md:p-8 mx-auto w-full max-w-3xl">
                 <Notification />
 
-                <div className="flex flex-col items-center mb-6 relative p-[4px] bg-gradient-to-br from-cyan-500 to-blue-500 rounded-2xl">
+                <div className="flex flex-col z-40 items-center mb-6 relative p-[4px] bg-gradient-to-br from-cyan-500 to-blue-500 rounded-2xl">
                     <div className="flex flex-col items-center bg-white rounded-xl px-6 py-6 w-full">
                         <h1 className={`text-3xl sm:text-4xl md:text-5xl text-blue-400 text-center mb-2 ${archivoBlack.className}`}>
                             Choose A Template
@@ -225,20 +456,22 @@ export default function SelectTemplatePage() {
                 {/* Template Preview */}
                 <div
                     className="relative flex flex-col items-center w-full max-w-xl mx-auto mb-6"
-                    onClick={handleDoubleTap}
                 >
-                    <div className="relative w-full max-w-xs mx-auto rounded-sm overflow-hidden shadow-[0_6px_20px_rgba(0,0,0,0.4)]">
+
+
+                    <div className="relative z-40 w-full max-w-xs mx-auto rounded-sm overflow-hidden">
                         {/* Base image */}
                         {userImgThumbDownloadUrl && (
                             <img
+                                ref={baseImgRef}
                                 src={userImgThumbDownloadUrl}
-                                alt="Preview"
+                                alt="Base"
                                 className="w-full h-auto block pointer-events-none"
                             />
                         )}
 
-                        {/* Overlay AnimatePresence */}
-                        <div className="absolute inset-0 top-0 left-0 w-full h-full">
+                        {/* Template overlay image */}
+                        {currentTemplate?.previewImageUrl && (
                             <AnimatePresence initial={false} custom={direction}>
                                 <motion.img
                                     key={currentTemplate?.id}
@@ -265,17 +498,105 @@ export default function SelectTemplatePage() {
                                     }}
                                 />
                             </AnimatePresence>
+
+                        )}
+
+                        {/* Colorable overlay */}
+                        {selectedTemplate?.previewHexUrl && hexValue !== "" && (
+                            <canvas
+                                ref={overlayCanvasRef}
+                                className="absolute top-0 left-0 w-full h-full pointer-events-none z-20"
+                            />
+                        )}
+                    </div>
+
+
+
+                    {/* Template label */}
+                    <div className="mt-6 mx-auto grid grid-cols-3 items-center bg-black/80 text-white px-4 py-1 rounded-lg text-sm max-w-md">
+                        {/* Left: color picker box */}
+                        {selectedTemplate?.hexElements != null ? (
+                            <div className="flex justify-center relative">
+                                <div
+                                    className="h-7 w-7 border rounded cursor-pointer"
+                                    style={{ backgroundColor: hexValue }}
+                                    onClick={() => setColorOpen((v) => !v)}
+                                />
+                            </div>
+
+                        ) : (
+                            <div className="flex justify-center"></div>
+                        )}
+
+
+                        {/* Center: template name */}
+                        <div className="text-center flex items-center justify-center h-8">
+                            {currentTemplate?.name}
+                        </div>
+
+                        {/* Right: disabled / invisible box */}
+                        <div className="flex justify-center">
+                            {selectedTemplate?.hexElements != null && hexValue !== "" ? (
+                                <img src="/svg/xmark_gray.svg" alt="Close" className="relative w-6 h-6 cursor-pointer" onClick={() => setHexValue("")} />
+                            ) : (
+                                <div className="h-8 w-8 border border-white rounded opacity-0 pointer-events-none" />
+                            )}
+
+                        </div>
+                    </div>
+
+
+
+
+                </div>
+
+                {/* Custom spectrum popup */}
+                <div className="flex justify-center relative" ref={containerRef}>
+                    {/* Trigger square */}
+
+                    {/* Color picker popup */}
+                    {/* Custom spectrum popup wrapper */}
+                    <div className="flex justify-center relative" ref={containerRef}>
+                        {/* Only render the popup if open */}
+
+                        <div
+                            className={`
+    fixed inset-x-0 bottom-0
+    bg-white/60 backdrop-blur-xs
+    z-30
+    transition-opacity duration-300 top-[0px]
+    ${colorOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}
+  `}
+                            onClick={() => setColorOpen(false)}
+                        />
+
+
+                        <div
+                            className={`absolute left-1/2 -top-20 transform -translate-x-1/2 z-50 p-1 bg-black/90 rounded mt-2 w-[90vw] max-w-[320px]
+h-[120px] sm:h-[140px] md:h-[160px]
+sm:mx-4
+md:mx-0
+transition-all duration-300 ease-out
+${colorOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"}`}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+
+                            <canvas
+                                ref={canvasRef}
+                                width={300}
+                                height={150}
+                                className="cursor-crosshair w-full h-full"
+                                onMouseDown={startPick}
+                                onTouchStart={startPick}
+                            />
                         </div>
 
                     </div>
 
-                    {/* Template label */}
-                    <div className="mt-6 mb-2 mx-auto text-center bg-black/60 text-white px-4 py-1 rounded-lg text-sm">
-                        {currentTemplate?.name}
-                    </div>
-
 
                 </div>
+
+
 
                 {/* Template Styles Slider */}
                 {filteredTemplates.length > 0 ? (
@@ -301,6 +622,7 @@ export default function SelectTemplatePage() {
                             <button
                                 key={style}
                                 onClick={() => {
+                                    setHexValue('');
                                     setSelectedStyle(style);
                                     setSelectedTemplate(currentTemplate);
                                 }}
@@ -347,7 +669,7 @@ export default function SelectTemplatePage() {
 
                     <button
                         onClick={handleNext}
-                         className="
+                        className="
                 w-full max-w-[140px] rounded-xl py-2 text-sm font-semibold text-white
                 bg-gradient-to-r from-cyan-500 to-blue-500
                 hover:brightness-110

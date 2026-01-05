@@ -31,7 +31,7 @@ export default function OverviewPage() {
     const {
         selectedTemplate, carDetails,
         description, setDescription, instagramHandle,
-        userImgDownloadUrl, prevCarDetails, setPrevCarDetails
+        userImgDownloadUrl, prevCarDetails, setPrevCarDetails, hexValue, setHexValue
     } = usePosterWizard()
     const { state } = usePosterWizard();
 
@@ -40,8 +40,6 @@ export default function OverviewPage() {
 
     const isGeneratingRef = useRef(false);
     const lastGeneratedAtRef = useRef<number>(0);
-
-    const hexValue = "0000FF";
 
     function deepEqual(carDetails1: CarDetails, carDetails2: CarDetails): boolean {
         return (
@@ -290,7 +288,7 @@ export default function OverviewPage() {
                                             Back
                                         </button>
                                         <button
-                                            className="px-5 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 py-2 text-white font-medium hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-cyan-300 transition"
+                                            className="px-5 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-medium hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-cyan-300 transition"
                                             onClick={handleGeneratePoster}
                                         >
                                             Generate

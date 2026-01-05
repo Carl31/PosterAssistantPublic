@@ -9,5 +9,6 @@ export type Template = {
   supportedTexts: string[]
   style: string
   hexElements: string[]
+  previewHexUrl: string
   // etc. Can add more here if wanting to use them on this page.
 }

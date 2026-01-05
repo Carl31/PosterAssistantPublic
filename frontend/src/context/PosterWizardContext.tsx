@@ -41,6 +41,8 @@ type PosterWizardContextType = {
   setUseAI: (value: boolean) => void
   credits: Credit
   setCredits: React.Dispatch<React.SetStateAction<Credit>>
+  hexValue: string
+  setHexValue: (value: string) => void
 }
 
 export type PosterWizardState = {
@@ -68,10 +70,11 @@ export const PosterWizardProvider = ({ children }: { children: React.ReactNode }
   const [templateIndex, setTemplateIndex] = useState(0)
   const [useAI, setUseAI] = useState(true)
   const [credits, setCredits] = useState<Credit>({
-  carJam: 0,
-  ai: 0,
-  posterGen: 0,
-})
+    carJam: 0,
+    ai: 0,
+    posterGen: 0,
+  })
+  const [hexValue, setHexValue] = useState("");
 
   useEffect(() => {
     setState({
@@ -81,38 +84,40 @@ export const PosterWizardProvider = ({ children }: { children: React.ReactNode }
     });
   }, [selectedTemplate, userImgDownloadUrl, carDetails]);
 
-return (
-  <PosterWizardContext.Provider value={{
-    state: state,
-    setState,
-    selectedTemplate,
-    setSelectedTemplate,
-    userImgDownloadUrl,
-    setuserImgDownloadUrl,
-    userImgThumbDownloadUrl,
-    setuserImgThumbDownloadUrl,
-    carDetails,
-    setCarDetails,
-    prevCarDetails,
-    setPrevCarDetails,
-    description,
-    setDescription,
-    instagramHandle,
-    setInstagramHandle,
-    geminiChecked,
-    setGeminiChecked,
-    progress,
-    setProgress,
-    templateIndex,
-    setTemplateIndex,
-    useAI,
-    setUseAI,
-    credits,
-    setCredits
-  }}>
-    {children}
-  </PosterWizardContext.Provider>
-)
+  return (
+    <PosterWizardContext.Provider value={{
+      state: state,
+      setState,
+      selectedTemplate,
+      setSelectedTemplate,
+      userImgDownloadUrl,
+      setuserImgDownloadUrl,
+      userImgThumbDownloadUrl,
+      setuserImgThumbDownloadUrl,
+      carDetails,
+      setCarDetails,
+      prevCarDetails,
+      setPrevCarDetails,
+      description,
+      setDescription,
+      instagramHandle,
+      setInstagramHandle,
+      geminiChecked,
+      setGeminiChecked,
+      progress,
+      setProgress,
+      templateIndex,
+      setTemplateIndex,
+      useAI,
+      setUseAI,
+      credits,
+      setCredits,
+      hexValue,
+      setHexValue
+    }}>
+      {children}
+    </PosterWizardContext.Provider>
+  )
 }
 
 export const usePosterWizard = () => {
