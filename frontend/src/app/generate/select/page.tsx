@@ -624,7 +624,7 @@ ${colorOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-eve
                                 onClick={() => {
                                     setHexValue('');
                                     setSelectedStyle(style);
-                                    setSelectedTemplate(currentTemplate);
+                                    setSelectedTemplate(null);
                                 }}
                                 className={className}
                             >
