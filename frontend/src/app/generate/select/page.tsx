@@ -356,6 +356,7 @@ export default function SelectTemplatePage() {
 
 
     const handleBack = () => {
+        setHexValue('');
         setCarDetails({ make: '', model: '', year: '' })
         setGeminiChecked(false)
         if (imageUploaded_flag) {
