@@ -316,7 +316,7 @@ export default function SelectTemplatePage() {
         const newIndex = (index + newDirection + filteredTemplates.length) % filteredTemplates.length;
         setDirection(newDirection);
         setIndex(newIndex);
-        setSelectedTemplate(filteredTemplates[newIndex]);
+        //setSelectedTemplate(filteredTemplates[newIndex]);
         setHexValue('');
     };
 
@@ -330,7 +330,7 @@ export default function SelectTemplatePage() {
     }, [state, router])
 
     const handleNext = () => {
-        setSelectedTemplate(currentTemplate);
+        //setSelectedTemplate(currentTemplate);
         // if (selectedTemplate === null) {
         //     alert('No template selected');
         //     return
@@ -348,6 +348,12 @@ export default function SelectTemplatePage() {
 
 
     }
+
+    useEffect(() => {
+        if (!filteredTemplates.length) return;
+        setSelectedTemplate(filteredTemplates[index]);
+    }, [index, filteredTemplates, setSelectedTemplate]);
+
 
     const handleBack = () => {
         setCarDetails({ make: '', model: '', year: '' })
