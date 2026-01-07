@@ -2,13 +2,13 @@
 
 import { useAuth } from '@/context/AuthContext'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { doc, getDoc } from 'firebase/firestore'
+import { doc, getDoc, getFirestore } from 'firebase/firestore'
 import { db } from '@/firebase/client'
 import { useState, useEffect, useRef } from 'react'
 import { Credit } from '@/types/credit'
 import Notification from '@/components/Notification'
 import { notify } from '@/utils/notify'
-import { addDoc, collection, serverTimestamp } from "firebase/firestore"
+import { addDoc, setDoc, collection, serverTimestamp } from "firebase/firestore"
 
 import { Anton } from 'next/font/google';
 const anton = Anton({
@@ -319,6 +319,7 @@ export default function DashboardPage() {
                 </>
               ) : (
                 <div className="py-8 text-center">
+                  <h1 className="text-2xl font-bold text-black mb-2">Submitted</h1>
                   <p className="text-lg font-semibold text-gray-800">
                     Thank you for your help!
                   </p>

@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { getAuth, onAuthStateChanged, signOut, updateProfile } from 'firebase/auth'
 import { doc, getDoc, getFirestore, updateDoc } from 'firebase/firestore'
+import { Credit } from '@/types/credit'
 
 export default function AccountSettingsPage() {
     const searchParams = useSearchParams();
@@ -16,6 +17,7 @@ export default function AccountSettingsPage() {
     --------------------------------------------------------------------- */
     const [email, setEmail] = useState<string | null>(null)
     const [uid, setUid] = useState<string | null>(null)
+    const [credits, setCredits] = useState<Credit>({ carJam: 0, ai: 0, posterGen: 0 })
 
     /* ---------------------------------------------------------------------
        State: editable profile fields
@@ -58,6 +60,7 @@ export default function AccountSettingsPage() {
                 setInstagramHandle(data.instagramHandle || '')
                 setOriginalName(data.displayName || '')
                 setOriginalInstagram(data.instagramHandle || '')
+                setCredits(data.credits || { carJam: 0, ai: 0, posterGen: 0 })
             }
         })
 
@@ -169,14 +172,21 @@ export default function AccountSettingsPage() {
                     <p className="text-base font-medium text-black">{email || '—'}</p>
                 </div>
 
-                <div>
+                {/* <div>
                     <p className="text-sm text-black"><b>User ID</b></p>
                     <p className="text-base font-mono break-all text-black">{uid || '—'}</p>
-                </div>
+                </div> */}
 
                 <div>
                     <p className="text-sm text-black"><b>Subscription</b></p>
                     <p className="text-base text-black">Early Access</p>
+                </div>
+
+                <div>
+                    <p className="text-sm text-black"><b>Remaining Credits</b></p>
+                    <p className="text-base text-black">Poster Credits: {credits.posterGen} </p>
+                    <p className="text-base text-black">CarJam Credits: {credits.carJam}</p>
+                    <p className="text-base text-black">AI Credits: {credits.ai}</p>
                 </div>
 
                 {/* Save button */}
