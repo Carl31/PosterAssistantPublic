@@ -16,7 +16,7 @@ export default function AccountSettingsPage() {
        State: user identity
     --------------------------------------------------------------------- */
     const [email, setEmail] = useState<string | null>(null)
-    const [uid, setUid] = useState<string | null>(null)
+    //const [uid, setUid] = useState<string | null>(null)
     const [credits, setCredits] = useState<Credit>({ carJam: 0, ai: 0, posterGen: 0 })
 
     /* ---------------------------------------------------------------------
@@ -49,7 +49,7 @@ export default function AccountSettingsPage() {
             if (!user) return
 
             setEmail(user.email)
-            setUid(user.uid)
+            //setUid(user.uid)
 
             const userRef = doc(db, 'users', user.uid)
             const snap = await getDoc(userRef)
