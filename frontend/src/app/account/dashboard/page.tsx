@@ -272,7 +272,8 @@ export default function DashboardPage() {
 
 
           <button
-            onClick={() => router.replace("/store")}
+            onClick={() => router.replace("/store")} 
+            ref={buyCreditsBtnRef}
             className="
     relative w-full
     inline-flex items-center justify-center

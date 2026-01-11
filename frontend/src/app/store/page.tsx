@@ -13,62 +13,6 @@ export default function PricingPage() {
 
     const router = useRouter()
 
-
-    const tiers = [
-        {
-            name: "Newbie",
-            price: "FREE",
-            subtitle: "One-time starter",
-            features: [
-                "3 credits (one-time)",
-                "Standard quality (720p)",
-                "25 basic templates",
-                "5 AI calls",
-                "No Carjam requests",
-                "Standard queue (10–15s)",
-                "No rollover credits",
-                "Top-ups not available",
-            ],
-            cta: "Get Started",
-            highlighted: false,
-        },
-        {
-            name: "Photographer",
-            price: "$9 / month",
-            badge: "Most Popular",
-            subtitle: "Best value",
-            features: [
-                "10 credits / month",
-                "High quality (1080p, print-ready)",
-                "50+ premium templates",
-                "25 AI calls",
-                "3 Carjam requests",
-                "Fast queue (5–8s)",
-                "3 rollover credits",
-                "40% off top-ups",
-            ],
-            cta: "Choose Photographer",
-            highlighted: true,
-        },
-        {
-            name: "Pro",
-            price: "$23 / month",
-            subtitle: "Maximum output",
-            features: [
-                "30 credits / month",
-                "Ultra HD (4K)",
-                "All 100+ templates",
-                "100 AI calls",
-                "15 Carjam requests",
-                "Priority queue (1–3s)",
-                "10 rollover credits",
-                "70% off top-ups",
-            ],
-            cta: "Go Pro",
-            highlighted: false,
-        },
-    ];
-
     return (
         <div className="max-w-6xl mx-auto px-2 pb-16 pt-6">
             <div
