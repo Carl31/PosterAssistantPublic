@@ -51,6 +51,11 @@ export default function Page() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    if (!captchaToken) {
+      notify('error', 'Please complete the reCAPTCHA.')
+      return;
+    }
+
     if (!agreed) {
       //alert("You must agree to the Privacy Policy and Terms & Conditions to sign up.");
       notify('error', 'You must agree to the Privacy Policy and Terms & Conditions to sign up.')
