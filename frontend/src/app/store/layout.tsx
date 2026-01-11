@@ -34,6 +34,7 @@ export default function GenerateLayout({ children }: { children: React.ReactNode
         </div>
       </div>
     </motion.div>
+
   ) : (
     <LoadingPage />
   )

@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { getAuth, onAuthStateChanged, signOut, updateProfile } from 'firebase/auth'
 import { doc, getDoc, getFirestore, updateDoc } from 'firebase/firestore'
 import { Credit } from '@/types/credit'
+import { motion } from 'framer-motion'
 
 export default function AccountSettingsPage() {
     const searchParams = useSearchParams();
@@ -135,132 +136,138 @@ export default function AccountSettingsPage() {
        Render
     --------------------------------------------------------------------- */
     return (
-        <div className="p-4 max-w-lg mx-auto">
-            <h1 className="text-2xl font-bold mb-4 ml-1 text-black">Account Settings</h1>
+        <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+        >
+            <div className="p-4 max-w-lg mx-auto">
+                <h1 className="text-2xl font-bold mb-4 ml-1 text-black">Account Settings</h1>
 
-            <div className="bg-blue-200 border-3 border-black rounded-xl shadow-md p-4 space-y-3">
-                {/* Username */}
-                <div>
-                    <p className="text-sm text-black"><b>Username</b></p>
-                    <input
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className="w-full mt-1 p-2 rounded-md bg-gray-100 text-black border-2 border-gray-700 focus:ring-2 focus:ring-black"
-                    />
-                </div>
-
-                {/* Instagram */}
-                <div>
-                    <p className="text-sm text-black"><b>Instagram Handle</b></p>
-                    <div className="relative">
-                        <span className="absolute inset-y-0 left-0 pl-3 pt-3 text-black">
-                            @
-                        </span>
+                <div className="bg-blue-200 border-3 border-black rounded-xl shadow-md p-4 space-y-3">
+                    {/* Username */}
+                    <div>
+                        <p className="text-sm text-black"><b>Username</b></p>
                         <input
                             type="text"
-                            value={instagramHandle}
-                            onChange={(e) => setInstagramHandle(e.target.value)}
-                            className="w-full mt-1 p-2 pl-8 rounded-md bg-gray-100 text-black border-2 border-gray-700 focus:ring-2 focus:ring-black"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            className="w-full mt-1 p-2 rounded-md bg-gray-100 text-black border-2 border-gray-700 focus:ring-2 focus:ring-black"
                         />
                     </div>
-                </div>
 
-                {/* Read-only fields */}
-                <div>
-                    <p className="text-sm text-black"><b>Email</b></p>
-                    <p className="text-base font-medium text-black">{email || '—'}</p>
-                </div>
+                    {/* Instagram */}
+                    <div>
+                        <p className="text-sm text-black"><b>Instagram Handle</b></p>
+                        <div className="relative">
+                            <span className="absolute inset-y-0 left-0 pl-3 pt-3 text-black">
+                                @
+                            </span>
+                            <input
+                                type="text"
+                                value={instagramHandle}
+                                onChange={(e) => setInstagramHandle(e.target.value)}
+                                className="w-full mt-1 p-2 pl-8 rounded-md bg-gray-100 text-black border-2 border-gray-700 focus:ring-2 focus:ring-black"
+                            />
+                        </div>
+                    </div>
 
-                {/* <div>
+                    {/* Read-only fields */}
+                    <div>
+                        <p className="text-sm text-black"><b>Email</b></p>
+                        <p className="text-base font-medium text-black">{email || '—'}</p>
+                    </div>
+
+                    {/* <div>
                     <p className="text-sm text-black"><b>User ID</b></p>
                     <p className="text-base font-mono break-all text-black">{uid || '—'}</p>
                 </div> */}
 
-                <div>
-                    <p className="text-sm text-black"><b>Subscription</b></p>
-                    <p className="text-base text-black">Early Access</p>
-                </div>
+                    <div>
+                        <p className="text-sm text-black"><b>Subscription</b></p>
+                        <p className="text-base text-black">Early Access</p>
+                    </div>
 
-                <div>
-                    <p className="text-sm text-black"><b>Remaining Credits</b></p>
-                    <p className="text-base text-black">Poster Credits: {credits.posterGen} </p>
-                    <p className="text-base text-black">CarJam Credits: {credits.carJam}</p>
-                    <p className="text-base text-black">AI Credits: {credits.ai}</p>
-                </div>
+                    <div>
+                        <p className="text-sm text-black"><b>Remaining Credits</b></p>
+                        <p className="text-base text-black">Poster Credits: {credits.posterGen} </p>
+                        <p className="text-base text-black">CarJam Credits: {credits.carJam}</p>
+                        <p className="text-base text-black">AI Credits: {credits.ai}</p>
+                    </div>
 
-                {/* Save button */}
-                <button
-                    onClick={handleSaveChanges}
-                    disabled={!canSave}
-                    className={`
+                    {/* Save button */}
+                    <button
+                        onClick={handleSaveChanges}
+                        disabled={!canSave}
+                        className={`
                         w-full mt-4 py-2 rounded-md text-sm font-medium transition-all
                         ${canSave
-                            ? 'bg-green-500 hover:bg-green-700 text-white'
-                            : 'bg-green-900/40 text-green-300 cursor-not-allowed'}
+                                ? 'bg-green-500 hover:bg-green-700 text-white'
+                                : 'bg-green-900/40 text-green-300 cursor-not-allowed'}
                     `}
-                >
-                    Save changes
-                </button>
-            </div>
+                    >
+                        Save changes
+                    </button>
+                </div>
 
-            {/* Navigation buttons */}
-            <div className="flex justify-between mt-4">
-                <button
-                    onClick={handleBack}
-                    // bg-gradient-to-br from-purple-600 to-blue-500
-                    className="px-5 py-2 rounded-lg bg-white text-gray-800 shadow-md
+                {/* Navigation buttons */}
+                <div className="flex justify-between mt-4">
+                    <button
+                        onClick={handleBack}
+                        // bg-gradient-to-br from-purple-600 to-blue-500
+                        className="px-5 py-2 rounded-lg bg-white text-gray-800 shadow-md
                 border border-gray-200
                 hover:bg-gray-50 transition"
-                >
-                    Back
-                </button>
+                    >
+                        Back
+                    </button>
 
-                <button
-                    onClick={handleLogout}
-                   className="px-5 py-2 rounded-lg bg-white border-3 border-red-500 text-red-500 text-sm"
-                >
-                    Sign Out
-                </button>
-            </div>
+                    <button
+                        onClick={handleLogout}
+                        className="px-5 py-2 rounded-lg bg-white border-3 border-red-500 text-red-500 text-sm"
+                    >
+                        Sign Out
+                    </button>
+                </div>
 
-            {/* Logout confirmation */}
-            {showLogoutPopup && (
-                <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50">
-                    <div className="p-4 rounded-lg bg-gray-100 text-center">
-                        <p className="mb-4 text-gray-800">
-                            Are you sure you want to sign out?
-                        </p>
-                        <div className="flex gap-2 justify-center">
-                            <button
-                                onClick={handleConfirmLogout}
-                                className="px-4 py-2 bg-red-600 text-white rounded"
-                            >
-                                Sign Out
-                            </button>
-                            <button
-                                onClick={() => setShowLogoutPopup(false)}
-                                className="px-4 py-2 bg-gray-300 rounded"
-                            >
-                                Cancel
-                            </button>
+                {/* Logout confirmation */}
+                {showLogoutPopup && (
+                    <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50">
+                        <div className="p-4 rounded-lg bg-gray-100 text-center">
+                            <p className="mb-4 text-gray-800">
+                                Are you sure you want to sign out?
+                            </p>
+                            <div className="flex gap-2 justify-center">
+                                <button
+                                    onClick={handleConfirmLogout}
+                                    className="px-4 py-2 bg-red-600 text-white rounded"
+                                >
+                                    Sign Out
+                                </button>
+                                <button
+                                    onClick={() => setShowLogoutPopup(false)}
+                                    className="px-4 py-2 bg-gray-300 rounded"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
 
-            {/* Profile completion overlay */}
-            {showOverlay && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center px-6"
-                    onClick={() => setShowOverlay(false)}
-                >
-                    {/* Backdrop */}
-                    <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" />
-
-                    {/* Card */}
+                {/* Profile completion overlay */}
+                {showOverlay && (
                     <div
-                        className="
+                        className="fixed inset-0 z-50 flex items-center justify-center px-6"
+                        onClick={() => setShowOverlay(false)}
+                    >
+                        {/* Backdrop */}
+                        <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" />
+
+                        {/* Card */}
+                        <div
+                            className="
         relative
         max-w-sm w-full
         rounded-2xl
@@ -271,20 +278,21 @@ export default function AccountSettingsPage() {
         text-sm text-white
         text-left
       "
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <p className="font-medium">
-                            Add your username and Instagram handle here.
-                        </p>
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <p className="font-medium">
+                                Add your username and Instagram handle here.
+                            </p>
 
-                        <p className="mt-3 text-gray-300">
-                            Your handle will appear on your posters.
-                        </p>
+                            <p className="mt-3 text-gray-300">
+                                Your handle will appear on your posters.
+                            </p>
+                        </div>
                     </div>
-                </div>
-            )}
+                )}
 
 
-        </div>
+            </div>
+        </motion.div>
     )
 }

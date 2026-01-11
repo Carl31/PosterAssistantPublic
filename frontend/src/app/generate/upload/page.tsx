@@ -299,6 +299,13 @@ export default function UploadImageStep() {
       const fullBlob = await resizeImage(cropped, 2000, 0.85)
       const thumbBlob = await resizeImage(cropped, 800, 0.7)
 
+      if (!thumbBlob || thumbBlob.size === 0) {
+        throw new Error('Invalid thumbnail blob')
+      }
+      if (!fullBlob || fullBlob.size === 0) {
+        throw new Error('Invalid user image blob')
+      }
+
       const fullRef = ref(storage, fullPath)
       const thumbRef = ref(storage, thumbPath)
 
@@ -320,6 +327,7 @@ export default function UploadImageStep() {
 
       setuserImgDownloadUrl(fullUrl)
       setuserImgThumbDownloadUrl(thumbUrl)
+      sessionStorage.setItem('thumbUrl', thumbUrl)
 
       router.push('/generate/select?upload=true')
     } catch (e) {

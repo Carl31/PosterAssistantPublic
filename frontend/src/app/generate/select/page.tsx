@@ -60,6 +60,9 @@ export default function SelectTemplatePage() {
     const [showHeart, setShowHeart] = useState(false);
     const lastTap = useRef(0);
 
+
+
+
     //const containerRef = useRef<HTMLDivElement>(null);
     //const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -194,8 +197,11 @@ export default function SelectTemplatePage() {
             const willFavorite = !favoriteTemplates.includes(currentTemplate.id); // true if adding
             toggleFavorite(currentTemplate.id);
             if (willFavorite) {
+                notify('info', `Added ${currentTemplate.name} to favorites.`);
                 setShowHeart(true);
                 setTimeout(() => setShowHeart(false), 600);
+            } else {
+                notify('info', `Removed ${currentTemplate.name} from favorites.`);
             }
         }
         lastTap.current = now;
@@ -439,6 +445,22 @@ export default function SelectTemplatePage() {
         }
     }
 
+
+    // IMAGEURL Stuff
+    const [thumbUrl, setThumbUrl] = useState<string | null>(null)
+    const [retry, setRetry] = useState(0)
+
+    useEffect(() => {
+        if (userImgThumbDownloadUrl) {
+            setThumbUrl(userImgThumbDownloadUrl)
+            return
+        }
+
+        const stored = sessionStorage.getItem('thumbUrl')
+        if (stored) setThumbUrl(stored)
+    }, [userImgThumbDownloadUrl])
+
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -465,17 +487,36 @@ export default function SelectTemplatePage() {
                     className="relative flex flex-col items-center w-full max-w-xl mx-auto mb-6"
                 >
 
-
-                    <div className="relative z-40 w-full max-w-xs mx-auto rounded-sm overflow-hidden">
-                        {/* Base image */}
-                        {userImgThumbDownloadUrl && (
-                            <img
-                                ref={baseImgRef}
-                                src={userImgThumbDownloadUrl}
-                                alt="Base"
-                                className="w-full h-auto block pointer-events-none"
-                            />
+                    {/* Floating heart animation */}
+                    <AnimatePresence>
+                        {showHeart && (
+                            <motion.div
+                                key="heart"
+                                initial={{ scale: 0, opacity: 0 }}
+                                animate={{ scale: 1.5, opacity: 1 }}
+                                exit={{ scale: 0, opacity: 0 }}
+                                transition={{ duration: 0.3 }}
+                                className="absolute z-50 text-red-500 text-3xl select-none pointer-events-none left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                            >
+                                ❤️
+                            </motion.div>
                         )}
+                    </AnimatePresence>
+
+
+                    <div className="relative z-40 w-full max-w-xs mx-auto rounded-sm overflow-hidden" onClick={handleDoubleTap}>
+                        {/* Base image */}
+                        <img
+                            ref={baseImgRef}
+                            src={`${thumbUrl}#${retry}`}
+                            alt="Base"
+                            className="w-full h-auto block pointer-events-none"
+                            onError={() => {
+                                setTimeout(() => setRetry((r) => r + 1), 1500)
+                            }}
+                        />
+
+
 
                         {/* Template overlay image */}
                         {currentTemplate?.previewImageUrl && (
@@ -641,23 +682,6 @@ ${colorOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-eve
                     })}
                 </div>
 
-
-                {/* Floating heart animation */}
-                <AnimatePresence>
-                    {showHeart && (
-                        <motion.div
-                            key="heart"
-                            initial={{ scale: 0, opacity: 0 }}
-                            animate={{ scale: 1.5, opacity: 1 }}
-                            exit={{ scale: 0, opacity: 0 }}
-                            transition={{ duration: 0.3 }}
-                            className="absolute text-red-500 text-3xl select-none pointer-events-none left-1/2"
-                            style={{ bottom: '18rem', transform: 'translateX(-50%)' }}
-                        >
-                            ❤️
-                        </motion.div>
-                    )}
-                </AnimatePresence>
 
                 {/* Navigation Buttons */}
                 <div className="flex justify-center gap-4 mt-8">
