@@ -19,8 +19,8 @@ export default function Page() {
   const startY = useRef<number | null>(null);
   const startProgress = useRef(0);
   const [progress, setProgress] = useState(0);
-  const [showSignupLoading, setShowSignupLoading] = useState(false)
-  const [showLoginLoading, setShowLoginLoading] = useState(false)
+  const [showSignupForm, setShowSignupForm] = useState(false);
+  const [showLoginForm, setShowLoginForm] = useState(false);
   const [loading, setLoading] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -105,55 +105,6 @@ export default function Page() {
   // frame inset: vertical + horizontal
   const FRAME_INSET_VH = 2.2;
   const FRAME_INSET_VW = 11.5; // THIS fixes left/right visibility
-
-  const handleSignUp = () => {
-    router.push('/signup')
-  }
-
-  const handleLogIn = () => {
-    router.push('/login')
-  }
-
-  function scrollToForm(id: string) {
-    //setShowLoading(true);
-    const el = document.getElementById(id);
-    //console.log(el);
-    //const el = document.getElementById("login-form");
-
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
-
-      if (el.id === "signup-form") {
-        setShowSignupLoading(true)
-      }
-
-      if (el.id === "login-form") {
-        setShowLoginLoading(true)
-      }
-    }
-
-
-
-  }
-
-  const scrollToTop = () => {
-    console.log("Scrolling to top");
-    // window.scrollTo({
-    //   top: 0,
-    //   left: 0,
-    //   behavior: 'smooth',
-    // })
-
-
-    const el = document.getElementById("sheet");
-    //console.log(el);
-    //const el = document.getElementById("login-form");
-
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
-    }
-
-  }
 
 
   function clamp(v: number, min: number, max: number) {
@@ -345,14 +296,14 @@ export default function Page() {
             >
               <button
                 className="px-5 py-3 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-sm min-w-40"
-                onClick={() => scrollToForm('signup-form')}
+                onClick={() => setShowSignupForm(true)}
               >
                 Sign Up
               </button>
 
               <button
                 className="px-5 py-3 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-sm min-w-40"
-                onClick={() => scrollToForm('login-form')}
+                onClick={() => setShowLoginForm(true)}
               >
                 Log In
               </button>
@@ -367,38 +318,36 @@ export default function Page() {
 
       </div>
 
-      <div id="signup-form" className="h-screen w-full bg-gray-100 flex flex-col items-center justify-center">
-        {showSignupLoading ? <form onSubmit={handleSignup} className="p-8 max-w-sm mx-auto">
+          {/* Signup overlay */}
+      <div
+        className={`fixed inset-0 bg-white z-49 transform transition-transform duration-500 ease-in-out overflow-auto p-8 ${
+          showSignupForm ? 'translate-y-0' : 'translate-y-full'
+        }`}
+      >
+        <form onSubmit={handleSignup} className="max-w-sm mx-auto flex flex-col gap-3">
           <h1 className="text-2xl font-bold mb-4 text-black">Sign Up</h1>
-
-          <div className="flex flex-col w-full overflow-auto">
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email"
-              className="w-full border p-2 mb-2 rounded border-black text-black"
-              disabled={loading}
-            />
-
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
-              className="w-full border p-2 mb-4 rounded border-black text-black"
-              disabled={loading}
-            />
-          </div>
-
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full border p-2 rounded border-black text-black"
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full border p-2 rounded border-black text-black"
+          />
 
           <div className="mb-4 w-full">
-            <label className="text-xs text-gray-600 flex flex-wrap items-center gap-1 sm:gap-2">
+            <label className="text-xs text-gray-600 flex items-center gap-1">
               <input
                 type="checkbox"
                 checked={agreed}
                 onChange={(e) => setAgreed(e.target.checked)}
-                className="mr-1 flex-shrink-0"
+                className="flex-shrink-0"
               />
               <span className="flex flex-wrap gap-1">
                 I agree to the
@@ -408,73 +357,74 @@ export default function Page() {
             </label>
           </div>
 
-
           {typeof window !== 'undefined' && <RecaptchaClient onChange={setCaptchaToken} />}
 
-
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full px-3 mt-3 py-2 rounded-lg bg-black text-white hover:bg-gray-700 transition-colors text-sm disabled:opacity-50"
-          >
-            {loading ? 'Signing up…' : 'Sign Up'}
+          <button type="submit" className="w-full px-3 py-2 mt-3 rounded-lg bg-black text-white hover:bg-gray-700 transition-colors text-sm">
+            Sign Up
           </button>
-          {/* Google login/signup */}
+
           <button
             type="button"
             onClick={handleGoogleLogin}
-            className="w-full px-3 py-2 mt-2 rounded-lg border-2 border-black text-black hover:bg-gray-700 transition-colors text-sm disabled:opacity-50"
+            className="w-full px-3 py-2 mt-2 rounded-lg border-2 border-black text-black hover:bg-gray-700 transition-colors text-sm"
           >
             Continue with Google
           </button>
+
           <button
-            onClick={scrollToTop}
             type="button"
-            className="w-full px-3 py-2 mt-2 rounded-lg border-2 border-black text-black hover:bg-gray-700 transition-colors text-sm disabled:opacity-50"
+            onClick={() => setShowSignupForm(false)}
+            className="w-full px-3 py-2 mt-2 rounded-lg border-2 border-black text-black hover:bg-gray-700 transition-colors text-sm"
           >
             Back
           </button>
-        </form> : null}
-
-
+        </form>
       </div>
 
-      <div id="login-form" className="h-screen w-full bg-gray-200 flex items-center justify-center">
-        {showLoginLoading ? <div>
-          {/* Email/password inputs */}
-          <form onSubmit={handleLogin} className="p-8 max-w-sm mx-auto">
-            <h1 className="text-2xl font-bold mb-4 text-black">Login</h1>
-            <div className="flex flex-col w-full overflow-auto">
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email"
-                className="w-full border border-black text-black p-2 mb-2 rounded" />
-              <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password"
-                className="w-full border border-black text-black p-2 mb-4 rounded" />
-            </div>
+      {/* Login overlay */}
+      <div
+        className={`fixed inset-0 bg-white z-49 transform transition-transform duration-500 ease-in-out overflow-auto p-8 ${
+          showLoginForm ? 'translate-y-0' : 'translate-y-full'
+        }`}
+      >
+        <form onSubmit={handleLogin} className="max-w-sm mx-auto flex flex-col gap-3">
+          <h1 className="text-2xl font-bold mb-4 text-black">Login</h1>
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full border p-2 rounded border-black text-black"
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full border p-2 rounded border-black text-black"
+          />
 
-            <button type="submit" className="w-full px-3 py-2 rounded-lg bg-black text-white hover:bg-gray-700 transition-colors text-sm disabled:opacity-50">Login</button>
+          <button type="submit" className="w-full px-3 py-2 mt-3 rounded-lg bg-black text-white hover:bg-gray-700 transition-colors text-sm">
+            Login
+          </button>
 
-            {/* Google login/signup */}
-            <button
-              type="button"
-              onClick={handleGoogleLogin}
-              className="w-full px-3 py-2 mt-2 rounded-lg border-2 border-black text-black hover:bg-gray-700 transition-colors text-sm disabled:opacity-50"
-            >
-              Continue with Google
-            </button>
-            <button
-              onClick={scrollToTop}
-              type="button"
-              className="w-full px-3 py-2 mt-2 rounded-lg border-2 border-black text-black hover:bg-gray-700 transition-colors text-sm disabled:opacity-50"
-            >
-              Back
-            </button>
-          </form>
+          <button
+            type="button"
+            onClick={handleGoogleLogin}
+            className="w-full px-3 py-2 mt-2 rounded-lg border-2 border-black text-black hover:bg-gray-700 transition-colors text-sm"
+          >
+            Continue with Google
+          </button>
 
-
-        </div> : null}
+          <button
+            type="button"
+            onClick={() => setShowLoginForm(false)}
+            className="w-full px-3 py-2 mt-2 rounded-lg border-2 border-black text-black hover:bg-gray-700 transition-colors text-sm"
+          >
+            Back
+          </button>
+        </form>
       </div>
     </section>
-
   );
 }

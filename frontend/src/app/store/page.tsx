@@ -22,7 +22,7 @@ export default function PricingPage() {
     bg-gradient-to-br from-cyan-500 to-blue-500
     rounded-2xl mb-4"
             > <div className="flex flex-col items-center bg-white rounded-xl px-4 sm:px-6 py-6 w-full">
-                    <h1 className={`text-3xl font-bold text-center text-blue-500 ${archivoBlack.className}`}>Credit Packs</h1>
+                    <h1 className={`text-3xl font-bold text-center text-blue-400 ${archivoBlack.className}`}>Credit Packs</h1>
                     <p className="mt-2 text-sm text-gray-500"><b>Coming soon.</b></p>
                 </div>
             </div>
