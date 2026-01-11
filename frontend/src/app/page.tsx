@@ -352,7 +352,7 @@ export default function Page() {
               <span className="flex flex-wrap gap-1">
                 I agree to the
                 <a href="/privacy-policy" className="underline">Privacy Policy</a> and
-                <a href="/terms-and-conditions" className="underline">Terms & Conditions</a>.
+                <a href="/terms-and-conditions" className="underline">Terms & Conditions</a>
               </span>
             </label>
           </div>
