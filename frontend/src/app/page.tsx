@@ -12,6 +12,12 @@ import { signInWithEmailAndPassword } from 'firebase/auth'
 import dynamic from 'next/dynamic';
 import Notification from '@/components/Notification'
 import { notify } from '@/utils/notify'
+import { Anton } from 'next/font/google';
+const anton = Anton({
+  weight: '400',        // required because Anton isn't a variable font
+  subsets: ['latin'],   // choose the subsets you need
+  display: 'swap',      // optional, helps with font rendering strategy
+});
 const RecaptchaClient = dynamic(() => import('@/components/RecaptchaClient'), { ssr: false });
 
 
@@ -284,14 +290,15 @@ export default function Page() {
 
             style={{ height: `${sheetHeight}%` }}
           >
-            <img
-              src="/png/sickshotsai.png"
-              alt="logo"
-              className="h-9 w-35 mb-6 mr-1"
-              style={{
+            
+                <h1
+                  className={`text-4xl sm:text-5xl md:text-5xl lg:text-6xl mb-4 text-blue-400 text-center ${anton.className}`}
+                  style={{
                 opacity: progress > 0.6 ? (progress - 0.6) / 0.4 : 0,
               }}
-            />
+                >
+                  SICKSHOTS <span className="text-[0.75em] ml-[-0.15em]">AI</span>
+                </h1>
 
             <div
               className="flex flex-col gap-4"
@@ -300,14 +307,14 @@ export default function Page() {
               }}
             >
               <button
-                className="px-5 py-3 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-sm min-w-40"
+                className="px-5 py-1.5 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-sm min-w-40"
                 onClick={() => setShowSignupForm(true)}
               >
                 Sign Up
               </button>
 
               <button
-                className="px-5 py-3 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-sm min-w-40"
+                className="px-5 py-1.5 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-sm min-w-40"
                 onClick={() => setShowLoginForm(true)}
               >
                 Log In
@@ -323,11 +330,10 @@ export default function Page() {
 
       </div>
 
-          {/* Signup overlay */}
+      {/* Signup overlay */}
       <div
-        className={`fixed inset-0 bg-white z-49 transform transition-transform duration-500 ease-in-out overflow-auto p-8 ${
-          showSignupForm ? 'translate-y-0' : 'translate-y-full'
-        }`}
+        className={`fixed inset-0 bg-white z-49 transform transition-transform duration-500 ease-in-out overflow-auto p-8 ${showSignupForm ? 'translate-y-0' : 'translate-y-full'
+          }`}
       >
         <form onSubmit={handleSignup} className="max-w-sm mx-auto flex flex-col gap-3">
           <h1 className="text-2xl font-bold mb-4 text-black">Sign Up</h1>
@@ -388,9 +394,8 @@ export default function Page() {
 
       {/* Login overlay */}
       <div
-        className={`fixed inset-0 bg-white z-49 transform transition-transform duration-500 ease-in-out overflow-auto p-8 ${
-          showLoginForm ? 'translate-y-0' : 'translate-y-full'
-        }`}
+        className={`fixed inset-0 bg-white z-49 transform transition-transform duration-500 ease-in-out overflow-auto p-8 ${showLoginForm ? 'translate-y-0' : 'translate-y-full'
+          }`}
       >
         <form onSubmit={handleLogin} className="max-w-sm mx-auto flex flex-col gap-3">
           <h1 className="text-2xl font-bold mb-4 text-black">Login</h1>

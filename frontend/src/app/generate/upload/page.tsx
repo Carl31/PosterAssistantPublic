@@ -369,10 +369,11 @@ export default function UploadImageStep() {
               </div>
 
               {!image ? (
+                <>
                 <label htmlFor="imageInput" className="cursor-pointer w-full max-w-md mx-auto">
                   <div className="bg-white border-3 border-black shadow-2xl rounded-xl px-6 py-4 flex flex-col items-center hover:shadow-xl transition">
                     <img className="w-9 h-9 mb-2" src="/svg/upload.svg" alt="Upload" />
-                    <span className="text-gray-800 font-semibold text-sm">Upload Image</span>
+                    <span className="text-gray-800 font-semibold text-sm">Upload image</span>
                     <input
                       id="imageInput"
                       type="file"
@@ -383,6 +384,8 @@ export default function UploadImageStep() {
                   </div>
 
                 </label>
+                <p className='text-gray-500 text-xs mt-3'>Tip: Clean, simple photos work best. Let the designs breathe!</p>
+                </>
               ) : (
                 <div className="flex flex-col items-center gap-4">
                   <div className="relative w-full max-w-md h-140 bg-gray-100 rounded-xl overflow-hidden shadow-sm">
@@ -412,7 +415,7 @@ export default function UploadImageStep() {
 
             {/* User Images Section */}
             <section id="user images" className="mt-8">
-              <h1 className="text-xl font-bold mb-4 text-black">Your Uploaded Images</h1>
+              <h1 className="text-xl font-bold mb-4 text-black">Your uploaded images</h1>
               {imagesLoading ? (
                 <Spinner />
               ) : error ? (

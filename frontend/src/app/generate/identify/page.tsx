@@ -396,7 +396,7 @@ export default function IdentifyVehicleStep() {
                         shadow-md
                     `}
               >
-                {loading ? "Detecting..." : "Detect Car Info"}
+                {loading ? "Detecting..." : "Detect car info"}
               </button>
 
               {/* OR DIVIDER */}
@@ -421,7 +421,7 @@ export default function IdentifyVehicleStep() {
                         shadow-md
                     `}
               >
-                Manually Input Car Details
+                Manually input car details
               </button>
 
               {/* =======================

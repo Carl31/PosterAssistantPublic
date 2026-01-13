@@ -43,9 +43,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                             toggleUseAI: true, // currently no use case for this
                         },
                         credits : {
-                            ai: 10,
-                            posterGen: 10,
-                            carJam: 10,
+                            ai: 7,
+                            posterGen: 7,
+                            carJam: 7,
                         }
                     })
                 }

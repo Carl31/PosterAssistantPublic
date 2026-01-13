@@ -345,7 +345,7 @@ export default function SelectTemplatePage() {
         // }
 
         if (selectedTemplate === null || selectedTemplate === undefined) {
-            alert('No template selected');
+            alert('No design selected');
             return
         } else {
             console.log(selectedStyle + ", " + selectedTemplate?.name);
@@ -474,7 +474,7 @@ export default function SelectTemplatePage() {
                 <div className="flex flex-col z-40 items-center mb-6 relative p-[4px] bg-gradient-to-br from-cyan-500 to-blue-500 rounded-2xl">
                     <div className="flex flex-col items-center bg-white rounded-xl px-6 py-6 w-full">
                         <h1 className={`text-3xl sm:text-4xl md:text-5xl text-blue-400 text-center mb-2 ${archivoBlack.className}`}>
-                            Choose A Template
+                            Choose A Design
                         </h1>
                         <p className="text-sm sm:text-base md:text-lg text-gray-700 text-center">
                             **Placeholder text only**
@@ -656,7 +656,7 @@ ${colorOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-eve
                     />
                 ) : (
                     <div className="text-sm text-gray-400 text-center mt-2 mb-5">
-                        {selectedStyle === "Favourites" ? "No favourites. Double tap a template to favourite!" : "No templates here."}
+                        {selectedStyle === "Favourites" ? "No favourites. Double tap a design to favourite!" : "No designs here."}
                     </div>
                 )}
 

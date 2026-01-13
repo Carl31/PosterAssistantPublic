@@ -228,7 +228,7 @@ function MockupContent() {
             <div className="absolute inset-0 bg-white" />
             <p className="relative text-xs font-bold text-center text-gray-900">
               <img className="inline-block w-4 h-4 mr-2" src="/svg/copy.svg" alt="copySVG" />
-              Share Link</p>
+              Share link</p>
           </button>
 
           <button className="mb-14 relative border-3 border-black rounded-lg w-full max-w-[256px] h-[29px] animate-customPulse overflow-hidden" onClick={() => setShowPopup(true)}>

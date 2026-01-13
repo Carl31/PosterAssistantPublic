@@ -12,6 +12,7 @@ import { addDoc, collection, serverTimestamp } from "firebase/firestore"
 import { motion } from 'framer-motion'
 
 import { Anton } from 'next/font/google';
+import TutorialOverlay from '@/components/TutorialOverlay'
 const anton = Anton({
   weight: '400',        // required because Anton isn't a variable font
   subsets: ['latin'],   // choose the subsets you need
@@ -31,6 +32,8 @@ export default function DashboardPage() {
   const searchParams = useSearchParams();
   const showTutorialFlag = searchParams!.get('signup') === 'true';
   const showFinalTutorialFlag = searchParams!.get('final') === 'true';
+
+  const [showTutorial, setShowTutorial] = useState(showTutorialFlag)
 
   const [tutorialStep, setTutorialStep] = useState<number | null>(
     showTutorialFlag ? 0 : (showFinalTutorialFlag ? 4 : null)
@@ -101,7 +104,7 @@ export default function DashboardPage() {
       onNext: () => router.replace('/account/settings/?final=true'),
     },
     {
-      text: `You're all set!\n\nI hope you enjoy using SickShotsAI :)\n\n- Carlos`,
+      text: `You're all set!\n\nJust message me on Instagram if you  have any questions.\n\nI hope you enjoy using SickShotsAI :)\n\n- Carlos`,
       highlight: null,
       onNext: () => setTutorialStep(null),
     },
@@ -272,7 +275,7 @@ export default function DashboardPage() {
 
 
           <button
-            onClick={() => router.replace("/store")} 
+            onClick={() => router.replace("/store")}
             ref={buyCreditsBtnRef}
             className="
     relative w-full
@@ -296,7 +299,7 @@ export default function DashboardPage() {
               src="/svg/coins.svg"
               alt="credits"
             />
-            <span>Buy Credits</span>
+            <span>Buy credits</span>
           </button>
 
 
@@ -440,6 +443,7 @@ export default function DashboardPage() {
             </div>
           </div>
         )}
+        {showTutorial && <TutorialOverlay onFinish={() => setShowTutorial(false)} />}
 
       </div>
     </motion.div>

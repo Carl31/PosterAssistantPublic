@@ -12,6 +12,7 @@ import { motion } from 'framer-motion'
 export default function AccountSettingsPage() {
     const searchParams = useSearchParams();
     const showFinalTutorialFlag = searchParams!.get('final') === 'true';
+    
 
     /* ---------------------------------------------------------------------
        State: user identity
@@ -46,6 +47,7 @@ export default function AccountSettingsPage() {
        Load user data on auth change
     --------------------------------------------------------------------- */
     useEffect(() => {
+         if (showFinalTutorialFlag) setShowOverlay(true);
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             if (!user) return
 
@@ -285,7 +287,10 @@ export default function AccountSettingsPage() {
                             </p>
 
                             <p className="mt-3 text-gray-300">
-                                Your handle will appear on your posters.
+                                Your <b>handle</b> will appear on your posters.
+                            </p>
+                            <p className="mt-3 text-gray-300">
+                                Your <b>username</b> is only used within the app.
                             </p>
                         </div>
                     </div>
