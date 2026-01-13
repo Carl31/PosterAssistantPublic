@@ -221,7 +221,7 @@ export default function DashboardPage() {
           </button>
 
           <p className="text-xs text-gray-600 mx-auto mt-[-7px]">
-            You have {credits.posterGen} poster credits left.
+            You have {credits?.posterGen ?? 0} poster credits left.
           </p>
 
           {/* My Posters */}
