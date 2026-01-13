@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import Image from 'next/image';
 import { Anton } from 'next/font/google';
 import { useRouter } from 'next/navigation';
 
@@ -27,7 +26,7 @@ const pages: TutorialPage[] = [
     { title: 'Showcase your work', subtitle: 'Every poster gets its own clean showcase page, complete with a scannable QR code.', image: '/svg/qr-code.svg', text: 'Viewers can scan, see the poster and view your Instagram - add your handle to make this seamless.', video:"/mp4/app4.mp4" },
 ];
 
-export default function TutorialOverlay({ onFinish }: { onFinish: () => void }) {
+export default function TutorialOverlay() {
     const [step, setStep] = useState(0);
     const startX = useRef<number | null>(null);
     const router = useRouter();

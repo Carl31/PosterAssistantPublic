@@ -443,7 +443,7 @@ export default function DashboardPage() {
             </div>
           </div>
         )}
-        {showTutorial && <TutorialOverlay onFinish={() => setShowTutorial(false)} />}
+        {showTutorial && <TutorialOverlay/>}
 
       </div>
     </motion.div>
