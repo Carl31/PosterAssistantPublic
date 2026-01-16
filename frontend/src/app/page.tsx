@@ -33,6 +33,8 @@ export default function Page() {
   const [agreed, setAgreed] = useState(false); // track checkbox state
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
+  
+
 
 
   const MIN_HEIGHT = 10;
@@ -183,8 +185,8 @@ export default function Page() {
       <div
         onTouchStart={e => handleTouchStart(e.touches[0].clientY)}
         onTouchEnd={e => handleTouchEnd(e.changedTouches[0].clientY)}
-        onMouseDown={e => handleTouchStart(e.clientY)}
-        onMouseUp={e => handleTouchEnd(e.clientY)}
+        onMouseDown={() => animateTo(1)} // <-- simple "swipe up" on click
+
 
         className="relative h-screen w-screen overflow-hidden touch-auto bg-white"
       >
