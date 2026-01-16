@@ -787,13 +787,13 @@ ${colorOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-eve
                                 onClick={(e) => e.stopPropagation()}
                             >
                                 <div className="text-base font-semibold mb-4">
-                                    <p>What are "Magazine" templates?</p>
+                                    <p>What are &quot;Magazine&quot; templates?</p>
                                 </div>
 
                                 <div className="mb-6">
                                     <p className='text-gray-300'>This group of templates are designed to be very versatile!<br></br><br></br></p>
 
-                                    <p>Dynamically includes:</p><br></br>
+                                    <p>Dynamically includes:</p>
                                     <p className='text-xs'>
                                         • Car Make<br></br>
                                         • Car Model<br></br>
@@ -812,7 +812,7 @@ ${colorOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-eve
                                         onChange={(e) => setDontShowAgainMagazine(e.target.checked)}
                                         className="accent-cyan-400"
                                     />
-                                    <p>Don't show this again</p>
+                                    <span>Don&apos;t show this again</span>
                                 </label>
                             </div>
                         </div>
@@ -833,7 +833,7 @@ ${colorOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-eve
                                 onClick={(e) => e.stopPropagation()}
                             >
                                 <div className="text-base font-semibold mb-4">
-                                    <p>What are "Brands" templates?</p>
+                                   <p>What are &quot;Brands&quot; templates?</p>
                                 </div>
 
                                 <div className="mb-6">
@@ -851,14 +851,14 @@ ${colorOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-eve
                                 </div>
 
 
-                                <label className="flex items-center gap-2 text-xs opacity-90 cursor-pointer">
+                                <label className="flex items-center gap-2 text-xs opacity-90 cursor-pointer text-gray-400">
                                     <input
                                         type="checkbox"
                                         checked={dontShowAgainBrands}
                                         onChange={(e) => setDontShowAgainBrands(e.target.checked)}
                                         className="accent-cyan-400"
                                     />
-                                    <p>Don't show this again</p>
+                                    <span>Don&apos;t show this again</span>
                                 </label>
                             </div>
                         </div>
