@@ -21,6 +21,7 @@ import TemplateKnob from '@/components/TemplateKnob'
 import Notification from '@/components/Notification'
 import { notify } from '@/utils/notify'
 import TemplateSlider from '@/components/TemplateSlider'
+import { style } from 'framer-motion/client'
 
 const archivoBlack = Archivo_Black({
     weight: "400", // Archivo Black only has 400
@@ -46,8 +47,8 @@ export default function SelectTemplatePage() {
     const [direction, setDirection] = useState(0); // -1 left, 1 right
     //const currentTemplate = templates[index];
 
-    const STYLES = ["Brands", "Magazine", "Events", "Favourites"]
-    const [selectedStyle, setSelectedStyle] = useState<string>("Brands")
+    const STYLES = ["Magazine", "Brands", "Favourites"]
+    const [selectedStyle, setSelectedStyle] = useState<string>("Magazine")
     const filteredTemplates = templates.filter(t => {
         if (selectedStyle === "Favourites") {
             return favoriteTemplates.includes(t.id);
@@ -59,6 +60,11 @@ export default function SelectTemplatePage() {
 
     const [showHeart, setShowHeart] = useState(false);
     const lastTap = useRef(0);
+
+    const [showMagazinePopup, setShowMagazinePopup] = useState(false);
+    const [showBrandsPopup, setShowBrandsPopup] = useState(false);
+    const [dontShowAgainMagazine, setDontShowAgainMagazine] = useState(false);
+    const [dontShowAgainBrands, setDontShowAgainBrands] = useState(false);
 
 
 
@@ -74,6 +80,30 @@ export default function SelectTemplatePage() {
 
     const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
     const baseImgRef = useRef<HTMLImageElement>(null);
+
+
+    const handleCloseMagazinePopup = async () => {
+        setShowMagazinePopup(false);
+
+        if (dontShowAgainMagazine && user?.uid) {
+            await updateDoc(doc(db, "users", user.uid), {
+                "settings.hideMagazinePopup": true,
+            });
+        }
+
+    };
+
+    const handleCloseBrandsPopup = async () => {
+        setShowBrandsPopup(false);
+
+        if (dontShowAgainBrands && user?.uid) {
+            await updateDoc(doc(db, "users", user.uid), {
+                "settings.hideBrandsPopup": true,
+            });
+        }
+
+    };
+
 
     async function applyHexFillToOverlay(hex: string) {
         const canvas = overlayCanvasRef.current;
@@ -412,6 +442,22 @@ export default function SelectTemplatePage() {
             setCredits(data?.credits)
             setFavoriteTemplates(data?.settings?.favouriteTemplates || [])
             setInstagramHandle(data?.instagramHandle || '')
+
+            if (!data?.settings?.hideMagazinePopup) {
+                setTimeout(() => {
+                    window.scrollTo({
+                        top: document.documentElement.scrollHeight,
+                        behavior: "smooth",
+                    });
+
+                    setShowMagazinePopup(true);
+                }, 2000);
+            }
+            if (!data?.settings?.hideBrandsPopup) {
+                // the set-timeout code for brands is when the brands button is pressed
+                setShowBrandsPopup(true);
+            }
+
         }
         fetchFavorites()
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -469,7 +515,6 @@ export default function SelectTemplatePage() {
             transition={{ duration: 0.3 }}
         >
             <section id="select template" className="p-4 sm:p-6 md:p-8 mx-auto w-full max-w-3xl">
-                <Notification />
 
                 <div className="flex flex-col z-40 items-center mb-6 relative p-[4px] bg-gradient-to-br from-cyan-500 to-blue-500 rounded-2xl">
                     <div className="flex flex-col items-center bg-white rounded-xl px-6 py-6 w-full">
@@ -567,7 +612,11 @@ export default function SelectTemplatePage() {
                             <div className="flex justify-center relative">
                                 <div
                                     className="h-7 w-7 border rounded cursor-pointer"
-                                    style={{ backgroundColor: hexValue }}
+                                    style={{
+                                        background: hexValue
+                                            ? hexValue
+                                            : "linear-gradient(45deg, #FFC1C1, #FFD8A8, #FFF3B0, #C1E1C1, #B0E0FF)"
+                                    }}
                                     onClick={() => setColorOpen((v) => !v)}
                                 />
                             </div>
@@ -673,6 +722,15 @@ ${colorOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-eve
                                     setHexValue('');
                                     setSelectedStyle(style);
                                     setSelectedTemplate(null);
+                                    if (style === "Brands") {
+                                        if (showBrandsPopup) {
+                                            window.scrollTo({
+                                                top: document.documentElement.scrollHeight,
+                                                behavior: "smooth",
+                                            });
+                                        }
+
+                                    }
                                 }}
                                 className={className}
                             >
@@ -712,6 +770,100 @@ ${colorOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-eve
                         Next
                     </button>
                 </div>
+
+
+                {showMagazinePopup && selectedStyle === "Magazine" && (
+                    <div
+                        className="fixed inset-0 z-50"
+                        onClick={handleCloseMagazinePopup}
+                    >
+                        {/* Dark overlay */}
+                        <div className="absolute inset-0 bg-black/70" />
+
+                        {/* Text */}
+                        <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
+                            <div
+                                className="bg-gray-700/50 backdrop-blur-sm border border-white rounded-xl px-6 py-4 max-w-sm text-white text-sm whitespace-pre-line mt-[-170px]"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <div className="text-base font-semibold mb-4">
+                                    What are "Magazine" templates?
+                                </div>
+
+                                <div className="mb-6">
+                                    <p className='text-gray-300'>This group of templates are designed to be very versatile!<br></br><br></br></p>
+
+                                    Dynamically includes:<br></br>
+                                    <p className='text-xs'>
+                                        • Car Make<br></br>
+                                        • Car Model<br></br>
+                                        • Car Year<br></br>
+                                        • Car Description<br></br>
+                                        • Current Date<br></br>
+                                        • Your Instagram Handle<br></br>
+                                    </p>
+
+                                </div>
+
+                                <label className="flex items-center gap-2 text-xs opacity-90 cursor-pointer text-gray-400">
+                                    <input
+                                        type="checkbox"
+                                        checked={dontShowAgainMagazine}
+                                        onChange={(e) => setDontShowAgainMagazine(e.target.checked)}
+                                        className="accent-cyan-400"
+                                    />
+                                    Don’t show this again
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                )}
+                {showBrandsPopup && selectedStyle === "Brands" && (
+                    <div
+                        className="fixed inset-0 z-50"
+                        onClick={handleCloseBrandsPopup}
+                    >
+                        {/* Dark overlay */}
+                        <div className="absolute inset-0 bg-black/70" />
+
+                        {/* Text */}
+                        <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
+                            <div
+                                className="bg-gray-700/50 backdrop-blur-sm border border-white rounded-xl px-6 py-4 max-w-sm text-white text-sm whitespace-pre-line mt-[-170px]"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <div className="text-base font-semibold mb-4">
+                                    What are "Brands" templates?
+                                </div>
+
+                                <div className="mb-6">
+                                    <p className='text-gray-300'>These templates are designed for specific car brands only.<br /><br /></p>
+
+                                    <strong>Important:</strong> The car <em>make</em> will <u>not</u> update dynamically. It is fixed in the template.<br /><br />
+                                    <p className="text-xs">
+                                        • Car Make: static<br />
+                                        • Car Model: dynamic<br />
+                                        • Car Year: dynamic<br />
+                                        • Car Description: dynamic<br />
+                                        • Current Date: dynamic<br />
+                                        • Your Instagram Handle: dynamic
+                                    </p>
+                                </div>
+
+
+                                <label className="flex items-center gap-2 text-xs opacity-90 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={dontShowAgainBrands}
+                                        onChange={(e) => setDontShowAgainBrands(e.target.checked)}
+                                        className="accent-cyan-400"
+                                    />
+                                    Don’t show this again
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
             </section>
 

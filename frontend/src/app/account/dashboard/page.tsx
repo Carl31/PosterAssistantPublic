@@ -8,7 +8,6 @@ import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/firebase/client'
 import { useState, useEffect, useRef } from 'react'
 import { Credit } from '@/types/credit'
-import Notification from '@/components/Notification'
 import { notify } from '@/utils/notify'
 import { addDoc, collection, serverTimestamp } from "firebase/firestore"
 import { motion } from 'framer-motion'
@@ -155,7 +154,6 @@ export default function DashboardPage() {
       transition={{ duration: 0.3 }}
     >
       <div className="p-4 sm:p-6 md:p-8 mx-auto w-full max-w-3xl">
-        <Notification />
         <div
           className="flex flex-col items-center 
     relative 

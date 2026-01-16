@@ -23,6 +23,7 @@ type Poster = {
         make: string
         model: string
     }
+    name: string
 }
 
 const handleDownload = async (poster: Poster) => {
@@ -100,7 +101,7 @@ export default function PosterHistoryPage() {
             {loading ? (
                 <LoadingPage text="Loading posters..." />
             ) : posters.length === 0 ? (
-                <p className='text-black'>No posters found.</p>
+                <p className='text-black'>No posters found. Go make one!</p>
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     {posters.map((poster) => {
@@ -125,7 +126,7 @@ export default function PosterHistoryPage() {
                                     <div>
                                         {poster.carDetails.year} {poster.carDetails.make} {poster.carDetails.model}
                                     </div>
-                                    <div><b>Template:</b> {poster.templateId}</div>
+                                    <div><b>Template:</b> {poster.name}</div>
                                     <div>
                                         <b>Created:</b> {poster.createdAt.toDate().toLocaleDateString('en-GB')}
                                     </div>

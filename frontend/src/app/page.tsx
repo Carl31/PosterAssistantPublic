@@ -10,7 +10,6 @@ import { auth } from '@/firebase/client'
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
 import { signInWithEmailAndPassword } from 'firebase/auth'
 import dynamic from 'next/dynamic';
-import Notification from '@/components/Notification'
 import { notify } from '@/utils/notify'
 import { Anton } from 'next/font/google';
 const anton = Anton({
@@ -73,9 +72,9 @@ export default function Page() {
       await createUserWithEmailAndPassword(auth, email, password)
       router.push('/account/dashboard?signup=true')
     } catch (err: any) {
-      alert(err.message || 'Signup failed.')
-      notify('error', 'Signup failed.')
+      //alert(err.message || 'Signup failed.')
       setLoading(false)
+      notify('error', 'Signup failed : ' + err.message)
     }
   }
 
@@ -96,8 +95,8 @@ export default function Page() {
       router.push('/account/dashboard')
     } catch (err) {
       setLoading(false)
-      alert('Login failed.' + err)
-      notify('error', 'Login failed.')
+      //alert('Login failed.' + err)
+      notify('error', 'Login failed: ' + err)
     }
   }
 
@@ -107,8 +106,8 @@ export default function Page() {
       await signInWithPopup(auth, provider)
       router.push('/account/dashboard')
     } catch (err) {
-      alert('Google sign-in failed.' + err)
-      notify('error', 'Google sign-in failed.')
+      // alert('Google sign-in failed.' + err)
+      notify('error', 'Google sign-in failed: ' + err)
     }
   }
 
@@ -180,7 +179,6 @@ export default function Page() {
 
   return (
     <section className="fixed inset-0 overflow-hidden">
-      <Notification />
 
       <div
         onTouchStart={e => handleTouchStart(e.touches[0].clientY)}

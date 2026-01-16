@@ -18,7 +18,6 @@ import { getAuth, onAuthStateChanged, User } from 'firebase/auth'
 import LoadingPage from '@/components/LoadingPage'
 import Spinner from '@/components/Spinner'
 import { Archivo_Black } from 'next/font/google'
-import Notification from '@/components/Notification'
 
 const archivoBlack = Archivo_Black({ weight: '400', subsets: ['latin'] })
 
@@ -346,7 +345,6 @@ export default function UploadImageStep() {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <div className="p-4 sm:p-6 md:p-8 mx-auto w-full max-w-3xl">
-        <Notification />
 
         {/* Upload Section */}
         {loading ? (

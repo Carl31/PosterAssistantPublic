@@ -12,7 +12,6 @@ import { QRCodeSVG } from 'qrcode.react';
 import LoadingPage from '@/components/LoadingPage';
 import ErrorPage from '@/components/ErrorPage';
 import { Suspense } from "react";
-import Notification from "@/components/Notification";
 import { notify } from "@/utils/notify";
 
 type UserData = {
@@ -104,7 +103,6 @@ function MockupContent() {
   return (
     ((loading) ? (<LoadingPage text="Loading poster..." />) : (
       <div className="px-4 bg-white">
-        <Notification />
         {/* <h1 className="text-xl font-bold mb-4">Poster Mockup Preview</h1> */}
 
 

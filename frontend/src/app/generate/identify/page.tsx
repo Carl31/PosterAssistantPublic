@@ -345,7 +345,6 @@ export default function IdentifyVehicleStep() {
       transition={{ duration: 0.3 }}
     >
       <div className="p-4 max-w-xl mx-auto space-y-8">
-        <Notification />
 
         {/* =======================
         IDENTIFY VEHICLE HEADER
