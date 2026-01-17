@@ -11,6 +11,7 @@ import { deleteObject, ref } from 'firebase/storage'
 import { db, storage } from '@/firebase/client'
 import LoadingPage from '@/components/LoadingPage'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { notify } from '@/utils/notify'
 
 type Poster = {
     id: string
@@ -23,7 +24,6 @@ type Poster = {
         make: string
         model: string
     }
-    name: string
 }
 
 const handleDownload = async (poster: Poster) => {
@@ -44,10 +44,46 @@ export default function PosterHistoryPage() {
     const [loading, setLoading] = useState(true)
     const [uid, setUid] = useState<string | null>(null)
     const [activePoster, setActivePoster] = useState<Poster | null>(null)
+    const [showDeletePopup, setShowDeletePopup] = useState(false)
+    const [posterToDelete, setPosterToDelete] = useState<Poster | null>(null)
+    const [deleteLocked, setDeleteLocked] = useState(false)
+    const [showDownloadPopup, setShowDownloadPopup] = useState(false)
+    const [posterToDownload, setPosterToDownload] = useState<Poster | null>(null)
+
+
+
 
     const router = useRouter()
     const searchParams = useSearchParams()
     const showReloadFlag = searchParams!.get('fromLoading') === 'true'
+
+    type Template = {
+        id: string
+        name: string
+    }
+
+    const [templateMap, setTemplateMap] = useState<Record<string, string>>({})
+
+    function useCooldown(durationMs: number) {
+        const [locked, setLocked] = useState(false)
+
+        const run = async (fn: () => Promise<void> | void) => {
+            if (locked) return
+            setLocked(true)
+
+            try {
+                await fn()
+            } finally {
+                setTimeout(() => setLocked(false), durationMs)
+            }
+        }
+
+        return { locked, run }
+    }
+
+    const downloadCooldown = useCooldown(1000)
+
+
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(getAuth(), async (user) => {
@@ -75,6 +111,22 @@ export default function PosterHistoryPage() {
         return () => unsubscribe()
     }, [])
 
+    useEffect(() => {
+        const fetchTemplates = async () => {
+            const snapshot = await getDocs(collection(db, 'templates'))
+
+            const map: Record<string, string> = {}
+            snapshot.docs.forEach((d) => {
+                map[d.id] = d.data().name
+            })
+
+            setTemplateMap(map)
+        }
+
+        fetchTemplates()
+    }, [])
+
+
     const handleDelete = async (poster: Poster) => {
         if (!uid) return
 
@@ -87,6 +139,96 @@ export default function PosterHistoryPage() {
 
         setPosters((p) => p.filter((x) => x.id !== poster.id))
     }
+
+    const handleConfirmDelete = async () => {
+        if (!posterToDelete || deleteLocked) return
+
+        setDeleteLocked(true)
+
+        try {
+            await handleDelete(posterToDelete)
+        } finally {
+            setPosterToDelete(null)
+            setShowDeletePopup(false)
+
+            setTimeout(() => {
+                setDeleteLocked(false)
+            }, 1000)
+        }
+    }
+
+    const downloadFramed = async (poster: Poster) => {
+        const canvas = document.createElement('canvas')
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return
+
+        const frameImg = new Image()
+        const posterImg = new Image()
+
+        frameImg.crossOrigin = 'anonymous'
+        posterImg.crossOrigin = 'anonymous'
+
+        canvas.width = 1149
+        canvas.height = 1920
+
+        frameImg.src = '/mockup_frame_light.png'
+        posterImg.src = poster.posterUrl
+
+        await Promise.all([
+            new Promise<void>((res) => (frameImg.onload = () => res())),
+            new Promise<void>((res) => (posterImg.onload = () => res())),
+        ])
+
+        // Draw frame
+        ctx.drawImage(frameImg, 0, 0, canvas.width, canvas.height)
+
+        // PERFECT placement (from your working mockup)
+        const scale = 1.298
+        const x = 132
+        const y = 342
+        const width = 680 * scale
+        const height = 960 * scale
+
+        ctx.drawImage(posterImg, x, y, width, height)
+
+        const blob = await new Promise<Blob>((resolve) =>
+            canvas.toBlob((b) => resolve(b!), 'image/png')
+        )
+
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `Poster_${poster.carDetails.make}_${poster.carDetails.model}_Framed.png`
+        a.click()
+        URL.revokeObjectURL(url)
+    }
+
+
+    const loadImage = (src: string) =>
+        new Promise<HTMLImageElement>((resolve, reject) => {
+            const img = new Image()
+            img.crossOrigin = 'anonymous'
+            img.onload = () => resolve(img)
+            img.onerror = reject
+            img.src = src
+        })
+
+    const downloadUnframed = async (poster: Poster) => {
+        const response = await fetch(poster.posterUrl)
+        const blob = await response.blob()
+        const url = URL.createObjectURL(blob)
+
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `Poster_${poster.carDetails.make}_${poster.carDetails.model}.png`
+        a.click()
+
+        URL.revokeObjectURL(url)
+    }
+
+
+
+
 
     return (
         <div className="p-4">
@@ -126,7 +268,7 @@ export default function PosterHistoryPage() {
                                     <div>
                                         {poster.carDetails.year} {poster.carDetails.make} {poster.carDetails.model}
                                     </div>
-                                    <div><b>Template:</b> {poster.name}</div>
+                                    <div> <b>Template:</b> {templateMap[poster.templateId] ?? poster.templateId}</div>
                                     <div>
                                         <b>Created:</b> {poster.createdAt.toDate().toLocaleDateString('en-GB')}
                                     </div>
@@ -147,7 +289,10 @@ export default function PosterHistoryPage() {
                                     </button>
 
                                     <button
-                                        onClick={() => handleDownload(poster)}
+                                        onClick={() => {
+                                            setPosterToDownload(poster)
+                                            setShowDownloadPopup(true)
+                                        }}
                                         className="py-1.5 w-full rounded-sm bg-white border-2 border-blur-500 text-blue-500 text-sm"
                                     >
                                         Download
@@ -165,13 +310,95 @@ export default function PosterHistoryPage() {
                                     </button>
 
                                     <button
-                                        onClick={() => handleDelete(poster)}
+                                        onClick={() => {
+                                            setPosterToDelete(poster)
+                                            setShowDeletePopup(true)
+                                        }}
                                         className="py-1.5 w-full rounded-sm bg-white border-2 border-red-500 text-red-500 text-sm"
                                     >
                                         Delete
                                     </button>
 
                                 </div>
+
+                                {showDownloadPopup && posterToDownload && (
+                                    <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50 p-4">
+                                        <div className="bg-white rounded-xl p-5 w-full max-w-xl shadow-lg">
+                                            <h2 className="text-base font-semibold text-blue-400 mb-5 text-center">
+                                                Download Poster
+                                            </h2>
+
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+                                                {/* Unframed */}
+                                                <div className="rounded-lg border border-gray-200 p-4 flex flex-col justify-between">
+                                                    <div className="mb-3">
+                                                        <h3 className="text-sm font-medium text-gray-700">
+                                                            Unframed
+                                                        </h3>
+                                                        <p className="text-xs text-gray-500 mt-1">
+                                                            Original poster file
+                                                        </p>
+                                                    </div>
+
+                                                    <button
+                                                        onClick={async () => {
+                                                            setShowDownloadPopup(false)
+                                                            notify('info', 'Downloading...')
+                                                            downloadCooldown.run(() =>
+                                                               downloadUnframed(posterToDownload)
+                                                            )
+                                                        }}
+                                                        className="mt-auto px-3 py-1.5 text-sm border rounded-md border-gray-300 text-gray-800 hover:bg-gray-50"
+                                                    >
+                                                        Download
+                                                    </button>
+                                                </div>
+
+                                                {/* Framed (Primary) */}
+                                                <div className="rounded-lg border border-gray-900 bg-gray-900 p-4 flex flex-col justify-between shadow-md ">
+                                                    <div className="text-center">
+                                                        <h3 className="text-sm font-semibold text-white">
+                                                            Framed
+                                                        </h3>
+                                                        <p className="text-xs text-gray-300 mt-1">
+                                                            Presentation-ready mockup
+                                                        </p>
+                                                    </div>
+
+                                                    <img
+                                                        src="/svg/frame-white.svg"
+                                                        className="max-h-12 object-contain mx-auto my-5"
+                                                    />
+
+                                                    <button
+                                                        onClick={async () => {
+                                                            setShowDownloadPopup(false)
+                                                            notify('info', 'Downloading...')
+                                                            downloadCooldown.run(() =>
+                                                               downloadFramed(posterToDownload)
+                                                            )
+                                                        }}
+                                                        className="px-5 py-1.5 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-sm"
+                                                    >
+                                                        Download
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <button
+                                                onClick={() => {
+                                                    setShowDownloadPopup(false)
+                                                    setPosterToDownload(null)
+                                                }}
+                                                className="w-full px-3 py-1.5 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200"
+                                            >
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                )}
+
 
                             </div>
 
@@ -191,6 +418,34 @@ export default function PosterHistoryPage() {
             >
                 Back
             </button>
+
+            {showDeletePopup && (
+                <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50">
+                    <div className="p-4 rounded-lg bg-gray-100 text-center">
+                        <p className="mb-4 text-gray-800">
+                            Are you sure you want to delete this poster?
+                        </p>
+                        <div className="flex gap-2 justify-center">
+                            <button
+                                onClick={handleConfirmDelete}
+                                className="px-4 py-2 bg-red-600 text-white rounded"
+                            >
+                                Delete
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setShowDeletePopup(false)
+                                    setPosterToDelete(null)
+                                }}
+                                className="px-4 py-2 bg-gray-300 rounded"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
 
         </div>
     )

@@ -793,7 +793,7 @@ ${colorOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-eve
                                 <div className="mb-6">
                                     <p className='text-gray-300'>This group of templates are designed to be very versatile!<br></br><br></br></p>
 
-                                    <p>Dynamically includes:</p>
+                                    <p>Automatically includes:</p>
                                     <p className='text-xs'>
                                         • Car Make<br></br>
                                         • Car Model<br></br>
@@ -839,7 +839,7 @@ ${colorOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-eve
                                 <div className="mb-6">
                                     <p className='text-gray-300'>These templates are designed for specific car brands only.<br /><br /></p>
 
-                                    <p><strong>Important:</strong> The car <em>make</em> will <u>not</u> update dynamically. It is fixed in the template.</p><br />
+                                    <p><strong>Important:</strong> The car <em>make</em> will <u>not</u> update automatically. It is fixed in the template.</p><br />
                                     <p className="text-xs">
                                         • Car Make: static<br />
                                         • Car Model: dynamic<br />
