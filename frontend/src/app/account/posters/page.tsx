@@ -26,18 +26,6 @@ type Poster = {
     }
 }
 
-const handleDownload = async (poster: Poster) => {
-    const response = await fetch(poster.posterUrl)
-    const blob = await response.blob()
-    const url = URL.createObjectURL(blob)
-
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `Poster_${poster.carDetails.make}_${poster.carDetails.model}.png`
-    a.click()
-
-    URL.revokeObjectURL(url)
-}
 
 export default function PosterHistoryPage() {
     const [posters, setPosters] = useState<Poster[]>([])
@@ -56,11 +44,6 @@ export default function PosterHistoryPage() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const showReloadFlag = searchParams!.get('fromLoading') === 'true'
-
-    type Template = {
-        id: string
-        name: string
-    }
 
     const [templateMap, setTemplateMap] = useState<Record<string, string>>({})
 
@@ -203,16 +186,6 @@ export default function PosterHistoryPage() {
         URL.revokeObjectURL(url)
     }
 
-
-    const loadImage = (src: string) =>
-        new Promise<HTMLImageElement>((resolve, reject) => {
-            const img = new Image()
-            img.crossOrigin = 'anonymous'
-            img.onload = () => resolve(img)
-            img.onerror = reject
-            img.src = src
-        })
-
     const downloadUnframed = async (poster: Poster) => {
         const response = await fetch(poster.posterUrl)
         const blob = await response.blob()
@@ -225,8 +198,6 @@ export default function PosterHistoryPage() {
 
         URL.revokeObjectURL(url)
     }
-
-
 
 
 
