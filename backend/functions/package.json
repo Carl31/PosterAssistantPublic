@@ -9,10 +9,11 @@
     "start": "npm run shell",
     "lintbuild": "npx eslint . --fix  && npm run build",
     "deployGeneratePoster": "npx eslint . --fix && npm run build && firebase deploy --only functions:generatePosterOnJobCreate",
-    "deployGenerateThumbnails": "npx eslint . --fix && npm run build && firebase deploy --only functions:generatePosterThumbnail",
+    "deployGenerateThumbnails": "npx eslint . --fix && npm run build && firebase deploy --only functions:generateThumbnail",
     "deployGemini": "npx eslint . --fix && npm run build && firebase deploy --only functions:detectCarDetailsWithGemini && firebase deploy --only functions:generateCarDescriptionWithGemini",
     "deployhosting": "cd .. && firebase deploy --only hosting",
     "deployCarJam": "npx eslint . --fix && npm run build && firebase deploy --only functions:fetchPlateWithCarJam",
+    "deployCleanUp": "npx eslint . --fix && npm run build && firebase deploy --only functions:cleanupCroppedImages",
     "logs": "firebase functions:log"
   },
   "engines": {

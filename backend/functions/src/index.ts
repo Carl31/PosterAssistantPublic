@@ -75,6 +75,12 @@ export const generateThumbnail = functions.storage
       return null;
     }
 
+    // Skip cropped images
+    if (filePath?.endsWith('_crop.jpg') || filePath?.endsWith('_crop.png')) {
+      console.log('Cropped image, skipping thumbnail generation:', filePath);
+      return null;
+    }
+
     const fileName = path.basename(filePath!);
     const thumbFileName = fileName.replace(/(\.[\w\d_-]+)$/i, '_thumb$1');
     const thumbFilePath = path.join(path.dirname(filePath!), thumbFileName);
@@ -181,6 +187,39 @@ export const generatePosterThumbnail = functions.storage
       .set({thumbnailUrl: thumbUrl}, {merge: true});
 
     console.log(`Thumbnail created at ${thumbFilePath}`);
+  });
+
+export const cleanupCroppedImages = functions.pubsub
+  .schedule('every 24 hours') // run once a day
+  .onRun(async () => {
+    const bucket = admin.storage().bucket();
+    const [files] = await bucket.getFiles({prefix: 'user_uploads/crops/'});
+
+    const now = Date.now();
+    const oneHour = 1000 * 60 * 60; // still deletes only if older than 1 hour
+
+    const deletions = files
+      // Only cropped images
+      .filter((file) => file.name.endsWith('_crop.jpg') || file.name.endsWith('_crop.png'))
+      // Only older than 1 hour
+      .filter((file) => {
+        const createdTimeStr = file.metadata.timeCreated;
+        if (!createdTimeStr) {
+          console.log('File has no creation time, skipping:', file.name);
+          return false;
+        }
+        const created = new Date(createdTimeStr).getTime();
+        return now - created > oneHour;
+      })
+      // Delete them
+      .map((file) => {
+        console.log('Deleting old crop image:', file.name);
+        return file.delete();
+      });
+
+    await Promise.all(deletions);
+    console.log(`Deleted ${deletions.length} cropped images older than 1 hour.`);
+    return null;
   });
 
 

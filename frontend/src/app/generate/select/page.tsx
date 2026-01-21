@@ -7,6 +7,7 @@
 
 import { usePosterWizard, isStepAccessible } from '@/context/PosterWizardContext'
 import { useAuth } from '@/context/AuthContext'
+import { auth } from '@/firebase/client'
 import { Template } from '@/types/template'
 import { useState, useRef, useEffect } from 'react'
 import { collection, getDocs, doc, updateDoc, arrayUnion, arrayRemove, getDoc, query, where } from 'firebase/firestore'
@@ -16,12 +17,22 @@ import { useRouter } from 'next/navigation';
 import Spinner from '@/components/Spinner';
 import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from "framer-motion";
+import { useGesture, PinchState } from '@use-gesture/react'
 import { Archivo_Black } from "next/font/google";
 import TemplateKnob from '@/components/TemplateKnob'
 import Notification from '@/components/Notification'
 import { notify } from '@/utils/notify'
 import TemplateSlider from '@/components/TemplateSlider'
 import { style } from 'framer-motion/client'
+import {
+    getStorage,
+    ref,
+    uploadBytes,
+    getDownloadURL,
+    listAll,
+} from 'firebase/storage'
+import ErrorPage from '@/components/ErrorPage';
+import LoadingPage from '@/components/LoadingPage'
 
 const archivoBlack = Archivo_Black({
     weight: "400", // Archivo Black only has 400
@@ -30,7 +41,7 @@ const archivoBlack = Archivo_Black({
 
 export default function SelectTemplatePage() {
     const [templates, setTemplates] = useState<Template[]>([])
-    const { selectedTemplate, setSelectedTemplate, setInstagramHandle, userImgThumbDownloadUrl, templateIndex, setTemplateIndex, setGeminiChecked, setCarDetails, credits, setCredits, hexValue, setHexValue } = usePosterWizard()
+    const { selectedTemplate, setSelectedTemplate, setInstagramHandle, setUserPosterImgDownloadUrl, userPosterImgDownloadUrl, userImgDownloadUrl, templateIndex, setTemplateIndex, setGeminiChecked, setCarDetails, credits, setCredits, hexValue, setHexValue, savedPosition, setSavedPosition, savedScale, setSavedScale, savedRotation, setSavedRotation } = usePosterWizard()
     const { user } = useAuth()
     // eslint-disable-next-line @typescript-eslint/naming-convention
     const [favoriteTemplates, setFavoriteTemplates] = useState<string[]>([])
@@ -60,11 +71,19 @@ export default function SelectTemplatePage() {
 
     const [showHeart, setShowHeart] = useState(false);
     const lastTap = useRef(0);
+    const tapTimeout = useRef<NodeJS.Timeout | null>(null);
 
     const [showMagazinePopup, setShowMagazinePopup] = useState(false);
     const [showBrandsPopup, setShowBrandsPopup] = useState(false);
     const [dontShowAgainMagazine, setDontShowAgainMagazine] = useState(false);
     const [dontShowAgainBrands, setDontShowAgainBrands] = useState(false);
+
+    const [position, setPosition] = useState(savedPosition ?? { x: 0, y: 0 });
+    const [scale, setScale] = useState(savedScale ?? 1);
+    const [rotation, setRotation] = useState(savedRotation ?? 0);
+
+
+    const [editMode, setEditMode] = useState(false);
 
 
 
@@ -76,10 +95,71 @@ export default function SelectTemplatePage() {
     const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
     const pickingRef = useRef(false);
     const containerRef = useRef<HTMLDivElement>(null);
+    const containerRefForImage = useRef<HTMLDivElement>(null);
 
 
     const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
     const baseImgRef = useRef<HTMLImageElement>(null);
+
+    const storage = getStorage()
+
+    const [error, setError] = useState<string | null>(null)
+
+    const tapStart = useRef<{ x: number; y: number } | null>(null);
+    const TAP_THRESHOLD = 5; // px, adjust if needed
+
+
+
+
+    const bind = useGesture(
+        {
+            onDrag: ({ offset: [x, y], movement: [mx, my], last, event }) => {
+                if (!editMode) {
+                    if (last && Math.abs(mx) > 50) paginate(mx > 0 ? -1 : 1);
+                    return;
+                }
+
+                setPosition({ x, y });
+
+                if (Math.abs(mx) > Math.abs(my)) event?.preventDefault();
+            },
+
+            onPinch: ({ offset: [d, a] }) => {
+                if (!editMode) return;
+                setScale(d);
+                setRotation(a);
+            },
+
+            onPointerDown: ({ event }) => {
+                if (colorOpen) return;
+
+                const pointerEvent = event as PointerEvent;
+                tapStart.current = { x: pointerEvent.clientX, y: pointerEvent.clientY };
+            },
+
+            onPointerUp: ({ event }) => {
+                if (colorOpen) return;
+
+                const pointerEvent = event as PointerEvent;
+
+                if (!tapStart.current) return;
+
+                const dx = Math.abs(pointerEvent.clientX - tapStart.current.x);
+                const dy = Math.abs(pointerEvent.clientY - tapStart.current.y);
+
+                tapStart.current = null;
+
+                if (dx <= TAP_THRESHOLD && dy <= TAP_THRESHOLD) {
+                    handleTap(event as any); // treat as tap
+                }
+            },
+        },
+        {
+            drag: { from: () => [position.x, position.y], filterTaps: true },
+            pinch: { scaleBounds: { min: 0.5, max: 3 }, rubberband: false },
+            eventOptions: { passive: false },
+        }
+    );
 
 
     const handleCloseMagazinePopup = async () => {
@@ -191,6 +271,13 @@ export default function SelectTemplatePage() {
     }, []);
 
 
+    useEffect(() => {
+        if (savedPosition) setPosition(savedPosition);
+        if (savedScale) setScale(savedScale);
+        if (savedRotation) setRotation(savedRotation);
+    }, [savedPosition, savedScale, savedRotation]);
+
+
     // whenever user selects a color
     useEffect(() => {
         applyHexFillToOverlay(hexValue);
@@ -214,18 +301,39 @@ export default function SelectTemplatePage() {
     }, [colorOpen]);
 
 
+    useEffect(() => {
+        if (colorOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [colorOpen]);
 
 
     useEffect(() => {
         setIndex(0);
     }, [selectedStyle, filteredTemplates.length]);
 
-    const handleDoubleTap = () => {
-        if (!currentTemplate) return;
+    const handleTap = (event?: Event) => {
+        if (colorOpen) return; // prevent toggling if picker is open
+
         const now = Date.now();
+
+        // DOUBLE TAP
         if (now - lastTap.current < 300) {
-            const willFavorite = !favoriteTemplates.includes(currentTemplate.id); // true if adding
+            if (tapTimeout.current) {
+                clearTimeout(tapTimeout.current);
+                tapTimeout.current = null;
+            }
+
+            if (!currentTemplate) return;
+
+            const willFavorite = !favoriteTemplates.includes(currentTemplate.id);
             toggleFavorite(currentTemplate.id);
+
             if (willFavorite) {
                 notify('info', `Added ${currentTemplate.name} to favorites.`);
                 setShowHeart(true);
@@ -233,9 +341,20 @@ export default function SelectTemplatePage() {
             } else {
                 notify('info', `Removed ${currentTemplate.name} from favorites.`);
             }
+
+            lastTap.current = 0;
+            return;
         }
+
+        // SINGLE TAP
         lastTap.current = now;
+
+        tapTimeout.current = setTimeout(() => {
+            setEditMode((v) => !v);
+            tapTimeout.current = null;
+        }, 300);
     };
+
 
     //const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -365,25 +484,174 @@ export default function SelectTemplatePage() {
         }
     }, [state, router])
 
-    const handleNext = () => {
-        //setSelectedTemplate(currentTemplate);
-        // if (selectedTemplate === null) {
-        //     alert('No template selected');
-        //     return
-        // } else {
-        //     router.push('/generate/identify')
-        // }
+    const captureUserImage = async (
+        containerRef: React.RefObject<HTMLDivElement | null>,
+        imgRef: React.RefObject<HTMLImageElement | null>,
+        position: { x: number; y: number },
+        scale: number,
+        rotation: number
+    ): Promise<Blob> => {
+        const container = containerRef.current;
+        const img = imgRef.current;
 
-        if (selectedTemplate === null || selectedTemplate === undefined) {
-            alert('No design selected');
+        if (!container || !img) {
+            throw new Error("Refs not ready");
+        }
+
+        if (!img.complete || !img.naturalWidth || !img.naturalHeight) {
+            throw new Error("Image not loaded");
+        }
+
+        await new Promise(requestAnimationFrame);
+
+        const rect = container.getBoundingClientRect();
+        if (!rect.width || !rect.height) {
+            throw new Error("Container has zero size");
+        }
+
+        // Quality multiplier (2 = recommended)
+        const QUALITY = 2;
+
+        // Base object-contain scale (matches CSS)
+        const scaleX = rect.width / img.naturalWidth;
+        const scaleY = rect.height / img.naturalHeight;
+        const baseScale = Math.min(scaleX, scaleY);
+
+        // Final export scale
+        const exportScale = baseScale * scale;
+
+        // Compute export canvas size in image space
+        const exportWidth = rect.width / exportScale;
+        const exportHeight = rect.height / exportScale;
+
+        const canvas = document.createElement("canvas");
+        canvas.width = exportWidth * QUALITY;
+        canvas.height = exportHeight * QUALITY;
+
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+            throw new Error("Canvas context unavailable");
+        }
+
+        // High-res render
+        ctx.scale(QUALITY, QUALITY);
+
+        // White background
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, exportWidth, exportHeight);
+
+        // Transform to match frontend
+        ctx.translate(
+            exportWidth / 2 + position.x / baseScale,
+            exportHeight / 2 + position.y / baseScale
+        );
+
+        ctx.rotate((rotation * Math.PI) / 180);
+        ctx.scale(scale, scale);
+
+
+        ctx.drawImage(
+            img,
+            -img.naturalWidth / 2,
+            -img.naturalHeight / 2
+        );
+
+        const blob = await new Promise<Blob | null>((resolve) =>
+            canvas.toBlob(resolve, "image/jpeg", 0.95)
+        );
+
+        if (!blob) {
+            throw new Error("Invalid captured blob");
+        }
+
+        return blob;
+    };
+
+
+
+    const handleNext = async () => {
+
+        if (!selectedTemplate) {
+            setError('No design selected')
             return
-        } else {
-            console.log(selectedStyle + ", " + selectedTemplate?.name);
-            router.push('/generate/identify')
+        }
+
+        // console.log("Saved position:", savedPosition);
+        // console.log("Saved scale:", savedScale);
+        // console.log("Saved rotation:", savedRotation);
+
+        // console.log("Current position:", position);
+        // console.log("Current scale:", scale);
+        // console.log("Current rotation:", rotation);
+
+        if (savedPosition != null && savedScale != null && savedRotation != null) {
+            const EPSILON = 0.0001; // acceptable difference
+
+            const samePosition =
+                Math.abs(position.x - savedPosition.x) < EPSILON &&
+                Math.abs(position.y - savedPosition.y) < EPSILON;
+
+            const sameScale = Math.abs(scale - savedScale) < EPSILON;
+            const sameRotation = Math.abs(rotation - savedRotation) < EPSILON;
+
+            console.log(
+                `Same position: ${samePosition}, Same scale: ${sameScale}, Same rotation: ${sameRotation}`
+            );
+
+            if (samePosition && sameScale && sameRotation) {
+                console.log("Transforms unchanged, skipping upload.");
+                // You can still navigate to the next page
+                setLoading(true);
+                router.push('/generate/identify')
+                return;
+            }
         }
 
 
+        try {
+            const capturedBlob = await captureUserImage(
+                containerRefForImage,
+                baseImgRef,
+                position,
+                scale,
+                rotation
+            )
+
+            setLoading(true)
+
+            await uploadCapturedImage(capturedBlob)
+
+            // persist coordinates for later use
+            setSavedPosition(position);
+            setSavedScale(scale);
+            setSavedRotation(rotation);
+
+            router.push('/generate/identify')
+        } catch (e) {
+            console.error(e)
+            setLoading(false)
+            setError('Failed to process image')
+        }
     }
+
+
+    const uploadCapturedImage = async (blob: Blob) => {
+        const currentUser = auth.currentUser
+        if (!currentUser) throw new Error('Not authenticated')
+
+        const ts = Date.now()
+        const path = `user_uploads/crops/${ts}_crop.jpg`
+
+        const refFull = ref(storage, path)
+
+        await uploadBytes(refFull, blob)
+
+        const url = await getDownloadURL(refFull)
+
+        setUserPosterImgDownloadUrl(url)
+        sessionStorage.setItem('fullPosterImageUrl', url)
+    }
+
 
     useEffect(() => {
         if (!filteredTemplates.length) return;
@@ -394,6 +662,10 @@ export default function SelectTemplatePage() {
     const handleBack = () => {
         setHexValue('');
         setCarDetails({ make: '', model: '', year: '' })
+        setSavedPosition(null);
+        setSavedRotation(null);
+        setSavedScale(null);
+
         setGeminiChecked(false)
         if (imageUploaded_flag) {
             router.push('/generate/upload?imageUploaded=true')
@@ -493,18 +765,18 @@ export default function SelectTemplatePage() {
 
 
     // IMAGEURL Stuff
-    const [thumbUrl, setThumbUrl] = useState<string | null>(null)
+    const [fullUrl, setFullUrl] = useState<string | null>(null)
     const [retry, setRetry] = useState(0)
 
     useEffect(() => {
-        if (userImgThumbDownloadUrl) {
-            setThumbUrl(userImgThumbDownloadUrl)
+        if (userImgDownloadUrl) {
+            setFullUrl(userImgDownloadUrl)
             return
         }
 
-        const stored = sessionStorage.getItem('thumbUrl')
-        if (stored) setThumbUrl(stored)
-    }, [userImgThumbDownloadUrl])
+        const stored = sessionStorage.getItem('fullUrl')
+        if (stored) setFullUrl(stored)
+    }, [userImgDownloadUrl])
 
 
     return (
@@ -514,251 +786,270 @@ export default function SelectTemplatePage() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
         >
-            <section id="select template" className="p-4 sm:p-6 md:p-8 mx-auto w-full max-w-3xl">
+            {loading ? (
+                <LoadingPage text="Saving design..." />
+            ) : error ? (
+                <ErrorPage text={error} />
+            ) : (
+                <section id="select template" className="p-4 sm:p-6 md:p-8 mx-auto w-full max-w-3xl">
 
-                <div className="flex flex-col z-40 items-center mb-6 relative p-[4px] bg-gradient-to-br from-cyan-500 to-blue-500 rounded-2xl">
-                    <div className="flex flex-col items-center bg-white rounded-xl px-6 py-6 w-full">
-                        <h1 className={`text-3xl sm:text-4xl md:text-5xl text-blue-400 text-center mb-2 ${archivoBlack.className}`}>
-                            Choose A Design
-                        </h1>
-                        <p className="text-sm sm:text-base md:text-lg text-gray-700 text-center">
-                            **Placeholder text only**
-                        </p>
-                    </div>
-                </div>
-
-                {/* Template Preview */}
-                <div
-                    className="relative flex flex-col items-center w-full max-w-xl mx-auto mb-6"
-                >
-
-                    {/* Floating heart animation */}
-                    <AnimatePresence>
-                        {showHeart && (
-                            <motion.div
-                                key="heart"
-                                initial={{ scale: 0, opacity: 0 }}
-                                animate={{ scale: 1.5, opacity: 1 }}
-                                exit={{ scale: 0, opacity: 0 }}
-                                transition={{ duration: 0.3 }}
-                                className="absolute z-50 text-red-500 text-3xl select-none pointer-events-none left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-                            >
-                                ❤️
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-
-
-                    <div className="relative z-40 w-full max-w-xs mx-auto rounded-sm overflow-hidden" onClick={handleDoubleTap}>
-                        {/* Base image */}
-                        <img
-                            ref={baseImgRef}
-                            src={`${thumbUrl}#${retry}`}
-                            alt="Base"
-                            className="w-full h-auto block pointer-events-none"
-                            onError={() => {
-                                setTimeout(() => setRetry((r) => r + 1), 1500)
-                            }}
-                        />
-
-
-
-                        {/* Template overlay image */}
-                        {currentTemplate?.previewImageUrl && (
-                            <AnimatePresence initial={false} custom={direction}>
-                                <motion.img
-                                    key={currentTemplate?.id}
-                                    src={currentTemplate?.previewImageUrl}
-                                    alt={currentTemplate?.name}
-                                    className="absolute inset-0 w-full h-full object-cover"
-                                    custom={direction}
-                                    variants={{
-                                        enter: (dir: number) => ({ x: dir > 0 ? 300 : -300, opacity: 0 }),
-                                        center: { x: 0, opacity: 1 },
-                                        exit: (dir: number) => ({ x: dir > 0 ? -300 : 300, opacity: 0 }),
-                                    }}
-                                    initial="enter"
-                                    animate="center"
-                                    exit="exit"
-                                    transition={{ duration: 0.4 }}
-                                    draggable={false}
-                                    drag="x"
-                                    dragConstraints={{ left: 0, right: 0 }}
-                                    dragElastic={0.6}
-                                    onDragEnd={(e, { offset }) => {
-                                        if (offset.x < -50) paginate(1)
-                                        else if (offset.x > 50) paginate(-1)
-                                    }}
-                                />
-                            </AnimatePresence>
-
-                        )}
-
-                        {/* Colorable overlay */}
-                        {selectedTemplate?.previewHexUrl && hexValue !== "" && (
-                            <canvas
-                                ref={overlayCanvasRef}
-                                className="absolute top-0 left-0 w-full h-full pointer-events-none z-20"
-                            />
-                        )}
-                    </div>
-
-
-
-                    {/* Template label */}
-                    <div className="mt-6 mx-auto grid grid-cols-3 items-center bg-black/80 text-white px-4 py-1 rounded-lg text-sm max-w-md">
-                        {/* Left: color picker box */}
-                        {selectedTemplate?.hexElements != null ? (
-                            <div className="flex justify-center relative">
-                                <div
-                                    className="h-7 w-7 border rounded cursor-pointer"
-                                    style={{
-                                        background: hexValue
-                                            ? hexValue
-                                            : "linear-gradient(45deg, #FFC1C1, #FFD8A8, #FFF3B0, #C1E1C1, #B0E0FF)"
-                                    }}
-                                    onClick={() => setColorOpen((v) => !v)}
-                                />
-                            </div>
-
-                        ) : (
-                            <div className="flex justify-center"></div>
-                        )}
-
-
-                        {/* Center: template name */}
-                        <div className="text-center flex items-center justify-center h-8">
-                            {currentTemplate?.name}
+                    <div className="flex flex-col z-40 items-center mb-6 relative p-[4px] bg-gradient-to-br from-cyan-500 to-blue-500 rounded-2xl">
+                        <div className="flex flex-col items-center bg-white rounded-xl px-6 py-6 w-full">
+                            <h1 className={`text-3xl sm:text-4xl md:text-5xl text-blue-400 text-center mb-2 ${archivoBlack.className}`}>
+                                Choose A Design
+                            </h1>
+                            <p className="text-sm sm:text-base md:text-lg text-gray-500 text-center mb-2">
+                                **Placeholder text only**
+                            </p>
+                            <p className="text-sm sm:text-base md:text-lg text-gray-700 text-center">
+                                <b>Tap your image to toggle edit mode</b> to reposition & rotate your image.
+                            </p>
                         </div>
+                    </div>
 
-                        {/* Right: disabled / invisible box */}
-                        <div className="flex justify-center">
-                            {selectedTemplate?.hexElements != null && hexValue !== "" ? (
-                                <img src="/svg/xmark_gray.svg" alt="Close" className="relative w-6 h-6 cursor-pointer" onClick={() => setHexValue("")} />
-                            ) : (
-                                <div className="h-8 w-8 border border-white rounded opacity-0 pointer-events-none" />
+                    {/* Template Preview */}
+                    <div
+                        className="relative flex flex-col items-center w-full max-w-xl mx-auto mb-6"
+                    >
+
+                        {/* Floating heart animation */}
+                        <AnimatePresence>
+                            {showHeart && (
+                                <motion.div
+                                    key="heart"
+                                    initial={{ scale: 0, opacity: 0 }}
+                                    animate={{ scale: 1.5, opacity: 1 }}
+                                    exit={{ scale: 0, opacity: 0 }}
+                                    transition={{ duration: 0.3 }}
+                                    className="absolute z-50 text-red-500 text-3xl select-none pointer-events-none left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                                >
+                                    ❤️
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
+
+                        <div
+                            ref={containerRefForImage}
+                            className={`relative z-40 w-full max-w-xs mx-auto rounded-sm overflow-hidden aspect-[5/7] 
+    ${editMode ? 'outline-2 outline-black outline-dotted transition-all duration-700' : 'transition-all duration-700'}`}
+                            {...bind()}
+
+                        >
+                            {/* Base image (gesture owner) */}
+                            <img
+                                ref={baseImgRef}
+                                src={`${fullUrl}#${retry}`}
+                                crossOrigin="anonymous"
+
+                                alt="Base"
+                                className="absolute inset-0 w-full h-full object-contain touch-none"
+                                onError={() => {
+                                    setTimeout(() => setRetry((r) => r + 1), 1500)
+                                }}
+                                style={{
+                                    transform: `translate(${position.x}px, ${position.y}px) scale(${scale}) rotate(${rotation}deg)`,
+                                }}
+                            />
+
+                            {/* Template overlay image (visual only) */}
+                            {currentTemplate?.previewImageUrl && (
+                                <AnimatePresence initial={false} custom={direction}>
+                                    <motion.img
+                                        key={currentTemplate.id}
+                                        src={currentTemplate.previewImageUrl}
+                                        alt={currentTemplate.name}
+                                        className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                                        custom={direction}
+                                        variants={{
+                                            enter: (dir: number) => ({ x: dir > 0 ? 300 : -300, opacity: 0 }),
+                                            center: { x: 0, opacity: editMode ? 0.35 : 1 },
+                                            exit: (dir: number) => ({ x: dir > 0 ? -300 : 300, opacity: 0 }),
+                                        }}
+                                        initial="enter"
+                                        animate="center"
+                                        exit="exit"
+                                        transition={{ duration: 0.4 }}
+                                    />
+                                </AnimatePresence>
+                            )}
+
+                            {/* Colorable overlay */}
+                            {selectedTemplate?.previewHexUrl && hexValue !== "" && (
+                                <motion.canvas
+                                    ref={overlayCanvasRef}
+                                    className="absolute inset-0 w-full h-full pointer-events-none z-20"
+                                    style={{ transform: 'translateX(-0.5px)' }}
+                                    animate={{ opacity: editMode ? 0.35 : 1 }}
+                                    transition={{ duration: 0.2 }}
+                                />
                             )}
 
                         </div>
+
+
+
+
+
+
+
+                        {/* Template label */}
+                        <div className="mt-6 mx-auto grid grid-cols-3 items-center bg-black/80 text-white px-4 py-1 rounded-lg text-sm max-w-md">
+                            {/* Left: color picker box */}
+                            {selectedTemplate?.hexElements != null ? (
+                                <div className="flex justify-center relative">
+                                    <div
+                                        className="h-7 w-7 border rounded cursor-pointer"
+                                        style={{
+                                            background: hexValue
+                                                ? hexValue
+                                                : "linear-gradient(45deg, #FFC1C1, #FFD8A8, #FFF3B0, #C1E1C1, #B0E0FF)"
+                                        }}
+                                        onClick={() => {
+                                            if (!editMode) setColorOpen(true);
+                                        }}
+                                    />
+                                </div>
+
+                            ) : (
+                                <div className="flex justify-center"></div>
+                            )}
+
+
+                            {/* Center: template name */}
+                            <div className="text-center flex items-center justify-center h-8">
+                                {currentTemplate?.name}
+                            </div>
+
+                            {/* Right: disabled / invisible box */}
+                            <div className="flex justify-center">
+                                {selectedTemplate?.hexElements != null && hexValue !== "" ? (
+                                    <img src="/svg/xmark_gray.svg" alt="Close" className="relative w-6 h-6 cursor-pointer" onClick={() => setHexValue("")} />
+                                ) : (
+                                    <div className="h-8 w-8 border border-white rounded opacity-0 pointer-events-none" />
+                                )}
+                            </div>
+                        </div>
+
+
+
+
                     </div>
 
-
-
-
-                </div>
-
-                {/* Custom spectrum popup */}
-                <div className="flex justify-center relative" ref={containerRef}>
-                    {/* Trigger square */}
-
-                    {/* Color picker popup */}
-                    {/* Custom spectrum popup wrapper */}
+                    {/* Custom spectrum popup */}
                     <div className="flex justify-center relative" ref={containerRef}>
-                        {/* Only render the popup if open */}
+                        {/* Trigger square */}
 
-                        <div
-                            className={`
+                        {/* Color picker popup */}
+                        {/* Custom spectrum popup wrapper */}
+                        <div className="flex justify-center relative" ref={containerRef}>
+                            {/* Only render the popup if open */}
+
+                            <div
+                                className={`
     fixed inset-x-0 bottom-0
     bg-white/60 backdrop-blur-xs
     z-30
     transition-opacity duration-300 top-[0px]
     ${colorOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}
   `}
-                            onClick={() => setColorOpen(false)}
-                        />
+                                onClick={(e) => {
+                                    e.stopPropagation();          // prevent tap from reaching image
+                                    setColorOpen(false);          // close the picker
+                                }}
+                            />
 
 
-                        <div
-                            className={`absolute left-1/2 -top-20 transform -translate-x-1/2 z-50 p-1 bg-black/90 rounded mt-2 w-[90vw] max-w-[320px]
+                            <div
+                                className={`absolute left-1/2 -top-20 transform -translate-x-1/2 z-50 p-1 bg-black/90 rounded mt-2 w-[90vw] max-w-[320px]
 h-[120px] sm:h-[140px] md:h-[160px]
 sm:mx-4
 md:mx-0
 transition-all duration-300 ease-out
 ${colorOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"}`}
-                            onClick={(e) => e.stopPropagation()}
-                        >
+                                onClick={(e) => e.stopPropagation()}
+                            >
 
-                            <canvas
-                                ref={canvasRef}
-                                width={300}
-                                height={150}
-                                className="cursor-crosshair w-full h-full"
-                                onMouseDown={startPick}
-                                onTouchStart={startPick}
-                            />
+                                <canvas
+                                    ref={canvasRef}
+                                    width={300}
+                                    height={150}
+                                    className="cursor-crosshair w-full h-full"
+                                    onMouseDown={startPick}
+                                    onTouchStart={startPick}
+                                />
+                                <p className='text-xs text-gray-400 mt-2'>Tip: Hold and drag to pick a color.</p>
+                            </div>
+
                         </div>
 
+
                     </div>
 
 
-                </div>
 
+                    {/* Template Styles Slider */}
+                    {filteredTemplates.length > 0 ? (
+                        <TemplateSlider
+                            length={filteredTemplates.length}
+                            index={index}
+                        />
+                    ) : (
+                        <div className="text-sm text-gray-400 text-center mt-2 mb-5">
+                            {selectedStyle === "Favourites" ? "No favourites. Double tap a design to favourite!" : "No designs here."}
+                        </div>
+                    )}
 
+                    <div className="flex flex-wrap justify-center gap-2 mt-2 mb-6">
+                        {STYLES.map((style) => {
+                            let className = style === selectedStyle ? "active" : "inactive";
+                            if (style === "Favourites") {
+                                className = style === selectedStyle ? "activeFavourite" : "inactiveFavourite";
+                            }
+                            return (
+                                <button
+                                    key={style}
+                                    onClick={() => {
+                                        setHexValue('');
+                                        setSelectedStyle(style);
+                                        setSelectedTemplate(null);
+                                        if (style === "Brands") {
+                                            if (showBrandsPopup) {
+                                                window.scrollTo({
+                                                    top: document.documentElement.scrollHeight,
+                                                    behavior: "smooth",
+                                                });
+                                            }
 
-                {/* Template Styles Slider */}
-                {filteredTemplates.length > 0 ? (
-                    <TemplateSlider
-                        length={filteredTemplates.length}
-                        index={index}
-                        onSwipe={paginate}
-                        selectedStyle={selectedStyle.toString()}
-                    />
-                ) : (
-                    <div className="text-sm text-gray-400 text-center mt-2 mb-5">
-                        {selectedStyle === "Favourites" ? "No favourites. Double tap a design to favourite!" : "No designs here."}
-                    </div>
-                )}
-
-                <div className="flex flex-wrap justify-center gap-2 mt-2 mb-6">
-                    {STYLES.map((style) => {
-                        let className = style === selectedStyle ? "active" : "inactive";
-                        if (style === "Favourites") {
-                            className = style === selectedStyle ? "activeFavourite" : "inactiveFavourite";
-                        }
-                        return (
-                            <button
-                                key={style}
-                                onClick={() => {
-                                    setHexValue('');
-                                    setSelectedStyle(style);
-                                    setSelectedTemplate(null);
-                                    if (style === "Brands") {
-                                        if (showBrandsPopup) {
-                                            window.scrollTo({
-                                                top: document.documentElement.scrollHeight,
-                                                behavior: "smooth",
-                                            });
                                         }
-
-                                    }
-                                }}
-                                className={className}
-                            >
-                                {style}
-                            </button>
-                        );
-                    })}
-                </div>
+                                    }}
+                                    className={className}
+                                >
+                                    {style}
+                                </button>
+                            );
+                        })}
+                    </div>
 
 
-                {/* Navigation Buttons */}
-                <div className="flex justify-center gap-4 mt-8">
-                    <button
-                        onClick={handleBack}
-                        className="
+                    {/* Navigation Buttons */}
+                    <div className="flex justify-center gap-4 mt-8 mb-5">
+                        <button
+                            onClick={handleBack}
+                            className="
                 w-full max-w-[140px] rounded-xl py-2 text-sm font-semibold
                 bg-white text-gray-800 shadow-md
                 border border-gray-200
                 hover:bg-gray-50
                 disabled:opacity-50
             "
-                    >
-                        Back
-                    </button>
+                        >
+                            Back
+                        </button>
 
-                    <button
-                        onClick={handleNext}
-                        className="
+                        <button
+                            onClick={handleNext}
+                            className="
                 w-full max-w-[140px] rounded-xl py-2 text-sm font-semibold text-white
                 bg-gradient-to-r from-cyan-500 to-blue-500
                 hover:brightness-110
@@ -766,106 +1057,106 @@ ${colorOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-eve
                 disabled:opacity-50 disabled:cursor-not-allowed
                 shadow-md
             "
-                    >
-                        Next
-                    </button>
-                </div>
+                        >
+                            Next
+                        </button>
+                    </div>
 
 
-                {showMagazinePopup && selectedStyle === "Magazine" && (
-                    <div
-                        className="fixed inset-0 z-50"
-                        onClick={handleCloseMagazinePopup}
-                    >
-                        {/* Dark overlay */}
-                        <div className="absolute inset-0 bg-black/70" />
+                    {showMagazinePopup && selectedStyle === "Magazine" && (
+                        <div
+                            className="fixed inset-0 z-50"
+                            onClick={handleCloseMagazinePopup}
+                        >
+                            {/* Dark overlay */}
+                            <div className="absolute inset-0 bg-black/70" />
 
-                        {/* Text */}
-                        <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
-                            <div
-                                className="bg-gray-700/50 backdrop-blur-sm border border-white rounded-xl px-6 py-4 max-w-sm text-white text-sm whitespace-pre-line mt-[-170px]"
-                                onClick={(e) => e.stopPropagation()}
-                            >
-                                <div className="text-base font-semibold mb-4">
-                                    <p>What are &quot;Magazine&quot; templates?</p>
+                            {/* Text */}
+                            <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
+                                <div
+                                    className="bg-gray-700/50 backdrop-blur-sm border border-white rounded-xl px-6 py-4 max-w-sm text-white text-sm whitespace-pre-line mt-[-170px]"
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <div className="text-base font-semibold mb-4">
+                                        <p>What are these designs?</p>
+                                    </div>
+
+                                    <div className="mb-6">
+                                        <p className='text-gray-300'>This group of templates are designed to be very versatile!<br></br><br></br></p>
+
+                                        <p>Automatically includes:</p>
+                                        <p className='text-xs'>
+                                            • Car Make<br></br>
+                                            • Car Model<br></br>
+                                            • Car Year<br></br>
+                                            • Car Description<br></br>
+                                            • Current Date<br></br>
+                                            • Your Instagram Handle<br></br>
+                                        </p>
+
+                                    </div>
+
+                                    <label className="flex items-center gap-2 text-xs opacity-90 cursor-pointer text-gray-400">
+                                        <input
+                                            type="checkbox"
+                                            checked={dontShowAgainMagazine}
+                                            onChange={(e) => setDontShowAgainMagazine(e.target.checked)}
+                                            className="accent-cyan-400"
+                                        />
+                                        <span>Don&apos;t show this again</span>
+                                    </label>
                                 </div>
-
-                                <div className="mb-6">
-                                    <p className='text-gray-300'>This group of templates are designed to be very versatile!<br></br><br></br></p>
-
-                                    <p>Automatically includes:</p>
-                                    <p className='text-xs'>
-                                        • Car Make<br></br>
-                                        • Car Model<br></br>
-                                        • Car Year<br></br>
-                                        • Car Description<br></br>
-                                        • Current Date<br></br>
-                                        • Your Instagram Handle<br></br>
-                                    </p>
-
-                                </div>
-
-                                <label className="flex items-center gap-2 text-xs opacity-90 cursor-pointer text-gray-400">
-                                    <input
-                                        type="checkbox"
-                                        checked={dontShowAgainMagazine}
-                                        onChange={(e) => setDontShowAgainMagazine(e.target.checked)}
-                                        className="accent-cyan-400"
-                                    />
-                                    <span>Don&apos;t show this again</span>
-                                </label>
                             </div>
                         </div>
-                    </div>
-                )}
-                {showBrandsPopup && selectedStyle === "Brands" && (
-                    <div
-                        className="fixed inset-0 z-50"
-                        onClick={handleCloseBrandsPopup}
-                    >
-                        {/* Dark overlay */}
-                        <div className="absolute inset-0 bg-black/70" />
+                    )}
+                    {showBrandsPopup && selectedStyle === "Brands" && (
+                        <div
+                            className="fixed inset-0 z-50"
+                            onClick={handleCloseBrandsPopup}
+                        >
+                            {/* Dark overlay */}
+                            <div className="absolute inset-0 bg-black/70" />
 
-                        {/* Text */}
-                        <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
-                            <div
-                                className="bg-gray-700/50 backdrop-blur-sm border border-white rounded-xl px-6 py-4 max-w-sm text-white text-sm whitespace-pre-line mt-[-170px]"
-                                onClick={(e) => e.stopPropagation()}
-                            >
-                                <div className="text-base font-semibold mb-4">
-                                   <p>What are &quot;Brands&quot; templates?</p>
+                            {/* Text */}
+                            <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
+                                <div
+                                    className="bg-gray-700/50 backdrop-blur-sm border border-white rounded-xl px-6 py-4 max-w-sm text-white text-sm whitespace-pre-line mt-[-170px]"
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <div className="text-base font-semibold mb-4">
+                                        <p>What are &quot;Brands&quot; templates?</p>
+                                    </div>
+
+                                    <div className="mb-6">
+                                        <p className='text-gray-300'>These templates are designed for specific car brands only.<br /><br /></p>
+
+                                        <p><strong>Important:</strong> The car <em>make</em> will <u>not</u> update automatically. It is fixed in the template.</p><br />
+                                        <p className="text-xs">
+                                            • Car Make: static<br />
+                                            • Car Model: dynamic<br />
+                                            • Car Year: dynamic<br />
+                                            • Car Description: dynamic<br />
+                                            • Current Date: dynamic<br />
+                                            • Your Instagram Handle: dynamic
+                                        </p>
+                                    </div>
+
+
+                                    <label className="flex items-center gap-2 text-xs opacity-90 cursor-pointer text-gray-400">
+                                        <input
+                                            type="checkbox"
+                                            checked={dontShowAgainBrands}
+                                            onChange={(e) => setDontShowAgainBrands(e.target.checked)}
+                                            className="accent-cyan-400"
+                                        />
+                                        <span>Don&apos;t show this again</span>
+                                    </label>
                                 </div>
-
-                                <div className="mb-6">
-                                    <p className='text-gray-300'>These templates are designed for specific car brands only.<br /><br /></p>
-
-                                    <p><strong>Important:</strong> The car <em>make</em> will <u>not</u> update automatically. It is fixed in the template.</p><br />
-                                    <p className="text-xs">
-                                        • Car Make: static<br />
-                                        • Car Model: dynamic<br />
-                                        • Car Year: dynamic<br />
-                                        • Car Description: dynamic<br />
-                                        • Current Date: dynamic<br />
-                                        • Your Instagram Handle: dynamic
-                                    </p>
-                                </div>
-
-
-                                <label className="flex items-center gap-2 text-xs opacity-90 cursor-pointer text-gray-400">
-                                    <input
-                                        type="checkbox"
-                                        checked={dontShowAgainBrands}
-                                        onChange={(e) => setDontShowAgainBrands(e.target.checked)}
-                                        className="accent-cyan-400"
-                                    />
-                                    <span>Don&apos;t show this again</span>
-                                </label>
                             </div>
                         </div>
-                    </div>
-                )}
+                    )}
 
-            </section>
+                </section>)}
 
         </motion.div>
     )

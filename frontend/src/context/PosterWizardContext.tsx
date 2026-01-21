@@ -1,11 +1,7 @@
 'use client'
 
-// Used to share state between all generate/... pages.
-// Also includes PosterWizardState to check if the state for each page is valid. If not, redirect to the previous page.
-
-import React, { createContext, useContext, useState } from 'react'
+import React, { createContext, useContext, useState, useEffect } from 'react'
 import { Template } from '@/types/template'
-import { useEffect } from 'react';
 import { Credit } from '@/types/credit'
 
 type CarDetails = {
@@ -43,20 +39,26 @@ type PosterWizardContextType = {
   setCredits: React.Dispatch<React.SetStateAction<Credit>>
   hexValue: string
   setHexValue: (value: string) => void
+  userPosterImgDownloadUrl: string | null
+  setUserPosterImgDownloadUrl: (url: string | null) => void
+  savedPosition: { x: number, y: number } | null
+  setSavedPosition: React.Dispatch<React.SetStateAction<{ x: number, y: number } | null>>
+  savedScale: number | null
+  setSavedScale: React.Dispatch<React.SetStateAction<number | null>>
+  savedRotation: number | null
+  setSavedRotation: React.Dispatch<React.SetStateAction<number | null>>
 }
 
 export type PosterWizardState = {
-  selectedTemplate?: Template | null;
-  uploadedImageUrl?: string | null;
-  carDetails?: CarDetails;
-  // Add more fields as needed to check if a step is accessible
-};
+  selectedTemplate?: Template | null
+  uploadedImageUrl?: string | null
+  carDetails?: CarDetails
+}
 
 const PosterWizardContext = createContext<PosterWizardContextType | undefined>(undefined)
 
 export const PosterWizardProvider = ({ children }: { children: React.ReactNode }) => {
-
-  const [state, setState] = useState<PosterWizardState>({});
+  const [state, setState] = useState<PosterWizardState>({})
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null)
   const [userImgDownloadUrl, setuserImgDownloadUrl] = useState<string | null>(null)
   const [userImgThumbDownloadUrl, setuserImgThumbDownloadUrl] = useState<string | null>(null)
@@ -65,28 +67,28 @@ export const PosterWizardProvider = ({ children }: { children: React.ReactNode }
   const [prevCarDetails, setPrevCarDetails] = useState<CarDetails>({ make: '', model: '', year: '' })
   const [instagramHandle, setInstagramHandle] = useState('')
   const [geminiChecked, setGeminiChecked] = useState(false)
-  //const [posterUrl, setPosterUrl] = useState<string | null>(null)
-  const [progress, setProgress] = useState<string | null>("Starting...")
+  const [progress, setProgress] = useState<string | null>('Starting...')
   const [templateIndex, setTemplateIndex] = useState(0)
   const [useAI, setUseAI] = useState(true)
-  const [credits, setCredits] = useState<Credit>({
-    carJam: 0,
-    ai: 0,
-    posterGen: 0,
-  })
-  const [hexValue, setHexValue] = useState("");
+  const [credits, setCredits] = useState<Credit>({ carJam: 0, ai: 0, posterGen: 0 })
+  const [hexValue, setHexValue] = useState('')
+  const [userPosterImgDownloadUrl, setUserPosterImgDownloadUrl] = useState<string | null>(null)
+
+  const [savedPosition, setSavedPosition] = useState<{ x: number, y: number } | null>(null)
+  const [savedScale, setSavedScale] = useState<number | null>(null)
+  const [savedRotation, setSavedRotation] = useState<number | null>(null)
 
   useEffect(() => {
     setState({
       selectedTemplate: selectedTemplate,
       uploadedImageUrl: userImgDownloadUrl,
       carDetails,
-    });
-  }, [selectedTemplate, userImgDownloadUrl, carDetails]);
+    })
+  }, [selectedTemplate, userImgDownloadUrl, carDetails])
 
   return (
     <PosterWizardContext.Provider value={{
-      state: state,
+      state,
       setState,
       selectedTemplate,
       setSelectedTemplate,
@@ -113,7 +115,15 @@ export const PosterWizardProvider = ({ children }: { children: React.ReactNode }
       credits,
       setCredits,
       hexValue,
-      setHexValue
+      setHexValue,
+      userPosterImgDownloadUrl,
+      setUserPosterImgDownloadUrl,
+      savedPosition,
+      setSavedPosition,
+      savedScale,
+      setSavedScale,
+      savedRotation,
+      setSavedRotation
     }}>
       {children}
     </PosterWizardContext.Provider>
@@ -122,15 +132,13 @@ export const PosterWizardProvider = ({ children }: { children: React.ReactNode }
 
 export const usePosterWizard = () => {
   const context = useContext(PosterWizardContext)
-  if (!context) {
-    throw new Error('usePosterWizard must be used within a PosterWizardProvider')
-  }
+  if (!context) throw new Error('usePosterWizard must be used within a PosterWizardProvider')
   return context
 }
 
 export function isStepAccessible(step: string, state: PosterWizardState): boolean {
-  if (step === "select") return !!state.uploadedImageUrl;
-  if (step === "identify") return !!state.uploadedImageUrl;
-  if (step === "overview") return !!state.carDetails && Object.values(state.carDetails).every((value) => value !== "");
-  return true;
+  if (step === 'select') return !!state.uploadedImageUrl
+  if (step === 'identify') return !!state.uploadedImageUrl
+  if (step === 'overview') return !!state.carDetails && Object.values(state.carDetails).every(value => value !== '')
+  return true
 }

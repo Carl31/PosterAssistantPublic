@@ -13,7 +13,6 @@ import {
 } from 'firebase/storage'
 import { auth } from '@/firebase/client'
 import { useRouter, useSearchParams } from 'next/navigation'
-import Cropper, { Area } from 'react-easy-crop'
 import { getAuth, onAuthStateChanged, User } from 'firebase/auth'
 import LoadingPage from '@/components/LoadingPage'
 import Spinner from '@/components/Spinner'
@@ -90,56 +89,6 @@ async function resizeImage(
   }
 }
 
-function degToRad(deg: number) {
-  return (deg * Math.PI) / 180
-}
-
-async function getCroppedImg(
-  imageSrc: string,
-  crop: Area,
-  rotation = 0
-): Promise<Blob> {
-  const image = await safeCreateImage(imageSrc)
-
-  const rotRad = degToRad(rotation)
-
-  const sin = Math.abs(Math.sin(rotRad))
-  const cos = Math.abs(Math.cos(rotRad))
-
-  const boundW = image.width * cos + image.height * sin
-  const boundH = image.width * sin + image.height * cos
-
-  const canvas = document.createElement('canvas')
-  canvas.width = boundW
-  canvas.height = boundH
-  const ctx = canvas.getContext('2d')
-  if (!ctx) throw new Error('Canvas ctx null')
-
-  ctx.translate(boundW / 2, boundH / 2)
-  ctx.rotate(rotRad)
-  ctx.drawImage(image, -image.width / 2, -image.height / 2)
-
-  const croppedCanvas = document.createElement('canvas')
-  croppedCanvas.width = crop.width
-  croppedCanvas.height = crop.height
-  const croppedCtx = croppedCanvas.getContext('2d')
-  if (!croppedCtx) throw new Error('Canvas ctx null')
-
-  croppedCtx.drawImage(
-    canvas,
-    crop.x,
-    crop.y,
-    crop.width,
-    crop.height,
-    0,
-    0,
-    crop.width,
-    crop.height
-  )
-
-  return await canvasToBlobSafe(croppedCanvas, 0.95)
-}
-
 /* ------------------ Component ------------------ */
 
 export default function UploadImageStep() {
@@ -147,10 +96,6 @@ export default function UploadImageStep() {
   const [image, setImage] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [crop, setCrop] = useState({ x: 0, y: 0 })
-  const [zoom, setZoom] = useState(1)
-  const [rotation, setRotation] = useState(0)
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null)
   const [user, setUser] = useState<User | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
   const [userImages, setUserImages] = useState<
@@ -188,6 +133,12 @@ export default function UploadImageStep() {
     setImage(null)
     setuserImgDownloadUrl(null)
     router.push('/account/dashboard')
+  }
+
+  const handleRemoveImage = () => {
+    setPreviewUrl(null)
+    sessionStorage.removeItem('selectedUserImage')
+    setImage(null)
   }
 
   /* ---------- Cleanup preview URLs safely ---------- */
@@ -263,13 +214,8 @@ export default function UploadImageStep() {
     setPreviewUrl(URL.createObjectURL(file))
   }
 
-  const onCropComplete = useCallback(
-    (_: Area, p: Area) => setCroppedAreaPixels(p),
-    []
-  )
-
   const handleImageUpload = async () => {
-    if (!image || !croppedAreaPixels || !previewUrl) return
+    if (!image || !previewUrl) return
 
     const currentUser = auth.currentUser
     if (!currentUser) return
@@ -289,14 +235,27 @@ export default function UploadImageStep() {
     )}`
 
     try {
-      const cropped = await getCroppedImg(
-        previewUrl,
-        croppedAreaPixels,
-        rotation
+
+      // can change image upload quality here (in the future, can make this variable dependant on user subscription tier):
+      const { width, height } = await getImageDimensions(image)
+      const longSide = Math.max(width, height)
+
+      // ---------- Full image ----------
+      const fullBlob =
+        longSide > 2000
+          ? await resizeImage(image, 2000, 0.85)
+          : image
+
+      // ---------- Thumbnail (conditional compression) ----------
+      const thumbQuality = longSide > 2000 ? 0.75 : 0.85
+
+      const thumbBlob = await resizeImage(
+        fullBlob instanceof Blob ? fullBlob : image,
+        800,
+        thumbQuality
       )
 
-      const fullBlob = await resizeImage(cropped, 2000, 0.85)
-      const thumbBlob = await resizeImage(cropped, 800, 0.7)
+
 
       if (!thumbBlob || thumbBlob.size === 0) {
         throw new Error('Invalid thumbnail blob')
@@ -326,7 +285,7 @@ export default function UploadImageStep() {
 
       setuserImgDownloadUrl(fullUrl)
       setuserImgThumbDownloadUrl(thumbUrl)
-      sessionStorage.setItem('thumbUrl', thumbUrl)
+      sessionStorage.setItem('fullUrl', fullUrl)
 
       router.push('/generate/select?upload=true')
     } catch (e) {
@@ -337,6 +296,17 @@ export default function UploadImageStep() {
     }
   }
 
+  async function getImageDimensions(blob: Blob): Promise<{ width: number; height: number }> {
+    const url = URL.createObjectURL(blob)
+    try {
+      const img = await safeCreateImage(url)
+      return { width: img.width, height: img.height }
+    } finally {
+      URL.revokeObjectURL(url)
+    }
+  }
+
+
   /* ---------- Render ---------- */
 
   if (authLoading) return <p>Authenticating...</p>
@@ -344,30 +314,32 @@ export default function UploadImageStep() {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-      <div className="p-4 sm:p-6 md:p-8 mx-auto w-full max-w-3xl">
+      {loading ? (
+        <LoadingPage text="Uploading image..." />
+      ) : (
 
-        {/* Upload Section */}
-        {loading ? (
-          <LoadingPage text="Uploading image..." />
-        ) : (
-          <>
-            <section id="upload image" className="mb-8 mt-4">
-              <div className="flex flex-col items-center 
+        <div className="p-4 sm:p-6 md:p-8 mx-auto w-full max-w-3xl">
+
+          {/* Upload Section */}
+
+
+          <section id="upload image" className="mb-8 mt-4">
+            <div className="flex flex-col items-center 
                         relative p-[4px] 
                         bg-gradient-to-br from-cyan-500 to-blue-500
                         rounded-2xl mb-6">
-                <div className="flex flex-col items-center bg-white rounded-xl px-6 py-6 w-full">
-                  <h1 className={`text-3xl sm:text-4xl md:text-5xl mb-2 text-blue-400 text-center ${archivoBlack.className}`}>
-                    Choose an Image
-                  </h1>
-                  <p className="text-sm sm:text-base md:text-lg text-gray-800 text-center">
-                    Upload your photo to turn it into a poster.
-                  </p>
-                </div>
+              <div className="flex flex-col items-center bg-white rounded-xl px-6 py-6 w-full">
+                <h1 className={`text-3xl sm:text-4xl md:text-5xl mb-2 text-blue-400 text-center ${archivoBlack.className}`}>
+                  Choose an Image
+                </h1>
+                <p className="text-sm sm:text-base md:text-lg text-gray-800 text-center">
+                  Upload your photo to turn it into a poster.
+                </p>
               </div>
+            </div>
 
-              {!image ? (
-                <>
+            {!image ? (
+              <>
                 <label htmlFor="imageInput" className="cursor-pointer w-full max-w-md mx-auto">
                   <div className="bg-white border-3 border-black shadow-2xl rounded-xl px-6 py-4 flex flex-col items-center hover:shadow-xl transition">
                     <img className="w-9 h-9 mb-2" src="/svg/upload.svg" alt="Upload" />
@@ -383,73 +355,77 @@ export default function UploadImageStep() {
 
                 </label>
                 <p className='text-gray-500 text-xs mt-3'>Tip: Clean, simple photos work best. Let the designs breathe!</p>
-                </>
-              ) : (
-                <div className="flex flex-col items-center gap-4">
-                  <div className="relative w-full max-w-md h-140 bg-gray-100 rounded-xl overflow-hidden shadow-sm">
-                    <Cropper
-                      image={previewUrl!}
-                      crop={crop}
-                      zoom={zoom}
-                      rotation={rotation}
-                      onRotationChange={setRotation}
-                      aspect={5 / 7}
-                      onCropChange={setCrop}
-                      onZoomChange={setZoom}
-                      onCropComplete={onCropComplete}
+              </>
+            ) : (
+              <div className="flex flex-col items-center gap-4">
+                <div className="relative w-full max-w-md bg-gray-100 rounded-xl overflow-hidden shadow-sm">
+                  <div className="relative w-full aspect-[5/7]">
+                    <img
+                      src={previewUrl!}
+                      alt="Preview"
+                      className="absolute inset-0 w-full h-full object-contain"
                     />
                   </div>
-                  <button
-                    onClick={handleImageUpload}
-                    disabled={!image}
-                    className="w-full max-w-xs inline-flex justify-center gap-2 px-6 py-3 text-sm font-semibold text-white rounded-lg
+                </div>
+                <button
+                  onClick={handleImageUpload}
+                  disabled={!image}
+                  className="w-full max-w-xs inline-flex justify-center gap-2 px-6 py-3 text-sm font-semibold text-white rounded-lg
                          bg-gradient-to-r from-cyan-500 to-blue-500 hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-cyan-300 transition"
-                  >
-                    Confirm and Upload
-                  </button>
-                </div>
-              )}
-            </section>
+                >
+                  Confirm and Upload
+                </button>
 
-            {/* User Images Section */}
-            <section id="user images" className="mt-8">
-              <h1 className="text-xl font-bold mb-4 text-black">Your uploaded images</h1>
-              {imagesLoading ? (
-                <Spinner />
-              ) : error ? (
-                <p className="text-red-500">{error}</p>
-              ) : userImages.length === 0 ? (
-                <p className="text-gray-700">No images found for your account. Time to upload some!</p>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                  {userImages.map(({ thumbUrl, originalUrl }) => (
-                    <img
-                      key={thumbUrl}
-                      src={thumbUrl}
-                      alt="User Upload"
-                      onClick={() => handleSelectExisting(thumbUrl, originalUrl)}
-                      className="rounded-xl object-cover w-full h-60 cursor-pointer transform transition active:scale-95 hover:brightness-105 focus:outline-none focus:ring-2 focus:ring-cyan-300"
-                    />
-                  ))}
-                </div>
-              )}
-            </section>
+                <button
+                  onClick={handleRemoveImage}
+                  disabled={!previewUrl}
+                  className="text-sm text-gray-400 underline underline-offset-2 hover:text-gray-500 transition"
+                >
+                  Choose a different image
+                </button>
+              </div>
+            )}
+          </section>
 
-            {/* Back Button */}
-            <button
-              onClick={handleBack}
-              className="relative w-full inline-flex justify-center gap-2 px-6 py-3 mt-8 text-sm font-semibold rounded-lg
+          {/* User Images Section */}
+          <section id="user images" className="mt-8">
+            <h1 className="text-xl font-bold mb-4 text-black">Your uploaded images</h1>
+            {imagesLoading ? (
+              <Spinner />
+            ) : error ? (
+              <p className="text-red-500">{error}</p>
+            ) : userImages.length === 0 ? (
+              <p className="text-gray-700">No images found for your account. Time to upload some!</p>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {userImages.map(({ thumbUrl, originalUrl }) => (
+                  <img
+                    key={thumbUrl}
+                    src={thumbUrl}
+                    alt="User Upload"
+                    onClick={() => handleSelectExisting(thumbUrl, originalUrl)}
+                    className="rounded-xl object-cover w-full h-60 cursor-pointer transform transition active:scale-95 hover:brightness-105 focus:outline-none focus:ring-2 focus:ring-cyan-300"
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+
+          {/* Back Button */}
+          <button
+            onClick={handleBack}
+            className="relative w-full inline-flex justify-center gap-2 px-6 py-3 mt-8 text-sm font-semibold rounded-lg
                        bg-white text-gray-800 shadow-md
                 border border-gray-200
                 hover:bg-gray-50
                 disabled:opacity-50 mb-4"
-            >
-              
-              Back
-            </button>
-          </>
-        )}
-      </div>
+          >
+
+            Back
+          </button>
+
+        </div>
+      )}
 
     </motion.div>
   )

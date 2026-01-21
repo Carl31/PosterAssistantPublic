@@ -31,7 +31,7 @@ export default function OverviewPage() {
     const {
         selectedTemplate, carDetails,
         description, setDescription, instagramHandle,
-        userImgDownloadUrl, prevCarDetails, setPrevCarDetails, hexValue, setHexValue
+        userImgDownloadUrl, prevCarDetails, setPrevCarDetails, hexValue, userPosterImgDownloadUrl
     } = usePosterWizard()
     const { state } = usePosterWizard();
 
@@ -216,7 +216,7 @@ export default function OverviewPage() {
                 body: JSON.stringify({
                     psdUrl: selectedTemplate?.psdFileUrl,
                     templateId: selectedTemplate?.id,
-                    userImageUrl: userImgDownloadUrl,
+                    userImageUrl: userPosterImgDownloadUrl,
                     carDetails,
                     description,
                     instagramHandle,

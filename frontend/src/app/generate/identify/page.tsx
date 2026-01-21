@@ -365,11 +365,11 @@ export default function IdentifyVehicleStep() {
             IMAGE PREVIEW
            ======================= */}
           {userImgThumbDownloadUrl && (
-            <div className="relative w-full max-w-xs mx-auto rounded-xl overflow-hidden shadow-lg">
+            <div className="relative w-full max-w-xs aspect-[5/7] rounded-xl overflow-hidden shadow-lg">
               <img
                 src={userImgThumbDownloadUrl}
                 alt="Preview"
-                className="w-full h-auto object-contain"
+                className="absolute inset-0 w-full h-full object-contain"
               />
             </div>
           )}
