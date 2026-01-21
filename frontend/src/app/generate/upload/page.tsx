@@ -139,7 +139,6 @@ export default function UploadImageStep() {
 
   const handleRemoveImage = () => {
     setPreviewUrl(null)
-    sessionStorage.removeItem('selectedUserImage')
     setImage(null)
   }
 

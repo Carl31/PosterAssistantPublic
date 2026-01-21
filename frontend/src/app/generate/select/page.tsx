@@ -650,7 +650,7 @@ export default function SelectTemplatePage() {
         const url = await getDownloadURL(refFull)
 
         setUserPosterImgDownloadUrl(url)
-        sessionStorage.setItem('fullPosterImageUrl', url)
+        sessionStorage.setItem('croppedPosterImageUrl', url)
     }
 
 

@@ -31,7 +31,7 @@ export default function OverviewPage() {
     const {
         selectedTemplate, carDetails,
         description, setDescription, instagramHandle,
-        userImgDownloadUrl, prevCarDetails, setPrevCarDetails, hexValue, userPosterImgDownloadUrl
+        userImgDownloadUrl, prevCarDetails, setPrevCarDetails, hexValue, userPosterImgDownloadUrl, setUserPosterImgDownloadUrl
     } = usePosterWizard()
     const { state } = usePosterWizard();
 
@@ -55,6 +55,17 @@ export default function OverviewPage() {
             router.replace("/generate/identify");
         }
     }, [state, router]);
+
+    // rettrive the same cropped poster url from session if for some reason the state var is null/ not available
+    useEffect(() => {
+        if (userPosterImgDownloadUrl) return;
+
+        const stored = sessionStorage.getItem('croppedPosterImageUrl');
+        if (!stored) return;
+
+        setUserPosterImgDownloadUrl(stored);
+    }, [userPosterImgDownloadUrl]);
+
 
 
     // Basically, generates description when car details change from prvious page.
@@ -257,6 +268,9 @@ export default function OverviewPage() {
         } finally {
             // unsubscribe();
             // setLoading(false)
+
+            sessionStorage.removeItem('fullUrl')
+            sessionStorage.removeItem('croppedPosterImageUrl')
         }
     }
 
