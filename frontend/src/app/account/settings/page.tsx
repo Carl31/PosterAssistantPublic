@@ -5,7 +5,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { getAuth, onAuthStateChanged, signOut, updateProfile } from 'firebase/auth'
-import { doc, getDoc, getFirestore, updateDoc, onSnapshot } from 'firebase/firestore'
+import { doc, getFirestore, updateDoc, onSnapshot } from 'firebase/firestore'
 import { Credit } from '@/types/credit'
 import { motion } from 'framer-motion'
 import { notify } from '@/utils/notify'
