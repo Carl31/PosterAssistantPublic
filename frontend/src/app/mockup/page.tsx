@@ -85,7 +85,6 @@ function MockupContent() {
   const [isSignedIn, setIsSignedIn] = useState(false);
 
   const [isEditMode, setIsEditMode] = useState(false)
-  const [isHolding, setIsHolding] = useState(false)
   const holdTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   const { user } = useAuth()
