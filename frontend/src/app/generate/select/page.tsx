@@ -11,7 +11,7 @@ import { useAuth } from '@/context/AuthContext'
 import { auth } from '@/firebase/client'
 import { Template } from '@/types/template'
 import { useState, useRef, useEffect } from 'react'
-import { collection, getDocs, doc, updateDoc, arrayUnion, arrayRemove, getDoc, query, where } from 'firebase/firestore'
+import { collection, getDocs, doc, updateDoc, arrayUnion, arrayRemove, getDoc, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '@/firebase/client'
 import TemplateCard from '@/components/TemplateCard'
 import { useRouter } from 'next/navigation';
@@ -112,11 +112,20 @@ export default function SelectTemplatePage() {
 
 
 
+
+    const scrollByDrag = (my: number) => {
+        // Positive `my` → dragging down → scroll up
+        // Negative `my` → dragging up → scroll down
+        const scrollAmount = 200; // pixels per drag
+        window.scrollBy({ top: -Math.sign(my) * scrollAmount, behavior: 'smooth' });
+    };
+
     const bind = useGesture(
         {
             onDrag: ({ offset: [x, y], movement: [mx, my], last, event }) => {
                 if (!editMode) {
-                    if (last && Math.abs(mx) > 50) paginate(mx > 0 ? -1 : 1);
+                    if (Math.abs(mx) > 50) paginate(mx > 0 ? -1 : 1);
+                    if (Math.abs(my) > 50) scrollByDrag(my); // small threshold to prevent accidental scroll
                     return;
                 }
 
@@ -707,62 +716,55 @@ export default function SelectTemplatePage() {
 
     // Fetch favorites when user is loaded
     useEffect(() => {
-        const fetchFavorites = async () => {
-            if (!user) return
-            const userRef = doc(db, 'users', user.uid)
-            const userSnap = await getDoc(userRef)
-            const data = userSnap.data()
-            setCredits(data?.credits)
-            setFavoriteTemplates(data?.settings?.favouriteTemplates || [])
-            setInstagramHandle(data?.instagramHandle || '')
+        if (!user) return
 
-            if (!data?.settings?.hideMagazinePopup) {
+        const userRef = doc(db, 'users', user.uid)
+
+        const unsubscribe = onSnapshot(userRef, (snap) => {
+            if (!snap.exists()) return
+
+            const data = snap.data()
+
+            setCredits(data.credits ?? 0)
+            setFavoriteTemplates(data.settings?.favouriteTemplates ?? [])
+            setInstagramHandle(data.instagramHandle ?? '')
+
+            if (!data.settings?.hideMagazinePopup) {
                 setTimeout(() => {
-                    window.scrollTo({
-                        top: document.documentElement.scrollHeight,
-                        behavior: "smooth",
-                    });
-
-                    setShowMagazinePopup(true);
-                }, 2000);
-            }
-            if (!data?.settings?.hideBrandsPopup) {
-                // the set-timeout code for brands is when the brands button is pressed
-                setShowBrandsPopup(true);
+                    // window.scrollTo({
+                    //     top: document.documentElement.scrollHeight,
+                    //     behavior: 'smooth',
+                    // })
+                    setShowMagazinePopup(true)
+                }, 1000)
             }
 
-        }
-        fetchFavorites()
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+            if (!data.settings?.hideBrandsPopup) {
+                setShowBrandsPopup(true)
+            }
+        })
+
+        return unsubscribe
     }, [user])
 
     // Toggle favorite
     const toggleFavorite = async (templateId: string) => {
         if (!user) return
+
         const userRef = doc(db, 'users', user.uid)
         const isFav = favoriteTemplates.includes(templateId)
 
-        // Optimistically update the UI
-        setFavoriteTemplates((prev) =>
-            isFav ? prev.filter((id) => id !== templateId) : [...prev, templateId]
-        )
-
-        // 🔄 Firestore update runs in background
         try {
             await updateDoc(userRef, {
                 'settings.favouriteTemplates': isFav
                     ? arrayRemove(templateId)
-                    : arrayUnion(templateId)
+                    : arrayUnion(templateId),
             })
         } catch (err) {
             console.error('Failed to update favorite:', err)
-
-            // Optional: Roll back if error occurs
-            setFavoriteTemplates((prev) =>
-                isFav ? [...prev, templateId] : prev.filter((id) => id !== templateId)
-            )
         }
     }
+
 
 
     // IMAGEURL Stuff
@@ -788,7 +790,7 @@ export default function SelectTemplatePage() {
             transition={{ duration: 0.3 }}
         >
             {loading ? (
-                <LoadingPage text="Saving design..." />
+                <LoadingPage text="Loading..." />
             ) : error ? (
                 <ErrorPage text={error} />
             ) : (

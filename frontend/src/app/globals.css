@@ -292,3 +292,11 @@ button:active {
 .animate-slide-up {
   animation: slide-up 0.25s ease-out;
 }
+
+body.edit-mode {
+  @apply bg-blue-400 transition-all duration-300 ease-out;
+}
+
+body {
+  @apply bg-black transition-colors duration-900 ease-out;
+}

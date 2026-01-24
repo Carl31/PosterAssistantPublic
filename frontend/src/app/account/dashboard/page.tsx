@@ -4,7 +4,7 @@
 
 import { useAuth } from '@/context/AuthContext'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { doc, getDoc } from 'firebase/firestore'
+import { doc, getDoc, onSnapshot } from 'firebase/firestore'
 import { db } from '@/firebase/client'
 import { useState, useEffect, useRef } from 'react'
 import { Credit } from '@/types/credit'
@@ -113,19 +113,23 @@ export default function DashboardPage() {
 
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      setLoading(true)
-      if (!user) return
-      const userRef = doc(db, 'users', user.uid)
-      const userSnap = await getDoc(userRef)
-      const data = userSnap.data()
-      setCredits(data?.credits)
-      // console.log(data)
-      setDisplayName(data?.displayName || []) // if needing more user data, fetch it here too.
+    if (!user) return
+
+    setLoading(true)
+
+    const userRef = doc(db, 'users', user.uid)
+
+    const unsubscribe = onSnapshot(userRef, (snap) => {
+      if (!snap.exists()) return
+
+      const data = snap.data()
+
+      setCredits(data.credits ?? {})
+      setDisplayName(data.displayName ?? '')
       setLoading(false)
-    }
-    fetchUserData()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    })
+
+    return unsubscribe
   }, [user])
 
   const handleCreatePoster = async () => {
@@ -307,7 +311,7 @@ export default function DashboardPage() {
           {/* Community */}
           <button
             ref={communityBtnRef}
-            onClick={() => notify('info', 'Comming tab coming soon.')}
+            onClick={() => notify('info', 'Community tab coming soon.')}
             className="
     relative w-full
     inline-flex items-center justify-center
@@ -406,7 +410,7 @@ export default function DashboardPage() {
                   <div className="py-8 text-center">
                     <h1 className="text-2xl font-bold text-black mb-2">Submitted</h1>
                     <p className="text-lg font-semibold text-gray-800">
-                      Thank you for your help!
+                      Thank you for your feedback! I personally read every submission :)
                     </p>
                   </div>
                 )}
@@ -443,7 +447,7 @@ export default function DashboardPage() {
             </div>
           </div>
         )}
-        {showTutorial && <TutorialOverlay/>}
+        {showTutorial && <TutorialOverlay />}
 
       </div>
     </motion.div>

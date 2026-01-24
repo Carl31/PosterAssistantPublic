@@ -5,14 +5,15 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { getAuth, onAuthStateChanged, signOut, updateProfile } from 'firebase/auth'
-import { doc, getDoc, getFirestore, updateDoc } from 'firebase/firestore'
+import { doc, getDoc, getFirestore, updateDoc, onSnapshot } from 'firebase/firestore'
 import { Credit } from '@/types/credit'
 import { motion } from 'framer-motion'
+import { notify } from '@/utils/notify'
 
 export default function AccountSettingsPage() {
     const searchParams = useSearchParams();
     const showFinalTutorialFlag = searchParams!.get('final') === 'true';
-    
+
 
     /* ---------------------------------------------------------------------
        State: user identity
@@ -32,6 +33,9 @@ export default function AccountSettingsPage() {
     --------------------------------------------------------------------- */
     const [originalName, setOriginalName] = useState('')
     const [originalInstagram, setOriginalInstagram] = useState('')
+    const [removeIgButton, setRemoveIgButton] = useState(false)
+    const [originalRemoveIgButton, setOriginalRemoveIgButton] = useState(false)
+
 
     /* ---------------------------------------------------------------------
        UI state
@@ -47,34 +51,41 @@ export default function AccountSettingsPage() {
        Load user data on auth change
     --------------------------------------------------------------------- */
     useEffect(() => {
-         if (showFinalTutorialFlag) setShowOverlay(true);
-        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+        if (showFinalTutorialFlag) setShowOverlay(true)
+
+        const unsubAuth = onAuthStateChanged(auth, (user) => {
             if (!user) return
 
-            setEmail(user.email)
-            //setUid(user.uid)
+            setEmail(user.email ?? '')
 
             const userRef = doc(db, 'users', user.uid)
-            const snap = await getDoc(userRef)
 
-            if (snap.exists()) {
+            const unsubUser = onSnapshot(userRef, (snap) => {
+                if (!snap.exists()) return
+
                 const data = snap.data()
-                setName(data.displayName || '')
-                setInstagramHandle(data.instagramHandle || '')
-                setOriginalName(data.displayName || '')
-                setOriginalInstagram(data.instagramHandle || '')
-                setCredits(data.credits || { carJam: 0, ai: 0, posterGen: 0 })
-            }
+
+                setName(data.displayName ?? '')
+                setInstagramHandle(data.instagramHandle ?? '')
+                setOriginalName(data.displayName ?? '')
+                setOriginalInstagram(data.instagramHandle ?? '')
+                setCredits(data.credits ?? { carJam: 0, ai: 0, posterGen: 0 })
+                setRemoveIgButton(data.settings?.removeIgButton ?? false)
+                setOriginalRemoveIgButton(data.settings?.removeIgButton ?? false)
+
+            })
+
+            return unsubUser
         })
 
-        return () => unsubscribe()
+        return () => unsubAuth()
     }, [])
 
     /* ---------------------------------------------------------------------
        Derived state helpers
     --------------------------------------------------------------------- */
     const hasChanges =
-        name != originalName || instagramHandle != originalInstagram
+        name != originalName || instagramHandle != originalInstagram || removeIgButton !== originalRemoveIgButton
 
     const isProfileComplete =
         name.trim() !== '' && instagramHandle.trim() !== ''
@@ -97,6 +108,7 @@ export default function AccountSettingsPage() {
         await updateDoc(userRef, {
             displayName: name,
             instagramHandle: instagramHandle,
+            'settings.removeIgButton': removeIgButton,
         })
 
         // Keep Firebase Auth display name in sync
@@ -107,6 +119,8 @@ export default function AccountSettingsPage() {
         // Mark current values as saved
         setOriginalName(name)
         setOriginalInstagram(instagramHandle)
+        setOriginalRemoveIgButton(removeIgButton)
+
     }
 
     const handleBack = () => {
@@ -147,7 +161,7 @@ export default function AccountSettingsPage() {
             <div className="p-4 max-w-lg mx-auto">
                 <h1 className="text-2xl font-bold mb-4 ml-1 text-black">Account Settings</h1>
 
-                <div className="bg-blue-200 border-3 border-black rounded-xl shadow-md p-4 space-y-3">
+                <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-4">
                     {/* Username */}
                     <div>
                         <p className="text-sm text-black"><b>Username</b></p>
@@ -198,6 +212,42 @@ export default function AccountSettingsPage() {
                         <p className="text-base text-black">AI Credits: {credits.ai}</p>
                     </div>
 
+                    <div className="flex items-center justify-between pt-2">
+                        <p className="text-sm text-black">
+                            <b>Show Instagram button</b>
+                        </p>
+
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setRemoveIgButton(v => {
+                                    const next = !v
+                                    notify(
+                                        'info',
+                                        next
+                                            ? 'Instagram button removed from poster showcase screen.'
+                                            : 'Instagram button restored on poster showcase screen.'
+                                    )
+                                    return next
+                                })
+                            }}
+                            className={`
+    relative inline-flex h-6 w-11 items-center rounded-full transition
+    ${!removeIgButton ? 'bg-blue-500' : 'bg-gray-400'}
+  `}
+                        >
+                            <span
+                                className={`
+      inline-block h-4 w-4 transform rounded-full bg-white transition
+      ${!removeIgButton ? 'translate-x-6' : 'translate-x-1'}
+    `}
+                            />
+                        </button>
+
+
+                    </div>
+
+
                     {/* Save button */}
                     <button
                         onClick={handleSaveChanges}
@@ -227,7 +277,7 @@ export default function AccountSettingsPage() {
 
                     <button
                         onClick={handleLogout}
-                        className="px-5 py-2 rounded-lg bg-white border-3 border-red-500 text-red-500 text-sm"
+                        className="px-5 py-2 rounded-lg bg-white border-2 border-red-500 text-red-500 text-sm"
                     >
                         Sign Out
                     </button>
@@ -249,7 +299,7 @@ export default function AccountSettingsPage() {
                                 </button>
                                 <button
                                     onClick={() => setShowLogoutPopup(false)}
-                                    className="px-4 py-2 bg-gray-300 rounded"
+                                    className="px-4 py-2 bg-gray-300 rounded text-gray-500"
                                 >
                                     Cancel
                                 </button>

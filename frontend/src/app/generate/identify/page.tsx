@@ -489,7 +489,7 @@ export default function IdentifyVehicleStep() {
 
           <button
             onClick={handleNext}
-            disabled={!geminiChecked && !manualInputClicked && !loading}
+            disabled={!geminiChecked && !manualInputClicked && !loading && !pendingValidation}
             className="
                 w-full max-w-[140px] rounded-xl py-2 text-sm font-semibold text-white
                 bg-gradient-to-r from-cyan-500 to-blue-500
