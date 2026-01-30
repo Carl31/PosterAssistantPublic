@@ -47,6 +47,10 @@ type PosterWizardContextType = {
   setSavedScale: React.Dispatch<React.SetStateAction<number | null>>
   savedRotation: number | null
   setSavedRotation: React.Dispatch<React.SetStateAction<number | null>>
+  isSupporter: boolean
+  setIsSupporter: (value: boolean) => void
+  hasPackUnlocks: boolean
+  setHasPackUnlocks: (value: boolean) => void
 }
 
 export type PosterWizardState = {
@@ -77,6 +81,9 @@ export const PosterWizardProvider = ({ children }: { children: React.ReactNode }
   const [savedPosition, setSavedPosition] = useState<{ x: number, y: number } | null>(null)
   const [savedScale, setSavedScale] = useState<number | null>(null)
   const [savedRotation, setSavedRotation] = useState<number | null>(null)
+
+  const [isSupporter, setIsSupporter] = useState<boolean>(false)
+  const [hasPackUnlocks, setHasPackUnlocks] = useState<boolean>(false)
 
   useEffect(() => {
     setState({
@@ -123,7 +130,11 @@ export const PosterWizardProvider = ({ children }: { children: React.ReactNode }
       savedScale,
       setSavedScale,
       savedRotation,
-      setSavedRotation
+      setSavedRotation,
+      isSupporter,
+      setIsSupporter,
+      hasPackUnlocks,
+      setHasPackUnlocks
     }}>
       {children}
     </PosterWizardContext.Provider>

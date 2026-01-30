@@ -6,7 +6,7 @@
 
 import { useEffect, useState } from 'react'
 import { getAuth, onAuthStateChanged } from 'firebase/auth'
-import { collection, deleteDoc, getDocs, orderBy, query, doc, Timestamp } from 'firebase/firestore'
+import { collection, deleteDoc, getDocs, orderBy, query, doc, Timestamp, getDoc } from 'firebase/firestore'
 import { deleteObject, ref } from 'firebase/storage'
 import { db, storage } from '@/firebase/client'
 import LoadingPage from '@/components/LoadingPage'
@@ -37,6 +37,7 @@ export default function PosterHistoryPage() {
     const [deleteLocked, setDeleteLocked] = useState(false)
     const [showDownloadPopup, setShowDownloadPopup] = useState(false)
     const [posterToDownload, setPosterToDownload] = useState<Poster | null>(null)
+    const [hasPackUnlocks, setHasPackUnlocks] = useState(false)
 
 
 
@@ -71,27 +72,41 @@ export default function PosterHistoryPage() {
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(getAuth(), async (user) => {
             if (!user) {
-                setLoading(false)
-                return
+                setLoading(false);
+                return;
             }
 
+            // --- Get user document ---
+            const userRef = doc(db, 'users', user.uid);
+            const userSnap = await getDoc(userRef);
+
+            let hasPackUnlocks = false;
+            if (userSnap.exists()) {
+                const userData = userSnap.data();
+                hasPackUnlocks = Boolean(userData.hasPackUnlocks);
+            }
+
+            setHasPackUnlocks(hasPackUnlocks); // store in state
+
+            // --- Get posters ---
             const q = query(
                 collection(db, 'users', user.uid, 'posters'),
                 orderBy('createdAt', 'desc')
-            )
+            );
 
-            const snapshot = await getDocs(q)
+            const snapshot = await getDocs(q);
             const data = snapshot.docs.map((d) => ({
                 id: d.id,
                 ...(d.data() as Omit<Poster, 'id'>),
-            }))
+            }));
 
-            setUid(user.uid)
-            setPosters(data)
-            setLoading(false)
-        })
+            setUid(user.uid);
+            setPosters(data);
+            setLoading(false);
+        });
 
-        return () => unsubscribe()
+        return () => unsubscribe();
+
     }, [])
 
     useEffect(() => {
@@ -293,7 +308,7 @@ export default function PosterHistoryPage() {
                                 </div>
 
                                 {showDownloadPopup && posterToDownload && (
-                                    <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50 p-4">
+                                    <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-49 p-4">
                                         <div className="bg-white rounded-xl p-5 w-full max-w-xl shadow-lg">
                                             <h2 className="text-base font-semibold text-blue-400 mb-5 text-center">
                                                 Download Poster
@@ -307,16 +322,20 @@ export default function PosterHistoryPage() {
                                                             Unframed
                                                         </h3>
                                                         <p className="text-xs text-gray-500 mt-1">
-                                                            Original poster file
+                                                            Original poster file: ideal for printing.
                                                         </p>
                                                     </div>
 
                                                     <button
                                                         onClick={async () => {
+                                                            if (!hasPackUnlocks) {
+                                                                notify('error', 'Visit the store to unlock this additional feature.');
+                                                                return;
+                                                            }
                                                             setShowDownloadPopup(false)
                                                             notify('info', 'Downloading...')
                                                             downloadCooldown.run(() =>
-                                                               downloadUnframed(posterToDownload)
+                                                                downloadUnframed(posterToDownload)
                                                             )
                                                         }}
                                                         className="mt-auto px-3 py-1.5 text-sm border rounded-md border-gray-300 text-gray-800 hover:bg-gray-50"
@@ -346,7 +365,7 @@ export default function PosterHistoryPage() {
                                                             setShowDownloadPopup(false)
                                                             notify('info', 'Downloading...')
                                                             downloadCooldown.run(() =>
-                                                               downloadFramed(posterToDownload)
+                                                                downloadFramed(posterToDownload)
                                                             )
                                                         }}
                                                         className="px-5 py-1.5 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-sm"

@@ -42,7 +42,7 @@ const archivoBlack = Archivo_Black({
 
 export default function SelectTemplatePage() {
     const [templates, setTemplates] = useState<Template[]>([])
-    const { selectedTemplate, setSelectedTemplate, setInstagramHandle, setUserPosterImgDownloadUrl, userPosterImgDownloadUrl, userImgDownloadUrl, templateIndex, setTemplateIndex, setGeminiChecked, setCarDetails, credits, setCredits, hexValue, setHexValue, savedPosition, setSavedPosition, savedScale, setSavedScale, savedRotation, setSavedRotation } = usePosterWizard()
+    const { selectedTemplate, setSelectedTemplate, setInstagramHandle, setUserPosterImgDownloadUrl, userPosterImgDownloadUrl, userImgDownloadUrl, templateIndex, setTemplateIndex, setGeminiChecked, setCarDetails, credits, setCredits, hexValue, setHexValue, savedPosition, setSavedPosition, savedScale, setSavedScale, savedRotation, setSavedRotation, setIsSupporter, isSupporter, setHasPackUnlocks, hasPackUnlocks } = usePosterWizard()
     const { user } = useAuth()
     // eslint-disable-next-line @typescript-eslint/naming-convention
     const [favoriteTemplates, setFavoriteTemplates] = useState<string[]>([])
@@ -59,8 +59,19 @@ export default function SelectTemplatePage() {
     const [direction, setDirection] = useState(0); // -1 left, 1 right
     //const currentTemplate = templates[index];
 
-    const STYLES = ["Magazine", "Brands", "Favourites"]
-    const [selectedStyle, setSelectedStyle] = useState<string>("Magazine")
+
+
+    type SupporterState = {
+        isActive: boolean
+        expiresAt: Date | null
+    }
+
+
+
+
+
+    const STYLES = ["Basic", "Pro", "Designer", "Brands", "Favourites"]
+    const [selectedStyle, setSelectedStyle] = useState<string>("Basic")
     const filteredTemplates = templates.filter(t => {
         if (selectedStyle === "Favourites") {
             return favoriteTemplates.includes(t.id);
@@ -85,6 +96,8 @@ export default function SelectTemplatePage() {
 
 
     const [editMode, setEditMode] = useState(false);
+
+    const [isAnimating, setIsAnimating] = useState(false);
 
 
 
@@ -477,6 +490,8 @@ export default function SelectTemplatePage() {
         : false;
 
     const paginate = (newDirection: number) => {
+        if (isAnimating) return;   // block if already animating
+        setIsAnimating(true);      // mark animation in progress
         if (!filteredTemplates.length) return;
         const newIndex = (index + newDirection + filteredTemplates.length) % filteredTemplates.length;
         setDirection(newDirection);
@@ -582,7 +597,18 @@ export default function SelectTemplatePage() {
     const handleNext = async () => {
 
         if (!selectedTemplate) {
-            setError('No design selected')
+            //setError('No design selected')
+            notify('error', 'No design selected')
+            return
+        }
+
+        if (selectedStyle == "Pro" && !hasPackUnlocks) {
+            notify('error', 'Unlock Pro templates in the store.')
+            return
+        }
+
+        if (selectedStyle == "Designer" && !isSupporter) {
+            notify('error', 'Unlock Designer templates in the store.')
             return
         }
 
@@ -729,6 +755,49 @@ export default function SelectTemplatePage() {
             setFavoriteTemplates(data.settings?.favouriteTemplates ?? [])
             setInstagramHandle(data.instagramHandle ?? '')
 
+            const hasPackUnlocks =
+                typeof data.hasPackUnlocks === 'boolean'
+                    ? data.hasPackUnlocks
+                    : false
+
+            const supporter =
+                data.supporter && typeof data.supporter === 'object'
+                    ? {
+                        isActive: Boolean(data.supporter.isActive),
+                        expiresAt: data.supporter.expiresAt ?? null,
+                    }
+                    : {
+                        isActive: false,
+                        expiresAt: null,
+                    }
+
+
+            const hasUnlocks = Boolean(hasPackUnlocks)
+
+            let isSupporter = false;
+            if (supporter?.isActive && supporter.expiresAt) {
+                let expiresAt: Date;
+
+                // Type narrowing
+                const expires = supporter.expiresAt as { seconds: number } | Date;
+
+                if ('seconds' in expires) {
+                    // Firestore Timestamp
+                    expiresAt = new Date(expires.seconds * 1000);
+                } else {
+                    // Already a Date
+                    expiresAt = expires as Date;
+                }
+
+                isSupporter = expiresAt > new Date();
+            }
+
+            console.log("hasPackUnlocks:", hasUnlocks);
+            console.log("supporter:", isSupporter);
+
+            setHasPackUnlocks(hasUnlocks)
+            setIsSupporter(isSupporter)
+
             if (!data.settings?.hideMagazinePopup) {
                 setTimeout(() => {
                     // window.scrollTo({
@@ -839,6 +908,27 @@ export default function SelectTemplatePage() {
                             {...bind()}
 
                         >
+                            {selectedStyle == "Pro" && !hasPackUnlocks && (
+                                <div className="absolute top-5 right-5 flex flex-col items-center z-41">
+                                    <img
+                                        className="w-9 h-9"
+                                        src="/svg/padlock_blue.svg"
+                                        alt="Locked"
+                                    />
+                                    <p className="text-xs mt-1 text-blue-400">Locked</p>
+                                </div>
+                            )}
+                            {selectedStyle == "Designer" && !isSupporter && (
+                                <div className="absolute top-5 right-5 flex flex-col items-center z-41">
+                                    <img
+                                        className="w-9 h-9"
+                                        src="/svg/padlock_blue.svg"
+                                        alt="Locked"
+                                    />
+                                    <p className="text-xs mt-1 text-blue-400">Locked</p>
+                                </div>
+                            )}
+
                             {/* Base image (gesture owner) */}
                             <img
                                 ref={baseImgRef}
@@ -873,6 +963,7 @@ export default function SelectTemplatePage() {
                                         animate="center"
                                         exit="exit"
                                         transition={{ duration: 0.4 }}
+                                        onAnimationComplete={() => setIsAnimating(false)}
                                     />
                                 </AnimatePresence>
                             )}
@@ -1066,7 +1157,7 @@ ${colorOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-eve
                     </div>
 
 
-                    {showMagazinePopup && selectedStyle === "Magazine" && (
+                    {showMagazinePopup && selectedStyle === "Basic" && (
                         <div
                             className="fixed inset-0 z-50"
                             onClick={handleCloseMagazinePopup}
@@ -1081,11 +1172,12 @@ ${colorOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-eve
                                     onClick={(e) => e.stopPropagation()}
                                 >
                                     <div className="text-base font-semibold mb-4">
-                                        <p>What are these designs?</p>
+                                        <p>Here's where things get cool!</p>
                                     </div>
 
                                     <div className="mb-6">
-                                        <p className='text-gray-300'>This group of templates are designed to be very versatile!<br></br><br></br></p>
+                                        <p className=''>There are 4 groups of designs that you can explore below.<br></br><br></br></p>
+                                        <p className='text-gray-300'>Each template is designed to be very versatile!<br></br><br></br></p>
 
                                         <p>Automatically includes:</p>
                                         <p className='text-xs'>
@@ -1096,6 +1188,8 @@ ${colorOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-eve
                                             • Current Date<br></br>
                                             • Your Instagram Handle<br></br>
                                         </p>
+
+                                        <p className='mt-4'>Want to change colour? Just tap the colourful square!</p>
 
                                     </div>
 

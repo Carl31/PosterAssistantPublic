@@ -32,6 +32,7 @@ type UserData = {
     customButtons?: CustomButton[];
     removeIgButton?: boolean;
   };
+  hasPackUnlocks: boolean
 }
 
 const COLOR_OPTIONS = [
@@ -102,6 +103,8 @@ function MockupContent() {
   const [showDeleteIgPopup, setShowDeleteIgPopup] = useState(false)
   const [removeIgButton, setRemoveIgButton] = useState(false)
 
+  const [hasPackUnlocks, setHasPackUnlocks] = useState(false)
+
   const HOLD_DELAY = 600
   const MOVE_THRESHOLD = 10 // px
 
@@ -146,10 +149,12 @@ function MockupContent() {
 
     const userRef = doc(db, 'users', user.uid)
 
-    await updateDoc(userRef, {
-      'settings.displayMessage': displayMessage,
-      'settings.customButtons': customButtons,
-    })
+    if (hasPackUnlocks) {
+      await updateDoc(userRef, {
+        'settings.displayMessage': displayMessage,
+        'settings.customButtons': customButtons,
+      })
+    }
 
     setIsEditMode(false)
   }
@@ -231,6 +236,8 @@ function MockupContent() {
       // setdisplayName(userData.displayName);
       setDisplayMessage(userData.settings.displayMessage);
       setRemoveIgButton(userData.settings.removeIgButton || false);
+
+      setHasPackUnlocks(userData.hasPackUnlocks);
 
       if (userData.settings.customButtons) {
         setCustomButtons(userData.settings.customButtons);
@@ -381,7 +388,13 @@ function MockupContent() {
               <textarea
                 className="text-xs mb-2 text-center text-gray-900 border border-black rounded p-2 w-full max-w-xs"
                 value={displayMessage}
-                onChange={(e) => setDisplayMessage(e.target.value)}
+                onChange={(e) => {
+                  if (!hasPackUnlocks) {
+                    notify('error', 'Visit the store to unlock customisations.');
+                    return;
+                  }
+                  setDisplayMessage(e.target.value);
+                }}
               />
             ) : (
               <p className="text-xs mb-4 text-center text-gray-900 mx-5">
@@ -398,7 +411,13 @@ function MockupContent() {
               {isEditMode && !removeIgButton && (
                 <button
                   className="absolute -top-1 -right-5 text-red-600 text-lg font-bold"
-                  onClick={() => setShowDeleteIgPopup(true)}
+                  onClick={() => {
+                    if (!hasPackUnlocks) {
+                      notify('error', 'Visit the store to unlock customisations.');
+                      return
+                    }
+                    setShowDeleteIgPopup(true)
+                  }}
                 >
                   −
                 </button>
@@ -455,7 +474,8 @@ function MockupContent() {
 
               {isEditMode && (
                 <button
-                  onClick={() => setPendingDeleteId(btn.id)}
+                  onClick={() =>
+                    setPendingDeleteId(btn.id)}
                   className="absolute -top-1 -right-5 text-red-600 text-lg font-bold"
                 >
                   −
@@ -470,7 +490,14 @@ function MockupContent() {
           {isEditMode && (
             <button
               className="mt-3 w-10 h-10 rounded-full border-2 border-black text-xl font-bold text-black"
-              onClick={() => setShowAddPopup(true)}
+              onClick={() => {
+                if (!hasPackUnlocks) {
+                  notify('error', 'Visit the store to unlock customisations.');
+                  return;
+                }
+                setShowAddPopup(true);
+              }}
+
             >
               +
             </button>
@@ -525,7 +552,13 @@ function MockupContent() {
 
           {/* Below was used to open popup content to download or message me for full res file */}
           <a
-            onClick={() => notify("info", "Downloading...")}
+            onClick={(e) => {
+              if (isEditMode) {
+                e.preventDefault(); // prevent download
+                return;
+              }
+              notify("info", "Downloading...");
+            }}
             href={btnLink}
             download={`CoolPoster@${instagramHandle}.png`}
             className="mb-14 relative border-3 border-black rounded-lg
@@ -545,231 +578,231 @@ function MockupContent() {
           </a>
 
 
-      </div>
+        </div>
 
         {
-    isEditMode && (
-      <button
-        className="fixed top-4 right-4 z-48 bg-black text-white px-4 py-2 rounded-lg"
-        onClick={handleExitEditMode}
-      >
-        Save and exit
-      </button>
-    )
-  }
+          isEditMode && (
+            <button
+              className="fixed top-4 right-4 z-48 bg-black text-white px-4 py-2 rounded-lg"
+              onClick={handleExitEditMode}
+            >
+              Save and exit
+            </button>
+          )
+        }
 
-  {
-    showAddPopup && (
-      <div className="fixed inset-0 z-49 flex items-center justify-center">
+        {
+          showAddPopup && (
+            <div className="fixed inset-0 z-49 flex items-center justify-center">
 
-        <div className="absolute inset-0 bg-black/60" onClick={() => setShowAddPopup(false)} />
+              <div className="absolute inset-0 bg-black/60" onClick={() => setShowAddPopup(false)} />
 
-        <div className="relative bg-white rounded-xl p-6 w-[calc(100vw-2rem)] max-w-sm">
-          <p className="mb-4 text-sm font-semibold text-gray-500">
-            Input your new button name and link:
-          </p>
+              <div className="relative bg-white rounded-xl p-6 w-[calc(100vw-2rem)] max-w-sm">
+                <p className="mb-4 text-sm font-semibold text-gray-500">
+                  Input your new button name and link:
+                </p>
 
-          <form
-            onSubmit={(e) => {
-              e.preventDefault()
-              const form = e.currentTarget
-              const buttonData: CustomButton = {
-                id: editingButton?.id || crypto.randomUUID(),
-                name: (form.elements.namedItem('name') as HTMLInputElement).value,
-                link: (form.elements.namedItem('link') as HTMLInputElement).value,
-                color: selectedColor,
-              }
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    const form = e.currentTarget
+                    const buttonData: CustomButton = {
+                      id: editingButton?.id || crypto.randomUUID(),
+                      name: (form.elements.namedItem('name') as HTMLInputElement).value,
+                      link: (form.elements.namedItem('link') as HTMLInputElement).value,
+                      color: selectedColor,
+                    }
 
-              setCustomButtons((prev) => {
-                if (editingButton) {
-                  // Replace the existing button
-                  return prev.map((b) => (b.id === editingButton.id ? buttonData : b))
-                } else {
-                  // Add new button
-                  return [...prev, buttonData]
-                }
-              })
+                    setCustomButtons((prev) => {
+                      if (editingButton) {
+                        // Replace the existing button
+                        return prev.map((b) => (b.id === editingButton.id ? buttonData : b))
+                      } else {
+                        // Add new button
+                        return [...prev, buttonData]
+                      }
+                    })
 
-              setEditingButton(null)
-              setNameInput('')
-              setLinkInput('')
-              setSelectedColor('bg-blue-500')
-              setShowAddPopup(false)
-              form.reset()
-            }}
-            className="space-y-3"
-          >
+                    setEditingButton(null)
+                    setNameInput('')
+                    setLinkInput('')
+                    setSelectedColor('bg-blue-500')
+                    setShowAddPopup(false)
+                    form.reset()
+                  }}
+                  className="space-y-3"
+                >
 
-            <input
-              name="name"
-              value={nameInput}
-              onChange={(e) => setNameInput(e.target.value)}
-              placeholder="Name"
-              required
-              className="w-full border p-2 text-gray-600"
-            />
-
-            <input
-              name="link"
-              value={linkInput}
-              onChange={(e) => setLinkInput(e.target.value)}
-              placeholder="Link"
-              required
-              className="w-full border p-2 text-gray-600"
-            />
-            <div className="overflow-x-auto">
-              <div className="flex gap-2 w-max pr-2">
-                {COLOR_OPTIONS.map((c) => (
-                  <button
-                    key={c.value}
-                    type="button"
-                    onClick={() => setSelectedColor(c.value)}
-                    className={`w-8 h-8 rounded-full flex-shrink-0 ${c.value} ${selectedColor === c.value ? 'ring-2 ring-black' : ''
-                      }`}
+                  <input
+                    name="name"
+                    value={nameInput}
+                    onChange={(e) => setNameInput(e.target.value)}
+                    placeholder="Name"
+                    required
+                    className="w-full border p-2 text-gray-600"
                   />
-                ))}
+
+                  <input
+                    name="link"
+                    value={linkInput}
+                    onChange={(e) => setLinkInput(e.target.value)}
+                    placeholder="Link"
+                    required
+                    className="w-full border p-2 text-gray-600"
+                  />
+                  <div className="overflow-x-auto">
+                    <div className="flex gap-2 w-max pr-2">
+                      {COLOR_OPTIONS.map((c) => (
+                        <button
+                          key={c.value}
+                          type="button"
+                          onClick={() => setSelectedColor(c.value)}
+                          className={`w-8 h-8 rounded-full flex-shrink-0 ${c.value} ${selectedColor === c.value ? 'ring-2 ring-black' : ''
+                            }`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+
+
+                  <button type="submit" className="w-full bg-black text-white py-2 rounded">
+                    {editingButton ? 'Save Changes' : 'Add'}
+                  </button>
+                </form>
               </div>
             </div>
+          )
+        }
 
+        {
+          pendingDeleteId && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center">
+              <div className="absolute inset-0 bg-black/60" />
 
+              <div className="relative bg-white rounded-xl p-6 w-full max-w-xs text-center">
+                <p className="mb-4 font-semibold text-gray-500">Delete button?</p>
 
-            <button type="submit" className="w-full bg-black text-white py-2 rounded">
-              {editingButton ? 'Save Changes' : 'Add'}
-            </button>
-          </form>
-        </div>
-      </div>
-    )
-  }
+                <div className="flex gap-4 justify-center">
+                  <button
+                    onClick={() => {
+                      setCustomButtons((prev) =>
+                        prev.filter((b) => b.id !== pendingDeleteId)
+                      )
+                      setPendingDeleteId(null)
+                    }}
+                    className="px-4 py-2 bg-black text-white rounded"
+                  >
+                    Yes
+                  </button>
 
-  {
-    pendingDeleteId && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center">
-        <div className="absolute inset-0 bg-black/60" />
-
-        <div className="relative bg-white rounded-xl p-6 w-full max-w-xs text-center">
-          <p className="mb-4 font-semibold text-gray-500">Delete button?</p>
-
-          <div className="flex gap-4 justify-center">
-            <button
-              onClick={() => {
-                setCustomButtons((prev) =>
-                  prev.filter((b) => b.id !== pendingDeleteId)
-                )
-                setPendingDeleteId(null)
-              }}
-              className="px-4 py-2 bg-black text-white rounded"
-            >
-              Yes
-            </button>
-
-            <button
-              onClick={() => setPendingDeleteId(null)}
-              className="px-4 py-2 border rounded text-gray-600"
-            >
-              No
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-
-
-  {
-    showGuidePopup && (
-      <div
-        className="fixed inset-0 z-50"
-        onClick={handleCloseGuidePopup}
-      >
-        {/* Dark overlay */}
-        <div className="absolute inset-0 bg-black/70" />
-
-        {/* Text */}
-        <div className="absolute top-0 left-0 right-0 flex justify-center px-6 pt-70 text-center">
-          <div
-            className="bg-gray-700/50 backdrop-blur-sm border border-cyan-400 rounded-xl px-6 py-4 max-w-sm text-white text-sm whitespace-pre-line mt-[-170px]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="text-base font-semibold mb-4">
-              <p className='text-lg'>Your first poster!</p>
+                  <button
+                    onClick={() => setPendingDeleteId(null)}
+                    className="px-4 py-2 border rounded text-gray-600"
+                  >
+                    No
+                  </button>
+                </div>
+              </div>
             </div>
+          )
+        }
 
-            <div className="mb-6">
-              <p className='text-gray-300'>This page is designed to help you share your poster with the owner of the car!<br></br><br></br></p>
 
-              <p><strong>To customise the below features:</strong> Tap and hold your poster. Try it now!</p><br />
 
-              <p>Features:</p>
-              <p className='text-xs'>
-                • Social buttons for visiting your profile<br></br>
-                • Custom message<br></br>
-                • Download and share options<br></br>
-              </p>
+        {
+          showGuidePopup && (
+            <div
+              className="fixed inset-0 z-50"
+              onClick={handleCloseGuidePopup}
+            >
+              {/* Dark overlay */}
+              <div className="absolute inset-0 bg-black/70" />
 
+              {/* Text */}
+              <div className="absolute top-0 left-0 right-0 flex justify-center px-6 pt-70 text-center">
+                <div
+                  className="bg-gray-700/50 backdrop-blur-sm border border-cyan-400 rounded-xl px-6 py-4 max-w-sm text-white text-sm whitespace-pre-line mt-[-170px]"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="text-base font-semibold mb-4">
+                    <p className='text-lg'>Your first poster!</p>
+                  </div>
+
+                  <div className="mb-6">
+                    <p className='text-gray-300'>This page is designed to help you share your poster with the owner of the car!<br></br><br></br></p>
+
+                    <p><strong>To customise the below features:</strong> Tap and hold your poster. Try it now!</p><br />
+
+                    <p>Features:</p>
+                    <p className='text-xs'>
+                      • Social buttons for visiting your profile<br></br>
+                      • Custom message<br></br>
+                      • Download and share options<br></br>
+                    </p>
+
+                  </div>
+
+                  <label className="flex items-center gap-2 text-xs opacity-90 cursor-pointer text-gray-400">
+                    <input
+                      type="checkbox"
+                      checked={dontShowAgainGuide}
+                      onChange={(e) => setDontShowAgainGuide(e.target.checked)}
+                      className="accent-cyan-400"
+                    />
+                    <span>Don&apos;t show this again</span>
+                  </label>
+                </div>
+              </div>
             </div>
+          )
+        }
 
-            <label className="flex items-center gap-2 text-xs opacity-90 cursor-pointer text-gray-400">
-              <input
-                type="checkbox"
-                checked={dontShowAgainGuide}
-                onChange={(e) => setDontShowAgainGuide(e.target.checked)}
-                className="accent-cyan-400"
-              />
-              <span>Don&apos;t show this again</span>
-            </label>
-          </div>
-        </div>
-      </div>
-    )
-  }
+        {
+          showDeleteIgPopup && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center">
+              {/* Dark overlay */}
+              <div className="absolute inset-0 bg-black/60" onClick={() => setShowDeleteIgPopup(false)} />
 
-  {
-    showDeleteIgPopup && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center">
-        {/* Dark overlay */}
-        <div className="absolute inset-0 bg-black/60" onClick={() => setShowDeleteIgPopup(false)} />
+              {/* Popup box */}
+              <div className="relative bg-white rounded-xl p-6 w-[calc(100vw-2rem)] max-w-sm">
+                <p className="mb-4 text-sm font-semibold text-gray-500 text-center">
+                  Are you sure you want to delete the Instagram button?
+                </p>
 
-        {/* Popup box */}
-        <div className="relative bg-white rounded-xl p-6 w-[calc(100vw-2rem)] max-w-sm">
-          <p className="mb-4 text-sm font-semibold text-gray-500 text-center">
-            Are you sure you want to delete the Instagram button?
-          </p>
+                <div className="flex justify-between gap-4">
+                  <button
+                    className="flex-1 bg-gray-200 text-black py-2 rounded"
+                    onClick={() => setShowDeleteIgPopup(false)}
+                  >
+                    Cancel
+                  </button>
 
-          <div className="flex justify-between gap-4">
-            <button
-              className="flex-1 bg-gray-200 text-black py-2 rounded"
-              onClick={() => setShowDeleteIgPopup(false)}
-            >
-              Cancel
-            </button>
+                  <button
+                    className="flex-1 bg-red-500 text-white py-2 rounded"
+                    onClick={async () => {
+                      setRemoveIgButton(true)
+                      setShowDeleteIgPopup(false)
 
-            <button
-              className="flex-1 bg-red-500 text-white py-2 rounded"
-              onClick={async () => {
-                setRemoveIgButton(true)
-                setShowDeleteIgPopup(false)
-
-                if (!user) return
-                const userRef = doc(db, 'users', user.uid)
-                try {
-                  await updateDoc(userRef, {
-                    'settings.removeIgButton': true
-                  })
-                  console.log('Instagram button removed in user settings')
-                } catch (err) {
-                  console.error('Failed to remove Instagram button:', err)
-                }
-              }}
-            >
-              Delete
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  }
+                      if (!user) return
+                      const userRef = doc(db, 'users', user.uid)
+                      try {
+                        await updateDoc(userRef, {
+                          'settings.removeIgButton': true
+                        })
+                        console.log('Instagram button removed in user settings')
+                      } catch (err) {
+                        console.error('Failed to remove Instagram button:', err)
+                      }
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          )
+        }
 
 
       </div >

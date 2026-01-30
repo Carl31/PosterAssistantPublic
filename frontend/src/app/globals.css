@@ -300,3 +300,18 @@ body.edit-mode {
 body {
   @apply bg-black transition-colors duration-900 ease-out;
 }
+
+.animate-gradient-orbit {
+  background-size: 400% 400%;
+  animation: gradientOrbitContinuous 4s linear infinite;
+}
+
+@keyframes gradientOrbitContinuous {
+  0%   { background-position:  50% 50%; }
+  16%  { background-position:  25% 75%; }
+  33%  { background-position:  50% 50%; }
+  50%  { background-position:  75% 25%; }
+  66%  { background-position: 100% 50%; }
+  83%  { background-position:  75% 75%; }
+  100% { background-position:   50% 50%; }
+}
