@@ -9,9 +9,7 @@ const archivoBlack = Archivo_Black({
 });
 import LoadingPage from '@/components/LoadingPage';
 import { useEffect, useState } from 'react'
-import { db } from '@/firebase/client'
-import { Credit } from '@/types/credit'
-import { getAuth, onAuthStateChanged, signOut, updateProfile } from 'firebase/auth'
+import { getAuth, onAuthStateChanged } from 'firebase/auth'
 import { doc, getFirestore, updateDoc, onSnapshot, getDoc } from 'firebase/firestore'
 import { useAuth } from '@/context/AuthContext';
 
@@ -560,7 +558,7 @@ export default function StorePage() {
                                 <li className="flex items-center gap-2 -ml-5 mt-4">
                                     <span>
                                         <b>
-                                            You'll get:
+                                            You&apos;ll get:
                                         </b>
                                     </span>
                                 </li>
@@ -677,7 +675,7 @@ export default function StorePage() {
                             <li className="flex items-center gap-2 -ml-5 mt-4">
                                 <span>
                                     <b>
-                                        You'll get:
+                                        You&apos;ll get:
                                     </b>
                                 </span>
                             </li>

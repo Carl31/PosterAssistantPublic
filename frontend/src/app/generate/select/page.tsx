@@ -1172,7 +1172,7 @@ ${colorOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-eve
                                     onClick={(e) => e.stopPropagation()}
                                 >
                                     <div className="text-base font-semibold mb-4">
-                                        <p>Here's where things get cool!</p>
+                                        <p>Here&apos;s where things get cool!</p>
                                     </div>
 
                                     <div className="mb-6">
