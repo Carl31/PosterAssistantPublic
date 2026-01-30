@@ -415,9 +415,14 @@ export default function StorePage() {
                                     Manage Subscription
                                 </button>
 
-                                <p className="mb-2 text-sm text-green-600 mt-2 ml-2">
-                                    Active until {formatExpiry(supporter?.expiresAt!)}
-                                </p>
+                                {supporter.expiresAt ? (
+                                    <p className="mb-2 text-sm text-green-600 mt-2 ml-2">
+                                        Active until {formatExpiry(supporter.expiresAt)}
+                                    </p>
+                                ) : (
+                                    <></>
+                                )}
+
                             </>
                         ) : (
                             <></>
@@ -459,7 +464,7 @@ export default function StorePage() {
                                 <li className="flex items-center gap-2 -ml-5 mt-4">
                                     <span>
                                         <b>
-                                            You'll get:
+                                            You&apos;ll get:
                                         </b>
                                     </span>
                                 </li>
@@ -783,7 +788,7 @@ export default function StorePage() {
 
                                 <p>This app is built and maintained by a single human, so your support has a very real impact on how it can grow and improve. So thank you!</p><br />
 
-                                <p className='text-gray-300'>If you have any questions, please don&apos;t hesitate to reach out:</p><br/>
+                                <p className='text-gray-300'>If you have any questions, please don&apos;t hesitate to reach out:</p><br />
                                 <p className='text-gray-300'>- Carlos @sickshotsnz</p>
                             </div>
 
@@ -824,7 +829,7 @@ export default function StorePage() {
 
                                 <p>If you have any questions or need further assistance, please don&apos;t hesitate to reach out to me.</p><br />
                                 <p>- Carlos @sickshotsnz :)</p>
-                                
+
                             </div>
                         </div>
                     </div>
