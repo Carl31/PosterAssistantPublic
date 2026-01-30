@@ -12,6 +12,7 @@ import { useEffect, useState } from 'react'
 import { getAuth, onAuthStateChanged } from 'firebase/auth'
 import { doc, getFirestore, updateDoc, onSnapshot, getDoc } from 'firebase/firestore'
 import { useAuth } from '@/context/AuthContext';
+import { notify } from '@/utils/notify';
 
 
 
@@ -208,6 +209,7 @@ export default function StorePage() {
 
 
     async function buyCreditPack(pack: 'small' | 'large') {
+        notify("info", "Redirecting to payment portal...");
         setLoading(true)
         const auth = getAuth()
         const user = auth.currentUser
@@ -237,6 +239,7 @@ export default function StorePage() {
 
     async function handleSupporterBtnClick() {
         if (isSupporter) return
+        notify("info", "Redirecting to payment portal...");
         setLoading(true)
 
         const auth = getAuth()
@@ -390,6 +393,7 @@ export default function StorePage() {
                             <>
                                 <button
                                     onClick={async () => {
+                                        notify("info", "Redirecting to payment portal...");
                                         const auth = getAuth()
                                         const user = auth.currentUser
                                         if (!user) return
