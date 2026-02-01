@@ -18,9 +18,16 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 })
 
 // Map pack names to Stripe Price IDs
+// 17 and 12 usd
+// const PRICE_IDS = {
+//   small: 'price_1StYmDJbxz2eE8bRSREJzbk5',
+//   large: 'price_1StYo7Jbxz2eE8bRs97E1WUh',
+// }
+
+// 15 and 10 usd
 const PRICE_IDS = {
-  small: 'price_1StYmDJbxz2eE8bRSREJzbk5',
-  large: 'price_1StYo7Jbxz2eE8bRs97E1WUh',
+  small: 'price_1Svq8MJbxz2eE8bRfIMM1AJ8',
+  large: 'price_1Svq7SJbxz2eE8bRhjzZuEPQ',
 }
 
 const SUPPORTER_PRICE_IDS = {

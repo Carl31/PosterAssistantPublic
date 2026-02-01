@@ -380,9 +380,10 @@ export default function StorePage() {
                                         <p className="font-semibold text-gray-600">{credits.ai}</p>
                                     </div>
                                 </div>
-                                <div className="rounded-lg border-1 p-4 border-gray-400">
+                                <div className="rounded-lg border-1 p-4 border-gray-400 flex flex-col gap-2">
                                     <p className="font-semibold text-gray-500" >Carjam Credits</p>
-                                    <p className="text-gray-400 text-xs">Used to identify your vehicle using CarJam.</p>
+                                    <p className="text-gray-400 text-xs">Used to identify your vehicle using its license plate.</p>
+                                    <p className="text-gray-400 text-xs"><b>Please note: </b>This feature is currently only available in New Zealand. Soon this will be available in US, UK and other countries.</p>
                                     <div className="flex items-center gap-2 mt-2">
                                         <img
                                             className="w-6 h-6 sm:w-9 sm:h-9 flex-shrink-0"
@@ -443,7 +444,7 @@ export default function StorePage() {
                     {/* CREDIT PACKS */}
                     <section className="space-y-4">
                         <h2 className="text-2xl font-bold text-blue-400 inline">Credit Packs</h2>
-                        <p className="text-xs text-gray-400">Store currency: USD</p>
+                        <p className="text-xs text-gray-500"><b>Store currency: $USD</b></p>
 
                         <p className="text-sm text-gray-500">
                             Credits stack and will never expire. Purchase of <b>any pack</b> (or becoming a supporter) unlocks additional features <b>for ever!</b>
@@ -460,11 +461,11 @@ export default function StorePage() {
                                 <h3 className="font-semibold text-blue-500">
                                     {isSupporter ? (
                                         <>
-                                            <span className="line-through mr-2">$12</span>
+                                            <span className="line-through mr-2">$10</span>
                                             $6 <span className="text-sm font-normal">(Enjoy half price, thank you for being a supporter!)</span>
                                         </>
                                     ) : (
-                                        "$12 Credit Pack"
+                                        "$10 Credit Pack"
                                     )}
                                 </h3>
 
@@ -560,11 +561,11 @@ export default function StorePage() {
                                     <span className="mr-2 text-sm text-gray-400 line-through">$21</span>
                                     {isSupporter ? (
                                         <>
-                                            <span className="line-through mr-2">$17</span>
+                                            <span className="line-through mr-2">$15</span>
                                             $8 <span className="text-sm font-normal">(Enjoy half price, thank you for being a supporter!)</span>
                                         </>
                                     ) : (
-                                        "$17 Credit Pack"
+                                        "$15 Credit Pack"
                                     )}
                                 </h3>
 
@@ -785,21 +786,27 @@ export default function StorePage() {
                     <div className="absolute inset-0 bg-black/70" />
 
                     {/* Text */}
-                    <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
+                    <div className="absolute inset-0 flex items-center justify-center px-6 text-center pt-50">
                         <div
                             className="bg-gray-700/50 backdrop-blur-sm border border-white rounded-xl px-6 py-4 max-w-sm text-white text-sm whitespace-pre-line mt-[-170px]"
                             onClick={(e) => e.stopPropagation()}
                         >
+                            <img
+                                className="block mx-auto w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0 mb-2"
+                                src="/svg/shop.svg"
+                                alt="Shop"
+                            />
                             <div className="text-base font-semibold mb-4">
                                 <p>Welcome to the store!</p>
                             </div>
 
                             <div className="mb-6">
-                                <p className='text-gray-300'>Here you can see your remaining credits, see unlockable features and buy a pack!<br /><br /></p>
+                                <p className='text-gray-300'>Here you can see your remaining credits, see unlockable features and buy packs.<br /><br /></p>
 
-                                <p>This app is built and maintained by a single human, so your support has a very real impact on how it can grow and improve. So thank you!</p><br />
+                                <p>This app is built and maintained by a single human, so your support has a very real impact on how it can grow and improve.</p><br />
+                                <div className="block mx-auto w-[40px] h-[3px] bg-white/30 rounded-full mb-4" />
 
-                                <p className='text-gray-300'>If you have any questions, please don&apos;t hesitate to reach out:</p><br />
+                                <p className='text-gray-300'>If you have any questions, please don&apos;t hesitate to reach out :)</p><br />
                                 <p className='text-gray-300'>- Carlos @sickshotsnz</p>
                             </div>
 
@@ -828,9 +835,14 @@ export default function StorePage() {
                     {/* Text */}
                     <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
                         <div
-                            className="bg-gray-700/50 backdrop-blur-sm border border-white rounded-xl px-6 py-4 max-w-sm text-white text-sm whitespace-pre-line mt-[-170px]"
+                            className="bg-gray-700/50 backdrop-blur-sm border border-white rounded-xl px-6 py-4 max-w-sm text-white text-sm whitespace-pre-line mt-[-150px]"
                             onClick={(e) => e.stopPropagation()}
                         >
+                            <img
+                                className="block mx-auto w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0 mb-2"
+                                src="/svg/confetti.svg"
+                                alt="Confetti"
+                            />
                             <div className="text-base font-semibold mb-4">
                                 <p>Thank you for your purchase!</p>
                             </div>
@@ -857,9 +869,14 @@ export default function StorePage() {
                     {/* Text */}
                     <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
                         <div
-                            className="bg-gray-700/50 backdrop-blur-sm border border-white rounded-xl px-6 py-4 max-w-sm text-white text-sm whitespace-pre-line mt-[-170px]"
+                            className="bg-gray-700/50 backdrop-blur-sm border border-white rounded-xl px-6 py-4 max-w-sm text-white text-sm whitespace-pre-line mt-[-130px]"
                             onClick={(e) => e.stopPropagation()}
                         >
+                            <img
+                                className="block mx-auto w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0 mb-2"
+                                src="/svg/confetti.svg"
+                                alt="Confetti"
+                            />
                             <div className="text-base font-semibold mb-4">
                                 <p>Thank you for becoming a supporter!</p>
                             </div>
