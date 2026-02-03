@@ -302,65 +302,68 @@ export default function StorePage() {
                                 {planTitle}
                             </h1>
 
-                            <div className="mt-6 rounded-xl border border-gray-200 bg-gradient-to-br from-white to-gray-50 p-4 shadow-sm">
-                                <p className="mb-3 text-base font-semibold text-gray-700 tracking-wide">
-                                    Templates
-                                </p>
+                            <div className="mt-6 rounded-2xl border border-sky-200 p-4 shadow-md">
+                                <div className="mb-3 flex items-center gap-2">
+                                    <img
+                                        className="w-4 h-4"
+                                        src="/svg/template_hollow.svg"
+                                        alt="template"
+                                    />
+                                    <p className="text-base font-semibold text-gray-600 tracking-wide">
+                                        Templates
+                                    </p>
+                                </div>
 
-                                <ul className="space-y-2 text-sm">
+
+                                <ul className="space-y-3 text-sm">
                                     {/* Basic */}
-                                    <li className="flex items-center justify-between rounded-lg border border-green-200 bg-green-50 px-3 py-2">
-                                        <span className="font-medium text-gray-700">Basic</span>
-                                        <span className="text-green-600 font-semibold">Unlocked</span>
+                                    <li className="relative flex items-center justify-between overflow-hidden rounded-xl border border-sky-400 bg-gradient-to-br from-sky-400 to-sky-600 px-5 py-2.5 shadow-[0_0_18px_rgba(56,189,248,0.2)]">
+                                        <span className="font-medium text-white">Basic</span>
+                                        <img className="w-4 h-4" src="/svg/checkmark.svg" alt="Unlocked" />
+                                        <span className="pointer-events-none absolute inset-0 bg-white/25 blur-md" />
                                     </li>
 
                                     {/* Pro */}
                                     <li
-                                        className={`flex items-center justify-between rounded-lg px-3 py-2 border ${hasUnlocks
-                                                ? "border-blue-200 bg-blue-50"
-                                                : "border-gray-200 bg-gray-100"
+                                        className={`relative flex items-center justify-between overflow-hidden rounded-xl border px-5 py-2.5 ${hasUnlocks
+                                            ? "border-sky-400 bg-gradient-to-br from-sky-400 to-sky-600 shadow-[0_0_22px_rgba(56,189,248,0.2)]"
+                                            : "border-gray-300 bg-gradient-to-br from-gray-200 to-gray-300"
                                             }`}
                                     >
-                                        <span className="font-medium text-gray-700">Pro</span>
+                                        <span className={`font-medium ${hasUnlocks ? "text-white" : "text-gray-600"}`}>
+                                            Pro
+                                        </span>
 
                                         {hasUnlocks ? (
-                                            <span className="font-semibold text-blue-600">
-                                                Unlocked
-                                            </span>
+                                            <img className="w-4 h-4" src="/svg/checkmark.svg" alt="Unlocked" />
                                         ) : (
-                                            <span className="flex items-center gap-2 text-gray-500">
-                                                <img
-                                                    className="w-3 h-3 opacity-70"
-                                                    src="/svg/lock_icon.svg"
-                                                    alt="Locked"
-                                                />
-                                                Locked
-                                            </span>
+                                            <img className="w-3 h-3 opacity-70" src="/svg/lock_icon.svg" alt="Locked" />
+                                        )}
+
+                                        {hasUnlocks && (
+                                            <span className="pointer-events-none absolute inset-0 bg-white/25 blur-md" />
                                         )}
                                     </li>
 
                                     {/* Designer */}
                                     <li
-                                        className={`relative flex items-center justify-between rounded-lg px-3 py-2 border ${isSupporter
-                                                ? "border-purple-300 bg-gradient-to-r from-purple-50 to-pink-50 animate-pulse"
-                                                : "border-gray-200 bg-gray-100"
+                                        className={`relative flex items-center justify-between overflow-hidden rounded-xl border px-5 py-2.5 ${isSupporter
+                                            ? "border-cyan-400 bg-gradient-to-br from-sky-400 to-sky-600 shadow-[0_0_28px_rgba(34,211,238,0.2)]"
+                                            : "border-gray-300 bg-gradient-to-br from-gray-200 to-gray-300"
                                             }`}
                                     >
-                                        <span className="font-medium text-gray-700">Designer</span>
+                                        <span className={`font-medium ${isSupporter ? "text-white" : "text-gray-600"}`}>
+                                            Designer
+                                        </span>
 
                                         {isSupporter ? (
-                                            <span className="font-semibold text-purple-700">
-                                                Unlocked
-                                            </span>
+                                            <img className="w-4 h-4" src="/svg/checkmark.svg" alt="Unlocked" />
                                         ) : (
-                                            <span className="flex items-center gap-2 text-gray-500">
-                                                <img
-                                                    className="w-3 h-3 opacity-70"
-                                                    src="/svg/lock_icon.svg"
-                                                    alt="Locked"
-                                                />
-                                                Locked
-                                            </span>
+                                            <img className="w-3 h-3 opacity-70" src="/svg/lock_icon.svg" alt="Locked" />
+                                        )}
+
+                                        {isSupporter && (
+                                            <span className="pointer-events-none absolute inset-0 bg-white/30 blur-md" />
                                         )}
                                     </li>
                                 </ul>
@@ -371,6 +374,9 @@ export default function StorePage() {
                                     </p>
                                 )}
                             </div>
+
+
+
 
 
                             <p className="font-semibold text-base text-gray-500 -mb-3 mt-3">Remaining Credits</p>
