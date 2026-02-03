@@ -302,54 +302,76 @@ export default function StorePage() {
                                 {planTitle}
                             </h1>
 
-                            <div className="mt-6 text-sm space-y-1">
-                                <p className="font-semibold text-gray-500 text-base">Templates</p>
-                                <ul className="ml-5 text-gray-600">
-                                    {/*// TO-DO: add padlock svgs here */}
-                                    <li>Basic: Unlocked</li>
-                                    <li className="flex items-center gap-2">
-                                        Pro:{" "}
+                            <div className="mt-6 rounded-xl border border-gray-200 bg-gradient-to-br from-white to-gray-50 p-4 shadow-sm">
+                                <p className="mb-3 text-base font-semibold text-gray-700 tracking-wide">
+                                    Templates
+                                </p>
+
+                                <ul className="space-y-2 text-sm">
+                                    {/* Basic */}
+                                    <li className="flex items-center justify-between rounded-lg border border-green-200 bg-green-50 px-3 py-2">
+                                        <span className="font-medium text-gray-700">Basic</span>
+                                        <span className="text-green-600 font-semibold">Unlocked</span>
+                                    </li>
+
+                                    {/* Pro */}
+                                    <li
+                                        className={`flex items-center justify-between rounded-lg px-3 py-2 border ${hasUnlocks
+                                                ? "border-blue-200 bg-blue-50"
+                                                : "border-gray-200 bg-gray-100"
+                                            }`}
+                                    >
+                                        <span className="font-medium text-gray-700">Pro</span>
+
                                         {hasUnlocks ? (
-                                            <span>Unlocked</span>
+                                            <span className="font-semibold text-blue-600">
+                                                Unlocked
+                                            </span>
                                         ) : (
-                                            <>
+                                            <span className="flex items-center gap-2 text-gray-500">
                                                 <img
-                                                    className="w-3 h-3"
+                                                    className="w-3 h-3 opacity-70"
                                                     src="/svg/lock_icon.svg"
                                                     alt="Locked"
                                                 />
-                                                <span>Locked</span>
-                                            </>
+                                                Locked
+                                            </span>
                                         )}
                                     </li>
 
-                                    <li className="flex items-center gap-2">
-                                        Designer:{" "}
+                                    {/* Designer */}
+                                    <li
+                                        className={`relative flex items-center justify-between rounded-lg px-3 py-2 border ${isSupporter
+                                                ? "border-purple-300 bg-gradient-to-r from-purple-50 to-pink-50 animate-pulse"
+                                                : "border-gray-200 bg-gray-100"
+                                            }`}
+                                    >
+                                        <span className="font-medium text-gray-700">Designer</span>
+
                                         {isSupporter ? (
-                                            <span>Unlocked</span>
+                                            <span className="font-semibold text-purple-700">
+                                                Unlocked
+                                            </span>
                                         ) : (
-                                            <>
+                                            <span className="flex items-center gap-2 text-gray-500">
                                                 <img
-                                                    className="w-3 h-3"
+                                                    className="w-3 h-3 opacity-70"
                                                     src="/svg/lock_icon.svg"
                                                     alt="Locked"
                                                 />
-                                                <span>
-                                                    {supporter.expiresAt
-                                                        ? "Locked"
-                                                        : "Locked"}
-                                                </span>
-                                            </>
+                                                Locked
+                                            </span>
                                         )}
                                     </li>
-                                    {!isSupporter && supporter.expiresAt && (
-                                        <p className="mb-2 mt-2 text-sm text-red-400">
-                                            Supporter expired on {formatExpiry(supporter.expiresAt)}.
-                                        </p>
-                                    )}
-
                                 </ul>
+
+                                {!isSupporter && supporter.expiresAt && (
+                                    <p className="mt-3 text-xs text-red-500">
+                                        Supporter expired on {formatExpiry(supporter.expiresAt)}.
+                                    </p>
+                                )}
                             </div>
+
 
                             <p className="font-semibold text-base text-gray-500 -mb-3 mt-3">Remaining Credits</p>
                             <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
