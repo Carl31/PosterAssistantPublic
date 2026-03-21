@@ -10,5 +10,8 @@ export type Template = {
   style: string
   hexElements: string[]
   previewHexUrl: string
+  accentColourSelect?: boolean
+  previewHexAccentUrl?: string
+  accentHexElements?: string[]
   // etc. Can add more here if wanting to use them on this page.
 }

@@ -15,6 +15,7 @@ import { db } from '@/firebase/client'
 import { useRouter } from 'next/navigation';
 import LoadingPage from '@/components/LoadingPage'
 import ErrorPage from '@/components/ErrorPage'
+import type { StartPosterJobBody } from '@/types/posterJob'
 
 type CarDetails = {
     make: string
@@ -31,9 +32,9 @@ export default function OverviewPage() {
     const {
         selectedTemplate, carDetails,
         description, setDescription, instagramHandle,
-        userImgDownloadUrl, prevCarDetails, setPrevCarDetails, hexValue, userPosterImgDownloadUrl, setUserPosterImgDownloadUrl
+        userImgDownloadUrl, prevCarDetails, setPrevCarDetails, hexValue, accentHexValue, userPosterImgDownloadUrl, setUserPosterImgDownloadUrl,
+        state,
     } = usePosterWizard()
-    const { state } = usePosterWizard();
 
     const [loading, setLoading] = useState(false)
     const router = useRouter()
@@ -207,7 +208,7 @@ export default function OverviewPage() {
             return <ErrorPage text="User is not authenticated." />
         }
         // For sending request to backnend with authorisation:
-        const token = user && (await user.getIdToken())
+        const token = await user.getIdToken()
 
         const jobId = crypto.randomUUID();
 
@@ -219,26 +220,29 @@ export default function OverviewPage() {
 
         setLoading(true)
         try {
+            const startPosterJobBody: StartPosterJobBody = {
+                userId: user.uid,
+                token,
+                jobId,
+                psdUrl: selectedTemplate?.psdFileUrl,
+                templateId: selectedTemplate?.id,
+                userImageUrl: userPosterImgDownloadUrl,
+                carDetails,
+                description,
+                instagramHandle,
+                fontsUsed: selectedTemplate?.fontsUsed,
+                supportedTexts: selectedTemplate?.supportedTexts,
+                hexColour: hexValue,
+                hexElements: selectedTemplate?.hexElements,
+                accentHexValue,
+                accentHexElements: selectedTemplate?.accentHexElements,
+            }
             const response = await fetch('/api/startPosterJob', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    psdUrl: selectedTemplate?.psdFileUrl,
-                    templateId: selectedTemplate?.id,
-                    userImageUrl: userPosterImgDownloadUrl,
-                    carDetails,
-                    description,
-                    instagramHandle,
-                    fontsUsed: selectedTemplate?.fontsUsed,
-                    jobId,
-                    token,
-                    userId: user.uid,
-                    supportedTexts: selectedTemplate?.supportedTexts,
-                    hexColour: hexValue,
-                    hexElements: selectedTemplate?.hexElements
-                })
+                body: JSON.stringify(startPosterJobBody),
             })
 
             if (!response.ok) {

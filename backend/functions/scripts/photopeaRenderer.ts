@@ -23,6 +23,8 @@ type PosterRenderInput = {
     supportedTexts: string[]
     hexColour: string
     hexElements: string[]
+    accentHexValue?: string | null
+    accentHexElements?: string[]
     onProgress: (progress: string) => void
 }
 
@@ -38,6 +40,8 @@ export const renderPoster = async ({
   supportedTexts,
   hexColour,
   hexElements,
+  accentHexValue,
+  accentHexElements,
   onProgress,
 }: PosterRenderInput): Promise<Buffer> => {
   const browser = await puppeteer.launch({
@@ -87,6 +91,8 @@ export const renderPoster = async ({
       supportedTexts: supportedTexts.join(','),
       hexColour: hexColour,
       hexElements: hexElements.join(','),
+      accentHexValue: accentHexValue != null && accentHexValue !== '' ? String(accentHexValue) : '',
+      accentHexElements: Array.isArray(accentHexElements) ? accentHexElements.join(',') : '',
     });
 
     console.log(fontsUsed);

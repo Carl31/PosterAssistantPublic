@@ -28,7 +28,13 @@
 
     const hexColour = params.get("hexColour");
     const hexElements = params.get("hexElements");
-    const hexElementsArray = hexElements.split(',');
+    const hexElementsArray = hexElements == null ? [] : hexElements.split(",");
+
+    const accentHexValueParam = params.get("accentHexValue");
+    const accentHexElementsParam = params.get("accentHexElements");
+    const accentHexElementsArray = accentHexElementsParam
+      ? accentHexElementsParam.split(",").filter(Boolean)
+      : [];
 
     // const hexColour = localStorage.getItem('poster_hexColour');
     // const hexElements = JSON.parse(localStorage.getItem('poster_hexElements'));
@@ -361,7 +367,85 @@ console.log("=== SCRIPT END ===");
         console.log(e.toString());
       }
 
+      console.log("[Wrapper] accentHexValueParam:", accentHexValueParam);
+      console.log("[Wrapper] accentHexElementsArray:", accentHexElementsArray);
 
+      if (
+        accentHexValueParam &&
+        accentHexValueParam !== ""
+      ) {
+        const applyAccentHexScript = `
+      console.log("=== ACCENT SCRIPT START ===");
+        var names = [];
+      var hexColor = "${accentHexValueParam}";
+
+var hexElements = ${JSON.stringify(accentHexElementsArray)};
+console.log("accent hexElements:", hexElements);
+var q = [app.activeDocument];
+
+while (q.length) {
+
+    var g = q.pop();
+
+    for (var i = 0; i < g.layers.length; i++) {
+        var l = g.layers[i];
+        console.log("  > Layer name:", l.name);
+        console.log("  > Layer has sublayers:", !!l.layers);
+
+        if (hexElements.indexOf(l.name) !== -1) {
+            console.log("  >>> MATCH FOUND <<<");
+            console.log("  >>> Target layer:", l.name);
+
+            
+                app.activeDocument.activeLayer = l;
+                console.log("  Rasterizing layer:", l.name);
+                l.rasterize(RasterizeType.TEXTCONTENTS);
+                console.log("  Rasterize OK");
+
+            console.log("  Locking transparency");
+            l.transparentPixelsLocked = true;
+
+            var fillColor = new SolidColor();
+            console.log("  Creating fill color");
+            fillColor.rgb.hexValue = hexColor;
+            console.log("  Fill color set:", hexColor);
+
+            console.log("  Selecting all");
+            app.activeDocument.selection.selectAll();
+
+            console.log("  Filling selection");
+            app.activeDocument.selection.fill(fillColor, ColorBlendMode.NORMAL, 100, false);
+
+
+            console.log("  Deselecting");
+            app.activeDocument.selection.deselect();
+
+            console.log("  Unlocking transparency");
+            l.transparentPixelsLocked = false;
+
+            console.log("  >>> FINISHED PROCESSING LAYER:", l.name);
+        }
+
+        names.push(l.name);
+
+        if (l.layers) {
+            q.push(l);
+        }
+    }
+}
+
+console.log("=== ACCENT SCRIPT END ===");
+`;
+
+        try {
+          ppWindow.postMessage(applyAccentHexScript, "*");
+          await waitForDone(1);
+          console.log("[Wrapper] Applied accent hex colours! Continuing...");
+        } catch (e) {
+          console.log("[Wrapper] Error:");
+          console.log(e.toString());
+        }
+      }
 
       // Stage 4: Place user image
       console.log("[Photopea Progress] Carefully inserting your image");

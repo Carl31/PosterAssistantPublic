@@ -42,15 +42,15 @@ const archivoBlack = Archivo_Black({
 
 export default function SelectTemplatePage() {
     const [templates, setTemplates] = useState<Template[]>([])
-    const { selectedTemplate, setSelectedTemplate, setInstagramHandle, setUserPosterImgDownloadUrl, userPosterImgDownloadUrl, userImgDownloadUrl, templateIndex, setTemplateIndex, setGeminiChecked, setCarDetails, credits, setCredits, hexValue, setHexValue, savedPosition, setSavedPosition, savedScale, setSavedScale, savedRotation, setSavedRotation, setIsSupporter, isSupporter, setHasPackUnlocks, hasPackUnlocks } = usePosterWizard()
+    const { selectedTemplate, setSelectedTemplate, setInstagramHandle, setUserPosterImgDownloadUrl, userPosterImgDownloadUrl, userImgDownloadUrl, templateIndex, setTemplateIndex, setGeminiChecked, setCarDetails, credits, setCredits, hexValue, setHexValue, accentHexValue, setAccentHexValue, savedPosition, setSavedPosition, savedScale, setSavedScale, savedRotation, setSavedRotation, setIsSupporter, isSupporter, setHasPackUnlocks, hasPackUnlocks, state } = usePosterWizard()
     const { user } = useAuth()
     // eslint-disable-next-line @typescript-eslint/naming-convention
     const [favoriteTemplates, setFavoriteTemplates] = useState<string[]>([])
     const [loading, setLoading] = useState(false)
     const router = useRouter()
-    const { state } = usePosterWizard()
 
     const [colorOpen, setColorOpen] = useState(false);
+    const [colorPickerMode, setColorPickerMode] = useState<'primary' | 'accent'>('primary');
 
     const searchParams = useSearchParams();
     const imageUploaded_flag = searchParams!.get('upload') === 'true';
@@ -113,6 +113,7 @@ export default function SelectTemplatePage() {
 
 
     const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
+    const accentOverlayCanvasRef = useRef<HTMLCanvasElement>(null);
     const baseImgRef = useRef<HTMLImageElement>(null);
 
     const storage = getStorage()
@@ -243,6 +244,38 @@ export default function SelectTemplatePage() {
         ctx.globalCompositeOperation = "source-over";
     }
 
+    async function applyAccentHexFillToOverlay(hex: string) {
+        const canvas = accentOverlayCanvasRef.current;
+        if (!canvas || !selectedTemplate?.previewHexAccentUrl) return;
+
+        const baseImg = baseImgRef.current;
+        if (!baseImg?.naturalWidth) return;
+
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+        if (!ctx) return;
+
+        canvas.width = baseImg.clientWidth;
+        canvas.height = baseImg.clientHeight;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.src = selectedTemplate.previewHexAccentUrl;
+
+        await new Promise<void>((resolve, reject) => {
+            img.onload = () => resolve();
+            img.onerror = () => reject();
+        });
+
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        ctx.globalCompositeOperation = "source-atop";
+        ctx.fillStyle = hex;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.globalCompositeOperation = "source-over";
+    }
+
 
     useEffect(() => {
         const canvas = overlayCanvasRef.current;
@@ -284,6 +317,45 @@ export default function SelectTemplatePage() {
         }
     }, [hexValue, selectedTemplate?.previewHexUrl]);
 
+    useEffect(() => {
+        const canvas = accentOverlayCanvasRef.current;
+        const baseImg = baseImgRef.current;
+        const overlayUrl = selectedTemplate?.previewHexAccentUrl;
+        if (!canvas || !baseImg || !overlayUrl || accentHexValue == null) return;
+
+        const drawAccentOverlay = async () => {
+            const ctx = canvas.getContext("2d", { willReadFrequently: true });
+            if (!ctx) return;
+
+            canvas.width = baseImg.clientWidth;
+            canvas.height = baseImg.clientHeight;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.src = overlayUrl;
+
+            await new Promise<void>((resolve, reject) => {
+                img.onload = () => resolve();
+                img.onerror = () => reject();
+            });
+
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            ctx.globalCompositeOperation = "source-atop";
+            ctx.fillStyle = accentHexValue;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.globalCompositeOperation = "source-over";
+        };
+
+        if (!baseImg.complete) {
+            baseImg.onload = drawAccentOverlay;
+        } else {
+            drawAccentOverlay();
+        }
+    }, [accentHexValue, selectedTemplate?.previewHexAccentUrl]);
+
 
 
 
@@ -306,6 +378,11 @@ export default function SelectTemplatePage() {
         applyHexFillToOverlay(hexValue);
     }, [hexValue, selectedTemplate?.previewHexUrl]);
 
+    useEffect(() => {
+        if (accentHexValue != null && selectedTemplate?.previewHexAccentUrl) {
+            applyAccentHexFillToOverlay(accentHexValue);
+        }
+    }, [accentHexValue, selectedTemplate?.previewHexAccentUrl]);
 
     useEffect(() => {
         function handleClickOutside(e: MouseEvent | TouchEvent) {
@@ -435,7 +512,11 @@ export default function SelectTemplatePage() {
 
         const [r, g, b] = ctx.getImageData(x, y, 1, 1).data;
         const hex = ((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1);
-        setHexValue(`#${hex}`); // live update
+        if (colorPickerMode === 'primary') {
+            setHexValue(`#${hex}`);
+        } else {
+            setAccentHexValue(`#${hex}`);
+        }
     }
 
     function startPick(e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) {
@@ -498,6 +579,7 @@ export default function SelectTemplatePage() {
         setIndex(newIndex);
         //setSelectedTemplate(filteredTemplates[newIndex]);
         setHexValue('');
+        setAccentHexValue(null);
     };
 
 
@@ -697,6 +779,7 @@ export default function SelectTemplatePage() {
 
     const handleBack = () => {
         setHexValue('');
+        setAccentHexValue(null);
         setCarDetails({ make: '', model: '', year: '' })
         setSavedPosition(null);
         setSavedRotation(null);
@@ -979,6 +1062,16 @@ export default function SelectTemplatePage() {
                                 />
                             )}
 
+                            {selectedTemplate?.previewHexAccentUrl && accentHexValue !== null && (
+                                <motion.canvas
+                                    ref={accentOverlayCanvasRef}
+                                    className="absolute inset-0 w-full h-full pointer-events-none z-30"
+                                    style={{ transform: 'translateX(-0.5px)' }}
+                                    animate={{ opacity: editMode ? 0.35 : 1 }}
+                                    transition={{ duration: 0.2 }}
+                                />
+                            )}
+
                         </div>
 
 
@@ -988,41 +1081,77 @@ export default function SelectTemplatePage() {
 
 
                         {/* Template label */}
-                        <div className="mt-6 mx-auto grid grid-cols-3 items-center bg-black/80 text-white px-4 py-1 rounded-lg text-sm max-w-md">
-                            {/* Left: color picker box */}
-                            {selectedTemplate?.hexElements != null ? (
-                                <div className="flex justify-center relative">
-                                    <div
-                                        className="h-7 w-7 border rounded cursor-pointer"
-                                        style={{
-                                            background: hexValue
-                                                ? hexValue
-                                                : "linear-gradient(45deg, #FFC1C1, #FFD8A8, #FFF3B0, #C1E1C1, #B0E0FF)"
-                                        }}
-                                        onClick={() => {
-                                            if (!editMode) setColorOpen(true);
-                                        }}
-                                    />
+                        <div className="mt-6 mx-auto flex flex-col gap-2 max-w-md">
+                            <div className="grid grid-cols-3 items-center bg-black/80 text-white px-4 py-1 rounded-lg text-sm">
+                                {/* Left: color picker box */}
+                                {selectedTemplate?.hexElements != null ? (
+                                    <div className="flex justify-center relative">
+                                        <div
+                                            className="h-7 w-7 border rounded cursor-pointer"
+                                            style={{
+                                                background: hexValue
+                                                    ? hexValue
+                                                    : "linear-gradient(45deg, #FFC1C1, #FFD8A8, #FFF3B0, #C1E1C1, #B0E0FF)"
+                                            }}
+                                            onClick={() => {
+                                                if (!editMode) {
+                                                    setColorPickerMode('primary');
+                                                    setColorOpen(true);
+                                                }
+                                            }}
+                                        />
+                                    </div>
+
+                                ) : (
+                                    <div className="flex justify-center"></div>
+                                )}
+
+
+                                {/* Center: template name */}
+                                <div className="text-center flex items-center justify-center h-8">
+                                    {currentTemplate?.name}
                                 </div>
 
-                            ) : (
-                                <div className="flex justify-center"></div>
+                                {/* Right: disabled / invisible box */}
+                                <div className="flex justify-center">
+                                    {selectedTemplate?.hexElements != null && hexValue !== "" ? (
+                                        <img src="/svg/xmark_gray.svg" alt="Close" className="relative w-6 h-6 cursor-pointer" onClick={() => setHexValue("")} />
+                                    ) : (
+                                        <div className="h-8 w-8 border border-white rounded opacity-0 pointer-events-none" />
+                                    )}
+                                </div>
+                            </div>
+
+                            {selectedTemplate?.accentColourSelect === true && (
+                                <div className="grid grid-cols-3 items-center bg-black/80 text-white px-4 py-1 rounded-lg text-sm">
+                                    <div className="flex justify-center relative">
+                                        <div
+                                            className="h-7 w-7 border rounded cursor-pointer"
+                                            style={{
+                                                background: accentHexValue
+                                                    ? accentHexValue
+                                                    : "linear-gradient(45deg, #FFC1C1, #FFD8A8, #FFF3B0, #C1E1C1, #B0E0FF)"
+                                            }}
+                                            onClick={() => {
+                                                if (!editMode) {
+                                                    setColorPickerMode('accent');
+                                                    setColorOpen(true);
+                                                }
+                                            }}
+                                        />
+                                    </div>
+                                    <div className="text-center flex items-center justify-center h-8 text-xs text-gray-300">
+                                        Accent
+                                    </div>
+                                    <div className="flex justify-center">
+                                        {accentHexValue !== null ? (
+                                            <img src="/svg/xmark_gray.svg" alt="Clear accent" className="relative w-6 h-6 cursor-pointer" onClick={() => setAccentHexValue(null)} />
+                                        ) : (
+                                            <div className="h-8 w-8 border border-white rounded opacity-0 pointer-events-none" />
+                                        )}
+                                    </div>
+                                </div>
                             )}
-
-
-                            {/* Center: template name */}
-                            <div className="text-center flex items-center justify-center h-8">
-                                {currentTemplate?.name}
-                            </div>
-
-                            {/* Right: disabled / invisible box */}
-                            <div className="flex justify-center">
-                                {selectedTemplate?.hexElements != null && hexValue !== "" ? (
-                                    <img src="/svg/xmark_gray.svg" alt="Close" className="relative w-6 h-6 cursor-pointer" onClick={() => setHexValue("")} />
-                                ) : (
-                                    <div className="h-8 w-8 border border-white rounded opacity-0 pointer-events-none" />
-                                )}
-                            </div>
                         </div>
 
 
@@ -1105,6 +1234,7 @@ ${colorOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-eve
                                     key={style}
                                     onClick={() => {
                                         setHexValue('');
+                                        setAccentHexValue(null);
                                         setSelectedStyle(style);
                                         setSelectedTemplate(null);
                                         if (style === "Brands") {

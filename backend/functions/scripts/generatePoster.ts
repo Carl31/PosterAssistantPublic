@@ -38,7 +38,9 @@ export const generatePosterOnJobCreate = functions
         templateId,
         supportedTexts,
         hexColour,
-        hexElements,
+        hexElements = [],
+        accentHexValue,
+        accentHexElements,
       } = data;
 
       // ✅ 1. Verify token and extract UID
@@ -74,6 +76,8 @@ export const generatePosterOnJobCreate = functions
         supportedTexts,
         hexColour,
         hexElements,
+        accentHexValue,
+        accentHexElements,
         onProgress: (progress) =>
           updateJobStatus(jobId, {progress, status: "in-progress"}),
       });
