@@ -6,7 +6,7 @@ import {GoogleGenerativeAI, HarmCategory, HarmBlockThreshold} from "@google/gene
 import {env} from "process";
 
 const corsHandler = cors({origin: true});
-const GEMINI_FLASH_MODEL_NAME = "gemini-2.0-flash";
+const GEMINI_FLASH_MODEL_NAME = "gemini-2.5-flash";
 
 const safetySettings = [
   {category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE},
