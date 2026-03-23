@@ -20,6 +20,7 @@ export default function VerifyEmailSuccess() {
         router.push('/account/dashboard');
       } catch (err) {
         router.push('/verify-email');
+        console.log(err);
       }
     };
 
