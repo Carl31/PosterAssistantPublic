@@ -1,31 +1,11 @@
-'use client';
+import { Suspense } from "react";
+import VerifyEmailSuccess from "./VerifyEmailSuccess";
 
-import { useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { applyActionCode } from 'firebase/auth';
-import { auth } from '@/firebase/client';
-
-export default function VerifyEmailSuccess() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-
-  const oobCode = searchParams!.get('oobCode');
-
-  useEffect(() => {
-    const verify = async () => {
-      if (!oobCode) return;
-
-      try {
-        await applyActionCode(auth, oobCode);
-        router.push('/account/dashboard');
-      } catch (err) {
-        router.push('/verify-email');
-        alert('Email verification failed: '+err);
-      }
-    };
-
-    verify();
-  }, [oobCode]);
-
-  return <div>Verifying email...</div>;
+export default function Page() {
+  return (
+    <Suspense fallback={<div>Verifying email...</div>}>
+      <VerifyEmailSuccess />
+    </Suspense>
+  );
 }
+
