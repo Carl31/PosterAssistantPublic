@@ -50,6 +50,10 @@ export default function DashboardPage() {
   const [feedbackText, setFeedbackText] = useState("")
   const [submitted, setSubmitted] = useState(false)
 
+  const isMobile =
+    typeof window !== "undefined" &&
+    /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
   const openFeedback = (type: "bug" | "feature") => {
     setFeedbackType(type)
     setSubmitted(false)
@@ -111,6 +115,15 @@ export default function DashboardPage() {
     },
   ]
 
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const check = async () => {
+      await user?.reload();
+      setReady(true);
+    };
+    check();
+  }, []);
 
   useEffect(() => {
     if (!user) return
@@ -135,6 +148,11 @@ export default function DashboardPage() {
   const handleCreatePoster = async () => {
     if (!user) {
       router.push('/')
+    }
+
+    if (!isMobile) {
+      notify('error', 'Creating a poster is only available on mobile.')
+      return
     }
 
     console.log("Credits:", credits)

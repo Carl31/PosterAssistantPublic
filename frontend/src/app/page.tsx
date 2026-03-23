@@ -3,6 +3,7 @@
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
+import { sendEmailVerification } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import LoadingPage from '@/components/LoadingPage';
 import { createUserWithEmailAndPassword } from 'firebase/auth'
@@ -33,7 +34,7 @@ export default function Page() {
   const [agreed, setAgreed] = useState(false); // track checkbox state
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
-  
+
 
 
 
@@ -72,7 +73,11 @@ export default function Page() {
     setLoading(true)
     try {
       await createUserWithEmailAndPassword(auth, email, password)
-      router.push('/account/dashboard?signup=true')
+      const userCred = await createUserWithEmailAndPassword(auth, email, password);
+      await sendEmailVerification(userCred.user);
+
+      router.push('/verify-email');
+      //router.push('/account/dashboard?signup=true')
     } catch (err: any) {
       //alert(err.message || 'Signup failed.')
       setLoading(false)
@@ -90,28 +95,44 @@ export default function Page() {
   }
 
   const handleLogin = async (e: React.FormEvent) => {
-    setLoading(true)
-    e.preventDefault()
+    setLoading(true);
+    e.preventDefault();
+
     try {
-      await signInWithEmailAndPassword(auth, email, password)
-      router.push('/account/dashboard')
+      const userCred = await signInWithEmailAndPassword(auth, email, password);
+
+      await userCred.user.reload();
+
+      if (!userCred.user.emailVerified) {
+        router.push('/verify-email');
+        return;
+      }
+
+      router.push('/account/dashboard');
     } catch (err) {
-      setLoading(false)
-      //alert('Login failed.' + err)
-      notify('error', 'Login failed: ' + err)
+      setLoading(false);
+      notify('error', 'Login failed: ' + err);
     }
-  }
+  };
 
   const handleGoogleLogin = async () => {
-    const provider = new GoogleAuthProvider()
+    const provider = new GoogleAuthProvider();
+
     try {
-      await signInWithPopup(auth, provider)
-      router.push('/account/dashboard')
+      const result = await signInWithPopup(auth, provider);
+
+      await result.user.reload();
+
+      if (!result.user.emailVerified) {
+        router.push('/verify-email');
+        return;
+      }
+
+      router.push('/account/dashboard');
     } catch (err) {
-      // alert('Google sign-in failed.' + err)
-      notify('error', 'Google sign-in failed: ' + err)
+      notify('error', 'Google sign-in failed: ' + err);
     }
-  }
+  };
 
 
   // frame inset: vertical + horizontal
@@ -290,15 +311,15 @@ export default function Page() {
 
             style={{ height: `${sheetHeight}%` }}
           >
-            
-                <h1
-                  className={`text-4xl sm:text-5xl md:text-5xl lg:text-6xl mb-4 text-blue-400 text-center ${anton.className}`}
-                  style={{
+
+            <h1
+              className={`text-4xl sm:text-5xl md:text-5xl lg:text-6xl mb-4 text-blue-400 text-center ${anton.className}`}
+              style={{
                 opacity: progress > 0.6 ? (progress - 0.6) / 0.4 : 0,
               }}
-                >
-                  SICKSHOTS <span className="text-[0.75em] ml-[-0.15em]">AI</span>
-                </h1>
+            >
+              SICKSHOTS <span className="text-[0.75em] ml-[-0.15em]">AI</span>
+            </h1>
 
             <div
               className="flex flex-col gap-4"

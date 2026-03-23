@@ -13,5 +13,11 @@ export type Template = {
   accentColourSelect?: boolean
   previewHexAccentUrl?: string
   accentHexElements?: string[]
+  alignSelect?: boolean
+  alignDefault?: 'left' | 'right'
+  psdFileReverseUrl?: string
+  previewHexReverseUrl?: string
+  previewImageReverseUrl?: string
+
   // etc. Can add more here if wanting to use them on this page.
 }

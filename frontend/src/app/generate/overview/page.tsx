@@ -32,7 +32,7 @@ export default function OverviewPage() {
     const {
         selectedTemplate, carDetails,
         description, setDescription, instagramHandle,
-        userImgDownloadUrl, prevCarDetails, setPrevCarDetails, hexValue, accentHexValue, userPosterImgDownloadUrl, setUserPosterImgDownloadUrl,
+        userImgDownloadUrl, prevCarDetails, setPrevCarDetails, hexValue, accentHexValue, alignChosen, userPosterImgDownloadUrl, setUserPosterImgDownloadUrl,
         state,
     } = usePosterWizard()
 
@@ -41,6 +41,8 @@ export default function OverviewPage() {
 
     const isGeneratingRef = useRef(false);
     const lastGeneratedAtRef = useRef<number>(0);
+
+    const [hasConfirmed, setHasConfirmed] = useState(false);
 
     function deepEqual(carDetails1: CarDetails, carDetails2: CarDetails): boolean {
         return (
@@ -217,7 +219,7 @@ export default function OverviewPage() {
         //     setProgress(progress);
         // });
 
-
+        setHasConfirmed(true);
         setLoading(true)
         try {
             const startPosterJobBody: StartPosterJobBody = {
@@ -236,6 +238,9 @@ export default function OverviewPage() {
                 hexElements: selectedTemplate?.hexElements,
                 accentHexValue,
                 accentHexElements: selectedTemplate?.accentHexElements,
+                psdFileReverseUrl: selectedTemplate?.psdFileReverseUrl,
+                alignDefault: selectedTemplate?.alignDefault,
+                alignChosen,
             }
             const response = await fetch('/api/startPosterJob', {
                 method: 'POST',
@@ -286,8 +291,8 @@ export default function OverviewPage() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
         >
-            <div className="p-8 max-w-xl mx-auto">
-                {loading ? <LoadingPage text="Generating preview..." /> : (
+            <div className={loading ? "" : "p-8 max-w-xl mx-auto"}>
+                {loading ? <LoadingPage text={hasConfirmed ? "Starting generation..." : "Generating preview..."} /> : (
                     <span>
                         <section id='overview'>
                             <div className="fixed inset-0 flex items-center justify-center mx-6">

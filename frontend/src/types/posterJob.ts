@@ -18,4 +18,7 @@ export type StartPosterJobBody = {
   hexElements: string[] | undefined
   accentHexValue: string | null
   accentHexElements: string[] | undefined
+  psdFileReverseUrl: string | undefined
+  alignDefault: 'left' | 'right' | undefined
+  alignChosen: 'left' | 'right' | null
 }

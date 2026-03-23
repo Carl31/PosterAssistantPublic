@@ -32,6 +32,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         hexElements,
         accentHexValue,
         accentHexElements,
+        psdFileReverseUrl,
+        alignDefault,
+        alignChosen,
     } = body
 
     try {
@@ -53,6 +56,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         hexElements: hexElements ?? [],
         accentHexValue: accentHexValue ?? null,
         accentHexElements: accentHexElements ?? [],
+        psdFileReverseUrl: psdFileReverseUrl ?? null,
+        alignDefault: alignDefault ?? null,
+        alignChosen: alignChosen ?? null,
         });
 
         console.log('Job started:', jobId);

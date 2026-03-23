@@ -11,7 +11,6 @@
 
   <script>
     const params = new URLSearchParams(window.location.search);
-    const psdUrl = params.get("psd");
     const userImageUrl = params.get("userImageUrl");
     let description = params.get("description");
     const instagram = params.get("instagramHandle").toUpperCase();
@@ -35,6 +34,20 @@
     const accentHexElementsArray = accentHexElementsParam
       ? accentHexElementsParam.split(",").filter(Boolean)
       : [];
+
+    const psdUrlDefault = params.get("psd");
+    const psdUrlReverse = params.get("psdFileReverseUrl");
+    const alignDefaultParam = params.get("alignDefault");
+    const alignChosenParam = params.get("alignChosen");
+    const psdUrl =
+      psdUrlReverse &&
+      alignDefaultParam !== null &&
+      alignChosenParam !== null &&
+      alignDefaultParam !== "" &&
+      alignChosenParam !== "" &&
+      alignDefaultParam !== alignChosenParam
+        ? psdUrlReverse
+        : psdUrlDefault;
 
     // const hexColour = localStorage.getItem('poster_hexColour');
     // const hexElements = JSON.parse(localStorage.getItem('poster_hexElements'));

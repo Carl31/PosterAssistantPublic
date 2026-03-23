@@ -216,229 +216,233 @@ export default function PosterHistoryPage() {
 
 
 
-    return (
-        <div className="p-4">
-            <h1 className="text-2xl font-bold mb-4 text-black">My Posters</h1>
+return (
+    <div className="p-4">
+        <h1 className="text-2xl font-bold mb-4 text-black">My Posters</h1>
 
-            {showReloadFlag && (
-                <p className="text-sm text-gray-700 mb-2">
-                    Reload to see newly generated posters
-                </p>
-            )}
+        {showReloadFlag && (
+            <p className="text-sm text-gray-700 mb-2">
+                Reload to see newly generated posters
+            </p>
+        )}
 
-            {loading ? (
-                <LoadingPage text="Loading posters..." />
-            ) : posters.length === 0 ? (
-                <p className='text-black'>No posters found. Go make one!</p>
-            ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                    {posters.map((poster) => {
-                        const isActive = activePoster?.id === poster.id;
+        {loading ? (
+            <LoadingPage text="Loading posters..." />
+        ) : posters.length === 0 ? (
+            <p className="text-black">No posters found. Go make one!</p>
+        ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
 
-                        return (
-                            <div key={poster.id} className="flex flex-col items-center">
-                                {/* Poster with border/shadow */}
-                                <div
-                                    onClick={() => setActivePoster(isActive ? null : poster)}
-                                    className="inline-block bg-black p-[4px] shadow-[-6px_6px_16px_rgba(0,0,0,0.45)] cursor-pointer"
-                                >
-                                    <img
-                                        src={poster.thumbnailUrl || poster.posterUrl}
-                                        alt="Poster"
-                                        className="block max-w-full h-auto bg-white"
-                                    />
-                                </div>
+                {posters.map((poster) => {
+                    const isActive = activePoster?.id === poster.id;
 
-                                {/* metadata */}
-                                <div className="mt-4 ml-2 text-xs text-gray-700 w-full text-left">
-                                    <div>
-                                        {poster.carDetails.year} {poster.carDetails.make} {poster.carDetails.model}
-                                    </div>
-                                    <div> <b>Template:</b> {templateMap[poster.templateId] ?? poster.templateId}</div>
-                                    <div>
-                                        <b>Created:</b> {poster.createdAt.toDate().toLocaleDateString('en-GB')}
-                                    </div>
-                                </div>
+                    return (
+                        <div key={poster.id} className="flex flex-col items-center">
 
-                                {/* Expandable buttons with smooth animation */}
-                                <div
-                                    className={`mt-2 flex flex-col gap-2 overflow-hidden transition-all duration-300 ease-in-out w-full`}
-                                    style={{ maxHeight: isActive ? '500px' : '0' }}
-                                >
-                                    <button
-                                        onClick={() =>
-                                            window.open(`/mockup?uid=${uid}&posterId=${poster.id}`, "_blank")
-                                        }
-                                        className="py-2 rounded bg-gray-900 text-white text-sm w-full"
-                                    >
-                                        Showcase
-                                    </button>
-
-                                    <button
-                                        onClick={() => {
-                                            setPosterToDownload(poster)
-                                            setShowDownloadPopup(true)
-                                        }}
-                                        className="py-1.5 w-full rounded-sm bg-white border-2 border-blur-500 text-blue-500 text-sm"
-                                    >
-                                        Download
-                                    </button>
-
-                                    <button
-                                        onClick={async () => {
-                                            const url = `/mockup?uid=${uid}&posterId=${poster.id}`;
-                                            if (navigator.share) await navigator.share({ url });
-                                            else await navigator.clipboard.writeText(url);
-                                        }}
-                                        className="py-1.5 w-full rounded-sm bg-white border-2 border-purple-500 text-purple-500 text-sm"
-                                    >
-                                        Share
-                                    </button>
-
-                                    <button
-                                        onClick={() => {
-                                            setPosterToDelete(poster)
-                                            setShowDeletePopup(true)
-                                        }}
-                                        className="py-1.5 w-full rounded-sm bg-white border-2 border-red-500 text-red-500 text-sm"
-                                    >
-                                        Delete
-                                    </button>
-
-                                </div>
-
-                                {showDownloadPopup && posterToDownload && (
-                                    <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-49 p-4">
-                                        <div className="bg-white rounded-xl p-5 w-full max-w-xl shadow-lg">
-                                            <h2 className="text-base font-semibold text-blue-400 mb-5 text-center">
-                                                Download Poster
-                                            </h2>
-
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
-                                                {/* Unframed */}
-                                                <div className="rounded-lg border border-gray-200 p-4 flex flex-col justify-between">
-                                                    <div className="mb-3">
-                                                        <h3 className="text-sm font-medium text-gray-700">
-                                                            Unframed
-                                                        </h3>
-                                                        <p className="text-xs text-gray-500 mt-1">
-                                                            Original poster file: ideal for printing.
-                                                        </p>
-                                                    </div>
-
-                                                    <button
-                                                        onClick={async () => {
-                                                            if (!hasPackUnlocks) {
-                                                                notify('error', 'Visit the store to unlock this additional feature.');
-                                                                return;
-                                                            }
-                                                            setShowDownloadPopup(false)
-                                                            notify('info', 'Downloading...')
-                                                            downloadCooldown.run(() =>
-                                                                downloadUnframed(posterToDownload)
-                                                            )
-                                                        }}
-                                                        className="mt-auto px-3 py-1.5 text-sm border rounded-md border-gray-300 text-gray-800 hover:bg-gray-50"
-                                                    >
-                                                        Download
-                                                    </button>
-                                                </div>
-
-                                                {/* Framed (Primary) */}
-                                                <div className="rounded-lg border border-gray-900 bg-gray-900 p-4 flex flex-col justify-between shadow-md ">
-                                                    <div className="text-center">
-                                                        <h3 className="text-sm font-semibold text-white">
-                                                            Framed
-                                                        </h3>
-                                                        <p className="text-xs text-gray-300 mt-1">
-                                                            Presentation-ready mockup
-                                                        </p>
-                                                    </div>
-
-                                                    <img
-                                                        src="/svg/frame-white.svg"
-                                                        className="max-h-12 object-contain mx-auto my-5"
-                                                    />
-
-                                                    <button
-                                                        onClick={async () => {
-                                                            setShowDownloadPopup(false)
-                                                            notify('info', 'Downloading...')
-                                                            downloadCooldown.run(() =>
-                                                                downloadFramed(posterToDownload)
-                                                            )
-                                                        }}
-                                                        className="px-5 py-1.5 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-sm"
-                                                    >
-                                                        Download
-                                                    </button>
-                                                </div>
-                                            </div>
-
-                                            <button
-                                                onClick={() => {
-                                                    setShowDownloadPopup(false)
-                                                    setPosterToDownload(null)
-                                                }}
-                                                className="w-full px-3 py-1.5 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200"
-                                            >
-                                                Cancel
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                )}
-
-
+                            {/* Poster */}
+                            <div
+                                onClick={() => setActivePoster(isActive ? null : poster)}
+                                className="inline-block bg-black p-[4px] shadow-[-6px_6px_16px_rgba(0,0,0,0.45)] cursor-pointer"
+                            >
+                                <img
+                                    src={poster.thumbnailUrl || poster.posterUrl}
+                                    alt="Poster"
+                                    className="block max-w-full h-auto bg-white"
+                                />
                             </div>
 
-                        );
-                    })}
+                            {/* Metadata */}
+                            <div className="mt-4 ml-2 text-xs text-gray-700 w-full text-left">
+                                <div>
+                                    {poster.carDetails.year} {poster.carDetails.make} {poster.carDetails.model}
+                                </div>
+                                <div>
+                                    <b>Template:</b> {templateMap[poster.templateId] ?? poster.templateId}
+                                </div>
+                                <div>
+                                    <b>Created:</b> {poster.createdAt.toDate().toLocaleDateString('en-GB')}
+                                </div>
+                            </div>
 
-                </div>
-            )}
-
-
-            <button
-                onClick={() => router.replace('/account/dashboard')}
-                className="bottom-4 left-1/2 mt-4 transform px-5 py-2 rounded-lg   bg-white text-gray-800 shadow-md
-                border border-gray-200
-                hover:bg-gray-50
-                disabled:opacity-50"
-            >
-                Back
-            </button>
-
-            {showDeletePopup && (
-                <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50">
-                    <div className="p-4 rounded-lg bg-gray-100 text-center">
-                        <p className="mb-4 text-gray-800">
-                            Are you sure you want to delete this poster?
-                        </p>
-                        <div className="flex gap-2 justify-center">
-                            <button
-                                onClick={handleConfirmDelete}
-                                className="px-4 py-2 bg-red-600 text-white rounded"
+                            {/* Actions */}
+                            <div
+                                className="mt-2 flex flex-col gap-2 overflow-hidden transition-all duration-300 ease-in-out w-full"
+                                style={{ maxHeight: isActive ? '500px' : '0' }}
                             >
-                                Delete
-                            </button>
+                                <button
+                                    onClick={() =>
+                                        window.open(`/mockup?uid=${uid}&posterId=${poster.id}`, "_blank")
+                                    }
+                                    className="py-2 rounded bg-gray-900 text-white text-sm w-full"
+                                >
+                                    Showcase
+                                </button>
+
+                                <button
+                                    onClick={() => {
+                                        setPosterToDownload(poster);
+                                        setShowDownloadPopup(true);
+                                    }}
+                                    className="py-1.5 w-full rounded-sm bg-white border-2 border-blue-500 text-blue-500 text-sm"
+                                >
+                                    Download
+                                </button>
+
+                                <button
+                                    onClick={async () => {
+                                        const url = `/mockup?uid=${uid}&posterId=${poster.id}`;
+                                        if (navigator.share) await navigator.share({ url });
+                                        else await navigator.clipboard.writeText(url);
+                                    }}
+                                    className="py-1.5 w-full rounded-sm bg-white border-2 border-purple-500 text-purple-500 text-sm"
+                                >
+                                    Share
+                                </button>
+
+                                <button
+                                    onClick={() => {
+                                        setPosterToDelete(poster);
+                                        setShowDeletePopup(true);
+                                    }}
+                                    className="py-1.5 w-full rounded-sm bg-white border-2 border-red-500 text-red-500 text-sm"
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    );
+                })}
+
+            </div>
+        )}
+
+        <button
+            onClick={() => router.replace('/account/dashboard')}
+            className="mt-4 px-5 py-2 rounded-lg bg-white text-gray-800 shadow-md border border-gray-200 hover:bg-gray-50 disabled:opacity-50"
+        >
+            Back
+        </button>
+
+        {/* Download Modal (moved outside grid/map to avoid stacking issues) */}
+        {showDownloadPopup && posterToDownload && (
+            <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-[9999] p-4">
+                <div className="bg-white rounded-xl p-5 w-full max-w-xl shadow-lg">
+
+                    <h2 className="text-base font-semibold text-blue-400 mb-5 text-center">
+                        Download Poster
+                    </h2>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+
+                        {/* Unframed */}
+                        <div className="rounded-lg border border-gray-200 p-4 flex flex-col justify-between">
+                            <div className="mb-3">
+                                <h3 className="text-sm font-medium text-gray-700">
+                                    Unframed
+                                </h3>
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Original poster file: ideal for printing.
+                                </p>
+                            </div>
+
                             <button
-                                onClick={() => {
-                                    setShowDeletePopup(false)
-                                    setPosterToDelete(null)
+                                onClick={async () => {
+                                    setShowDownloadPopup(false);
+
+                                    if (!hasPackUnlocks) {
+                                        notify('error', 'Visit the store to unlock this additional feature.');
+                                        return;
+                                    }
+
+                                    notify('info', 'Downloading...');
+
+                                    downloadCooldown.run(() =>
+                                        downloadUnframed(posterToDownload)
+                                    );
                                 }}
-                                className="px-4 py-2 bg-gray-300 rounded"
+                                className="mt-auto px-3 py-1.5 text-sm border rounded-md border-gray-300 text-gray-800 hover:bg-gray-50"
                             >
-                                Cancel
+                                Download
                             </button>
                         </div>
+
+                        {/* Framed */}
+                        <div className="rounded-lg border border-gray-900 bg-gray-900 p-4 flex flex-col justify-between shadow-md">
+                            <div className="text-center">
+                                <h3 className="text-sm font-semibold text-white">
+                                    Framed
+                                </h3>
+                                <p className="text-xs text-gray-300 mt-1">
+                                    Presentation-ready mockup
+                                </p>
+                            </div>
+
+                            <img
+                                src="/svg/frame-white.svg"
+                                className="max-h-12 object-contain mx-auto my-5"
+                            />
+
+                            <button
+                                onClick={async () => {
+                                    setShowDownloadPopup(false);
+
+                                    notify('info', 'Downloading...');
+
+                                    downloadCooldown.run(() =>
+                                        downloadFramed(posterToDownload)
+                                    );
+                                }}
+                                className="px-5 py-1.5 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-sm"
+                            >
+                                Download
+                            </button>
+                        </div>
+
+                    </div>
+
+                    <button
+                        onClick={() => {
+                            setShowDownloadPopup(false);
+                            setPosterToDownload(null);
+                        }}
+                        className="w-full px-3 py-1.5 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    >
+                        Cancel
+                    </button>
+
+                </div>
+            </div>
+        )}
+
+        {/* Delete Modal */}
+        {showDeletePopup && (
+            <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-[9999]">
+                <div className="p-4 rounded-lg bg-gray-100 text-center">
+                    <p className="mb-4 text-gray-800">
+                        Are you sure you want to delete this poster?
+                    </p>
+                    <div className="flex gap-2 justify-center">
+                        <button
+                            onClick={handleConfirmDelete}
+                            className="px-4 py-2 bg-red-600 text-white rounded"
+                        >
+                            Delete
+                        </button>
+                        <button
+                            onClick={() => {
+                                setShowDeletePopup(false);
+                                setPosterToDelete(null);
+                            }}
+                            className="px-4 py-2 bg-gray-300 rounded"
+                        >
+                            Cancel
+                        </button>
                     </div>
                 </div>
-            )}
-
-
-        </div>
-    )
+            </div>
+        )}
+    </div>
+);
 }
 
 

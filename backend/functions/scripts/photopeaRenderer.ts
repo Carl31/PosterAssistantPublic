@@ -25,6 +25,9 @@ type PosterRenderInput = {
     hexElements: string[]
     accentHexValue?: string | null
     accentHexElements?: string[]
+    psdFileReverseUrl?: string | null
+    alignDefault?: 'left' | 'right' | null
+    alignChosen?: 'left' | 'right' | null
     onProgress: (progress: string) => void
 }
 
@@ -42,6 +45,9 @@ export const renderPoster = async ({
   hexElements,
   accentHexValue,
   accentHexElements,
+  psdFileReverseUrl,
+  alignDefault,
+  alignChosen,
   onProgress,
 }: PosterRenderInput): Promise<Buffer> => {
   const browser = await puppeteer.launch({
@@ -93,6 +99,9 @@ export const renderPoster = async ({
       hexElements: hexElements.join(','),
       accentHexValue: accentHexValue != null && accentHexValue !== '' ? String(accentHexValue) : '',
       accentHexElements: Array.isArray(accentHexElements) ? accentHexElements.join(',') : '',
+      psdReverse: psdFileReverseUrl != null && psdFileReverseUrl !== '' ? String(psdFileReverseUrl) : '',
+      alignDefault: alignDefault != null ? String(alignDefault) : '',
+      alignChosen: alignChosen != null ? String(alignChosen) : '',
     });
 
     console.log(fontsUsed);

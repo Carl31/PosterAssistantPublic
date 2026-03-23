@@ -41,6 +41,9 @@ export const generatePosterOnJobCreate = functions
         hexElements = [],
         accentHexValue,
         accentHexElements,
+        psdFileReverseUrl,
+        alignDefault,
+        alignChosen,
       } = data;
 
       // ✅ 1. Verify token and extract UID
@@ -78,6 +81,9 @@ export const generatePosterOnJobCreate = functions
         hexElements,
         accentHexValue,
         accentHexElements,
+        psdFileReverseUrl,
+        alignDefault,
+        alignChosen,
         onProgress: (progress) =>
           updateJobStatus(jobId, {progress, status: "in-progress"}),
       });

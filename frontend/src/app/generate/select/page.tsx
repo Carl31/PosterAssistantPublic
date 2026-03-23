@@ -42,7 +42,7 @@ const archivoBlack = Archivo_Black({
 
 export default function SelectTemplatePage() {
     const [templates, setTemplates] = useState<Template[]>([])
-    const { selectedTemplate, setSelectedTemplate, setInstagramHandle, setUserPosterImgDownloadUrl, userPosterImgDownloadUrl, userImgDownloadUrl, templateIndex, setTemplateIndex, setGeminiChecked, setCarDetails, credits, setCredits, hexValue, setHexValue, accentHexValue, setAccentHexValue, savedPosition, setSavedPosition, savedScale, setSavedScale, savedRotation, setSavedRotation, setIsSupporter, isSupporter, setHasPackUnlocks, hasPackUnlocks, state } = usePosterWizard()
+    const { selectedTemplate, setSelectedTemplate, setInstagramHandle, setUserPosterImgDownloadUrl, userPosterImgDownloadUrl, userImgDownloadUrl, templateIndex, setTemplateIndex, setGeminiChecked, setCarDetails, credits, setCredits, hexValue, setHexValue, accentHexValue, setAccentHexValue, alignChosen, setAlignChosen, savedPosition, setSavedPosition, savedScale, setSavedScale, savedRotation, setSavedRotation, setIsSupporter, isSupporter, setHasPackUnlocks, hasPackUnlocks, state } = usePosterWizard()
     const { user } = useAuth()
     // eslint-disable-next-line @typescript-eslint/naming-convention
     const [favoriteTemplates, setFavoriteTemplates] = useState<string[]>([])
@@ -51,6 +51,8 @@ export default function SelectTemplatePage() {
 
     const [colorOpen, setColorOpen] = useState(false);
     const [colorPickerMode, setColorPickerMode] = useState<'primary' | 'accent'>('primary');
+
+    const [showAdvanced, setShowAdvanced] = useState(false);
 
     const searchParams = useSearchParams();
     const imageUploaded_flag = searchParams!.get('upload') === 'true';
@@ -123,6 +125,21 @@ export default function SelectTemplatePage() {
     const tapStart = useRef<{ x: number; y: number } | null>(null);
     const TAP_THRESHOLD = 5; // px, adjust if needed
 
+
+    const defaultAlign = selectedTemplate?.alignDefault;
+    const isReversed =
+        selectedTemplate?.alignSelect &&
+        alignChosen != null &&
+        defaultAlign != null &&
+        alignChosen !== defaultAlign;
+
+    const previewImageUrl = isReversed
+        ? currentTemplate?.previewImageReverseUrl
+        : currentTemplate?.previewImageUrl;
+
+    const previewHexUrl = isReversed
+        ? selectedTemplate?.previewHexReverseUrl
+        : selectedTemplate?.previewHexUrl;
 
 
 
@@ -211,7 +228,7 @@ export default function SelectTemplatePage() {
 
     async function applyHexFillToOverlay(hex: string) {
         const canvas = overlayCanvasRef.current;
-        if (!canvas || !selectedTemplate?.previewHexUrl) return;
+        if (!canvas || !previewHexUrl) return;
 
         const baseImg = baseImgRef.current;
         if (!baseImg?.naturalWidth) return; // ensure base image is loaded
@@ -227,7 +244,7 @@ export default function SelectTemplatePage() {
 
         const img = new Image();
         img.crossOrigin = "anonymous";
-        img.src = selectedTemplate.previewHexUrl;
+        img.src = previewHexUrl;
 
         await new Promise<void>((resolve, reject) => {
             img.onload = () => resolve();
@@ -280,7 +297,7 @@ export default function SelectTemplatePage() {
     useEffect(() => {
         const canvas = overlayCanvasRef.current;
         const baseImg = baseImgRef.current;
-        const overlayUrl = selectedTemplate?.previewHexUrl;
+        const overlayUrl = previewHexUrl;
         if (!canvas || !baseImg || !overlayUrl) return;
 
         const drawOverlay = async () => {
@@ -315,7 +332,7 @@ export default function SelectTemplatePage() {
         } else {
             drawOverlay();
         }
-    }, [hexValue, selectedTemplate?.previewHexUrl]);
+    }, [hexValue, previewHexUrl]);
 
     useEffect(() => {
         const canvas = accentOverlayCanvasRef.current;
@@ -376,7 +393,7 @@ export default function SelectTemplatePage() {
     // whenever user selects a color
     useEffect(() => {
         applyHexFillToOverlay(hexValue);
-    }, [hexValue, selectedTemplate?.previewHexUrl]);
+    }, [hexValue, previewHexUrl]);
 
     useEffect(() => {
         if (accentHexValue != null && selectedTemplate?.previewHexAccentUrl) {
@@ -580,6 +597,7 @@ export default function SelectTemplatePage() {
         //setSelectedTemplate(filteredTemplates[newIndex]);
         setHexValue('');
         setAccentHexValue(null);
+        setAlignChosen(null);
     };
 
 
@@ -647,15 +665,13 @@ export default function SelectTemplatePage() {
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, exportWidth, exportHeight);
 
-        // Transform to match frontend
-        ctx.translate(
-            exportWidth / 2 + position.x / baseScale,
-            exportHeight / 2 + position.y / baseScale
-        );
-
+        // Match CSS: transform-origin center; translate → scale → rotate on the <img>.
+        // Pinch zoom is already in exportWidth/exportHeight via exportScale (baseScale * scale);
+        // do not ctx.scale(scale) or zoom is applied twice.
+        // Canvas applies transforms right-to-left on geometry: T_center * R * T_pan * v  ≡  R * (v + pan) from center.
+        ctx.translate(exportWidth / 2, exportHeight / 2);
         ctx.rotate((rotation * Math.PI) / 180);
-        ctx.scale(scale, scale);
-
+        ctx.translate(position.x / baseScale, position.y / baseScale);
 
         ctx.drawImage(
             img,
@@ -776,10 +792,19 @@ export default function SelectTemplatePage() {
         setSelectedTemplate(filteredTemplates[index]);
     }, [index, filteredTemplates, setSelectedTemplate]);
 
+    useEffect(() => {
+        if (selectedTemplate?.alignSelect === true && selectedTemplate.alignDefault) {
+            setAlignChosen(selectedTemplate.alignDefault);
+        } else {
+            setAlignChosen(null);
+        }
+    }, [selectedTemplate?.id, selectedTemplate?.alignSelect, selectedTemplate?.alignDefault, setAlignChosen]);
+
 
     const handleBack = () => {
         setHexValue('');
         setAccentHexValue(null);
+        setAlignChosen(null);
         setCarDetails({ make: '', model: '', year: '' })
         setSavedPosition(null);
         setSavedRotation(null);
@@ -1033,7 +1058,7 @@ export default function SelectTemplatePage() {
                                 <AnimatePresence initial={false} custom={direction}>
                                     <motion.img
                                         key={currentTemplate.id}
-                                        src={currentTemplate.previewImageUrl}
+                                        src={previewImageUrl}
                                         alt={currentTemplate.name}
                                         className="absolute inset-0 w-full h-full object-cover pointer-events-none"
                                         custom={direction}
@@ -1052,7 +1077,7 @@ export default function SelectTemplatePage() {
                             )}
 
                             {/* Colorable overlay */}
-                            {selectedTemplate?.previewHexUrl && hexValue !== "" && (
+                            {previewHexUrl && hexValue !== "" && (
                                 <motion.canvas
                                     ref={overlayCanvasRef}
                                     className="absolute inset-0 w-full h-full pointer-events-none z-20"
@@ -1076,138 +1101,221 @@ export default function SelectTemplatePage() {
 
 
 
-
-
-
-
-                        {/* Template label */}
-                        <div className="mt-6 mx-auto flex flex-col gap-2 max-w-md">
-                            <div className="grid grid-cols-3 items-center bg-black/80 text-white px-4 py-1 rounded-lg text-sm">
-                                {/* Left: color picker box */}
-                                {selectedTemplate?.hexElements != null ? (
-                                    <div className="flex justify-center relative">
-                                        <div
-                                            className="h-7 w-7 border rounded cursor-pointer"
-                                            style={{
-                                                background: hexValue
-                                                    ? hexValue
-                                                    : "linear-gradient(45deg, #FFC1C1, #FFD8A8, #FFF3B0, #C1E1C1, #B0E0FF)"
-                                            }}
-                                            onClick={() => {
-                                                if (!editMode) {
-                                                    setColorPickerMode('primary');
-                                                    setColorOpen(true);
-                                                }
-                                            }}
-                                        />
-                                    </div>
-
-                                ) : (
-                                    <div className="flex justify-center"></div>
-                                )}
-
-
-                                {/* Center: template name */}
-                                <div className="text-center flex items-center justify-center h-8">
-                                    {currentTemplate?.name}
-                                </div>
-
-                                {/* Right: disabled / invisible box */}
-                                <div className="flex justify-center">
-                                    {selectedTemplate?.hexElements != null && hexValue !== "" ? (
-                                        <img src="/svg/xmark_gray.svg" alt="Close" className="relative w-6 h-6 cursor-pointer" onClick={() => setHexValue("")} />
-                                    ) : (
-                                        <div className="h-8 w-8 border border-white rounded opacity-0 pointer-events-none" />
-                                    )}
-                                </div>
-                            </div>
-
-                            {selectedTemplate?.accentColourSelect === true && (
-                                <div className="grid grid-cols-3 items-center bg-black/80 text-white px-4 py-1 rounded-lg text-sm">
-                                    <div className="flex justify-center relative">
-                                        <div
-                                            className="h-7 w-7 border rounded cursor-pointer"
-                                            style={{
-                                                background: accentHexValue
-                                                    ? accentHexValue
-                                                    : "linear-gradient(45deg, #FFC1C1, #FFD8A8, #FFF3B0, #C1E1C1, #B0E0FF)"
-                                            }}
-                                            onClick={() => {
-                                                if (!editMode) {
-                                                    setColorPickerMode('accent');
-                                                    setColorOpen(true);
-                                                }
-                                            }}
-                                        />
-                                    </div>
-                                    <div className="text-center flex items-center justify-center h-8 text-xs text-gray-300">
-                                        Accent
-                                    </div>
-                                    <div className="flex justify-center">
-                                        {accentHexValue !== null ? (
-                                            <img src="/svg/xmark_gray.svg" alt="Clear accent" className="relative w-6 h-6 cursor-pointer" onClick={() => setAccentHexValue(null)} />
-                                        ) : (
-                                            <div className="h-8 w-8 border border-white rounded opacity-0 pointer-events-none" />
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-
-
-
-                    </div>
-
-                    {/* Custom spectrum popup */}
-                    <div className="flex justify-center relative" ref={containerRef}>
-                        {/* Trigger square */}
-
-                        {/* Color picker popup */}
-                        {/* Custom spectrum popup wrapper */}
+                        {/* Custom spectrum popup */}
                         <div className="flex justify-center relative" ref={containerRef}>
-                            {/* Only render the popup if open */}
+                            {/* Trigger square */}
 
-                            <div
-                                className={`
+                            {/* Color picker popup */}
+                            {/* Custom spectrum popup wrapper */}
+                            <div className="flex justify-center relative" ref={containerRef}>
+                                {/* Only render the popup if open */}
+
+                                <div
+                                    className={`
     fixed inset-x-0 bottom-0
     bg-white/60 backdrop-blur-xs
     z-30
     transition-opacity duration-300 top-[0px]
     ${colorOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}
   `}
-                                onClick={(e) => {
-                                    e.stopPropagation();          // prevent tap from reaching image
-                                    setColorOpen(false);          // close the picker
-                                }}
-                            />
+                                    onClick={(e) => {
+                                        e.stopPropagation();          // prevent tap from reaching image
+                                        setColorOpen(false);          // close the picker
+                                    }}
+                                />
 
 
-                            <div
-                                className={`absolute left-1/2 -top-20 transform -translate-x-1/2 z-50 p-1 bg-black/90 rounded mt-2 w-[90vw] max-w-[320px]
+                                <div
+                                    className={`absolute left-1/2 -top-20 transform -translate-x-1/2 z-50 p-1 bg-black/90 rounded w-[90vw] max-w-[320px]
 h-[120px] sm:h-[140px] md:h-[160px]
 sm:mx-4
 md:mx-0
-transition-all duration-300 ease-out
+transition-all duration-300 ease-out mt-25
 ${colorOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"}`}
-                                onClick={(e) => e.stopPropagation()}
-                            >
+                                    onClick={(e) => e.stopPropagation()}
+                                >
 
-                                <canvas
-                                    ref={canvasRef}
-                                    width={300}
-                                    height={150}
-                                    className="cursor-crosshair w-full h-full"
-                                    onMouseDown={startPick}
-                                    onTouchStart={startPick}
-                                />
-                                <p className='text-xs text-gray-400 mt-2'>Tip: Hold and drag to pick a color.</p>
+                                    <canvas
+                                        ref={canvasRef}
+                                        width={300}
+                                        height={150}
+                                        className="cursor-crosshair w-full h-full"
+                                        onMouseDown={startPick}
+                                        onTouchStart={startPick}
+                                    />
+                                    <p className='text-xs text-gray-400 mt-2'>Tip: Hold and drag to pick a color.</p>
+                                </div>
+
                             </div>
+
 
                         </div>
 
 
+
+                        {/* Template Controls */}
+                        <div className="mt-6 mx-auto max-w-md">
+
+    {/* Unified Control Card */}
+    <div
+        className={`rounded-2xl overflow-hidden shadow-lg border border-white/10 
+        bg-gradient-to-br from-black/80 to-black/60 backdrop-blur-sm
+        transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
+        ${showAdvanced ? 'max-w-md' : 'max-w-[340px]'}`}
+    >
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+
+            {/* Primary colour */}
+            <div className="flex items-center gap-3 min-w-0">
+                <div
+                    className={`h-9 w-9 rounded-lg border transition-all shadow-inner shrink-0
+                    ${selectedTemplate?.hexElements ? 'cursor-pointer' : 'opacity-30 pointer-events-none'}`}
+                    style={{
+                        background: hexValue
+                            ? hexValue
+                            : "linear-gradient(45deg, #ff6b6b, #f59e0b, #10b981, #3b82f6, #8b5cf6)"
+                    }}
+                    onClick={() => {
+                        if (!editMode && selectedTemplate?.hexElements) {
+                            setColorPickerMode('primary');
+                            setColorOpen(true);
+                        }
+                    }}
+                />
+
+                {/* Animated "Primary" label */}
+                <span
+                    className={`text-xs uppercase tracking-wider text-white/60 whitespace-nowrap
+                    transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
+                    ${showAdvanced ? 'opacity-100 translate-x-0 ml-1' : 'opacity-0 -translate-x-2 ml-0 w-0 overflow-hidden'}`}
+                >
+                    Primary
+                </span>
+            </div>
+
+            {/* Template name */}
+            <div className="text-center flex-1 mx-3 text-sm font-semibold tracking-wide text-white truncate">
+                {currentTemplate?.name}
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-2 shrink-0">
+
+                <button
+                    onClick={() => setHexValue("")}
+                    disabled={!hexValue || !selectedTemplate?.hexElements}
+                    className="w-8 h-8 flex items-center justify-center rounded-md border border-white/10 
+                    hover:bg-white/10 transition disabled:opacity-20 disabled:pointer-events-none"
+                >
+                    <img src="/svg/xmark_gray.svg" className="w-4 h-4" />
+                </button>
+
+                <button
+                    onClick={() => setShowAdvanced(v => !v)}
+                    className="w-8 h-8 flex items-center justify-center rounded-md 
+                    bg-gradient-to-r from-cyan-600 to-blue-700 text-white text-sm font-bold shadow-md
+                    transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
+                >
+                    {showAdvanced ? '−' : '+'}
+                </button>
+            </div>
+        </div>
+
+        {/* Expandable Section */}
+        <div
+            className={`overflow-hidden
+            transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
+            ${showAdvanced ? 'max-h-48 opacity-100' : 'max-h-0 opacity-0'}`}
+        >
+            <div className="divide-y divide-white/10">
+
+                {/* Accent */}
+                <div className="flex items-center justify-between px-4 py-3">
+                    <div className="flex items-center gap-3">
+                        <div
+                            className={`h-8 w-8 rounded-md border
+                            ${selectedTemplate?.accentColourSelect ? 'cursor-pointer' : 'opacity-30 pointer-events-none'}`}
+                            style={{
+                                background: accentHexValue
+                                    ? accentHexValue
+                                    : "linear-gradient(45deg, #ff6b6b, #f59e0b, #10b981, #3b82f6, #8b5cf6)"
+                            }}
+                            onClick={() => {
+                                if (!editMode && selectedTemplate?.accentColourSelect) {
+                                    setColorPickerMode('accent');
+                                    setColorOpen(true);
+                                }
+                            }}
+                        />
+                        <span className="text-xs uppercase tracking-wider text-white/60">
+                            Accent
+                        </span>
                     </div>
+
+                    <button
+                        onClick={() => setAccentHexValue(null)}
+                        disabled={!accentHexValue || !selectedTemplate?.accentColourSelect}
+                        className="w-8 h-8 flex items-center justify-center rounded-md border border-white/10 
+                        hover:bg-white/10 transition disabled:opacity-20 disabled:pointer-events-none"
+                    >
+                        <img src="/svg/xmark_gray.svg" className="w-4 h-4" />
+                    </button>
+                </div>
+
+                {/* Alignment */}
+                <div className="flex items-center justify-between px-4 py-3">
+                    <div className="flex items-center gap-3">
+                        <div
+                            className={`inline-flex rounded-lg overflow-hidden border border-white/20 bg-white/[0.05] p-[2px]
+                            ${(!selectedTemplate?.alignSelect || !selectedTemplate?.alignDefault) ? 'opacity-30 pointer-events-none' : ''}`}
+                        >
+                            <button
+                                type="button"
+                                disabled={editMode}
+                                className={`px-3 py-1 text-xs font-medium rounded-md transition-all
+                                ${(alignChosen ?? selectedTemplate?.alignDefault) === 'left'
+                                        ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow'
+                                        : 'text-white/70 hover:bg-white/10'}
+                                disabled:opacity-50`}
+                                onClick={() => setAlignChosen('left')}
+                            >
+                                Left
+                            </button>
+
+                            <button
+                                type="button"
+                                disabled={editMode}
+                                className={`px-3 py-1 text-xs font-medium rounded-md transition-all
+                                ${(alignChosen ?? selectedTemplate?.alignDefault) === 'right'
+                                        ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow'
+                                        : 'text-white/70 hover:bg-white/10'}
+                                disabled:opacity-50`}
+                                onClick={() => setAlignChosen('right')}
+                            >
+                                Right
+                            </button>
+                        </div>
+
+                        <span className="text-xs uppercase tracking-wider text-white/60">
+                            Align
+                        </span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+
+
+                    </div>
+
+
 
 
 
@@ -1235,8 +1343,10 @@ ${colorOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-eve
                                     onClick={() => {
                                         setHexValue('');
                                         setAccentHexValue(null);
+                                        setAlignChosen(null);
                                         setSelectedStyle(style);
                                         setSelectedTemplate(null);
+                                        setShowAdvanced(false);
                                         if (style === "Brands") {
                                             if (showBrandsPopup) {
                                                 window.scrollTo({

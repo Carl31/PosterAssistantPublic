@@ -7,6 +7,8 @@ import { auth } from '@/firebase/client'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import LoadingPage from '@/components/LoadingPage'
+import { sendEmailVerification } from 'firebase/auth';
+
 
 
 export default function SignupPage() {
@@ -20,17 +22,20 @@ export default function SignupPage() {
     setLoading(false)
   }, [])
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    try {
-      await createUserWithEmailAndPassword(auth, email, password)
-      router.push('/account/dashboard?signup=true')
-    } catch (err: any) {
-      alert(err.message || 'Signup failed.')
-      setLoading(false)
-    }
+const handleSignup = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
+  try {
+    const userCred = await createUserWithEmailAndPassword(auth, email, password);
+
+    await sendEmailVerification(userCred.user);
+
+    router.push('/verify-email');
+  } catch (err: any) {
+    alert(err.message || 'Signup failed.');
+    setLoading(false);
   }
+};
 
   if (loading) {
     return (

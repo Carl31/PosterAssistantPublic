@@ -41,6 +41,8 @@ type PosterWizardContextType = {
   setHexValue: (value: string) => void
   accentHexValue: string | null
   setAccentHexValue: React.Dispatch<React.SetStateAction<string | null>>
+  alignChosen: 'left' | 'right' | null
+  setAlignChosen: React.Dispatch<React.SetStateAction<'left' | 'right' | null>>
   userPosterImgDownloadUrl: string | null
   setUserPosterImgDownloadUrl: (url: string | null) => void
   savedPosition: { x: number, y: number } | null
@@ -79,6 +81,7 @@ export const PosterWizardProvider = ({ children }: { children: React.ReactNode }
   const [credits, setCredits] = useState<Credit>({ carJam: 0, ai: 0, posterGen: 0 })
   const [hexValue, setHexValue] = useState('')
   const [accentHexValue, setAccentHexValue] = useState<string | null>(null)
+  const [alignChosen, setAlignChosen] = useState<'left' | 'right' | null>(null)
   const [userPosterImgDownloadUrl, setUserPosterImgDownloadUrl] = useState<string | null>(null)
 
   const [savedPosition, setSavedPosition] = useState<{ x: number, y: number } | null>(null)
@@ -128,6 +131,8 @@ export const PosterWizardProvider = ({ children }: { children: React.ReactNode }
       setHexValue,
       accentHexValue,
       setAccentHexValue,
+      alignChosen,
+      setAlignChosen,
       userPosterImgDownloadUrl,
       setUserPosterImgDownloadUrl,
       savedPosition,
