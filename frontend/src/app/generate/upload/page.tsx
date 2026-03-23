@@ -114,7 +114,10 @@ export default function UploadImageStep() {
 
   const activePreviewRef = useRef<string | null>(null)
 
-  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
+  const startPointRef = useRef<{ x: number; y: number } | null>(null);
+  const movedRef = useRef(false);
+  const MOVE_THRESHOLD = 10;
 
   /* ---------- Auth ---------- */
 
@@ -312,26 +315,66 @@ export default function UploadImageStep() {
 
   const pressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleDeleteImage = async (imageUrl: string) => {
+  const handleDeleteImage = async (thumbUrl: string) => {
     try {
-      // Convert the download URL into a storage reference
-      const imageRef = ref(storage, imageUrl);
+      const decodedUrl = decodeURIComponent(thumbUrl);
+      const parts = decodedUrl.split("/");
+      const fileNameWithToken = parts[parts.length - 1];
+      const fileName = fileNameWithToken.split("?")[0];
 
-      // Delete from Firebase Storage
-      await deleteObject(imageRef);
+      const isThumb = fileName.includes("_thumb");
+      const baseName = isThumb
+        ? fileName.replace("_thumb", "")
+        : fileName;
 
-      // Optional: remove from local state if needed
-      setUserImages(prev => prev.filter(img => img.thumbUrl !== imageUrl));
+      const userPath = `user_uploads/${user?.uid}`;
+
+      const fullPath = `${userPath}/${baseName}`;
+      const thumbPath = `${userPath}/${baseName.replace(
+        /\.(?=[^.]+$)/,
+        "_thumb."
+      )}`;
+
+      const fullRef = ref(storage, fullPath);
+      const thumbRef = ref(storage, thumbPath);
+
+      await Promise.all([
+        deleteObject(fullRef),
+        deleteObject(thumbRef),
+      ]);
+
+      // Optimistic local update
+      setUserImages((prev) =>
+        prev.filter((img) => img.thumbUrl !== thumbUrl)
+      );
 
     } catch (error) {
       console.error("Error deleting image:", error);
     }
   };
 
-  const startPress = (thumbUrl: string) => {
+  const startPress = (thumbUrl: string, e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    startPointRef.current = { x: touch.clientX, y: touch.clientY };
+    movedRef.current = false;
+
     pressTimerRef.current = setTimeout(() => {
+      if (movedRef.current) return;
       setDeleteTarget(thumbUrl);
     }, 600);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!startPointRef.current) return;
+
+    const touch = e.touches[0];
+    const dx = Math.abs(touch.clientX - startPointRef.current.x);
+    const dy = Math.abs(touch.clientY - startPointRef.current.y);
+
+    if (dx > MOVE_THRESHOLD || dy > MOVE_THRESHOLD) {
+      movedRef.current = true;
+      cancelPress();
+    }
   };
 
   const cancelPress = () => {
@@ -448,7 +491,8 @@ export default function UploadImageStep() {
                     src={thumbUrl}
                     alt="User Upload"
                     onClick={() => handleSelectExisting(thumbUrl, originalUrl)}
-                    onTouchStart={() => startPress(thumbUrl)}
+                    onTouchStart={(e) => startPress(thumbUrl, e)}
+                    onTouchMove={handleTouchMove}
                     onTouchEnd={cancelPress}
                     onTouchCancel={cancelPress}
                     className="rounded-xl object-cover w-full h-60 cursor-pointer transform transition active:scale-95 hover:brightness-105 focus:outline-none focus:ring-2 focus:ring-cyan-300"
