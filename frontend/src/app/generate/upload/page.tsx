@@ -5,8 +5,9 @@
 
 import { motion } from 'framer-motion'
 import { usePosterWizard } from '@/context/PosterWizardContext'
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react';
 import {
+  deleteObject,
   getStorage,
   ref,
   uploadBytes,
@@ -112,6 +113,8 @@ export default function UploadImageStep() {
   const cameFromSelectPage = searchParams?.get('imageUploaded') === 'true'
 
   const activePreviewRef = useRef<string | null>(null)
+
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   /* ---------- Auth ---------- */
 
@@ -307,6 +310,46 @@ export default function UploadImageStep() {
     }
   }
 
+  const pressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleDeleteImage = async (imageUrl: string) => {
+    try {
+      // Convert the download URL into a storage reference
+      const imageRef = ref(storage, imageUrl);
+
+      // Delete from Firebase Storage
+      await deleteObject(imageRef);
+
+      // Optional: remove from local state if needed
+      // setUserImages(prev => prev.filter(img => img.thumbUrl !== imageUrl));
+
+    } catch (error) {
+      console.error("Error deleting image:", error);
+    }
+  };
+
+  const startPress = (thumbUrl: string) => {
+    pressTimerRef.current = setTimeout(() => {
+      setDeleteTarget(thumbUrl);
+    }, 600);
+  };
+
+  const cancelPress = () => {
+    if (pressTimerRef.current) {
+      clearTimeout(pressTimerRef.current);
+      pressTimerRef.current = null;
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    await handleDeleteImage(deleteTarget);
+    setDeleteTarget(null);
+  };
+
+  const cancelDelete = () => {
+    setDeleteTarget(null);
+  };
 
   /* ---------- Render ---------- */
 
@@ -405,6 +448,9 @@ export default function UploadImageStep() {
                     src={thumbUrl}
                     alt="User Upload"
                     onClick={() => handleSelectExisting(thumbUrl, originalUrl)}
+                    onTouchStart={() => startPress(thumbUrl)}
+                    onTouchEnd={cancelPress}
+                    onTouchCancel={cancelPress}
                     className="rounded-xl object-cover w-full h-60 cursor-pointer transform transition active:scale-95 hover:brightness-105 focus:outline-none focus:ring-2 focus:ring-cyan-300"
                   />
                 ))}
@@ -425,6 +471,32 @@ export default function UploadImageStep() {
             Back
           </button>
 
+        </div>
+      )}
+
+      {deleteTarget && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-sm shadow-xl mx-2">
+            <p className="text-gray-800 text-center mb-6">
+              Do you want to delete this image permanently?
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={confirmDelete}
+                className="flex-1 px-4 py-2 rounded-lg bg-red-500 text-white font-semibold hover:brightness-110 transition"
+              >
+                Delete
+              </button>
+
+              <button
+                onClick={cancelDelete}
+                className="flex-1 px-4 py-2 rounded-lg bg-gray-200 text-gray-800 font-semibold hover:bg-gray-300 transition"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

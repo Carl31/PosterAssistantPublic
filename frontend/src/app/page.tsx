@@ -12,6 +12,7 @@ import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
 import { signInWithEmailAndPassword } from 'firebase/auth'
 import dynamic from 'next/dynamic';
 import { notify } from '@/utils/notify'
+import { sendPasswordResetEmail } from 'firebase/auth';
 import { Anton } from 'next/font/google';
 const anton = Anton({
   weight: '400',        // required because Anton isn't a variable font
@@ -34,7 +35,8 @@ export default function Page() {
   const [agreed, setAgreed] = useState(false); // track checkbox state
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
-
+  const [showResetPopup, setShowResetPopup] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
 
 
 
@@ -73,7 +75,10 @@ export default function Page() {
     setLoading(true)
     try {
       const userCred = await createUserWithEmailAndPassword(auth, email, password);
-      await sendEmailVerification(userCred.user);
+      await sendEmailVerification(userCred.user, {
+        url: 'https://sickshotnz.app/verify-email-success',
+        handleCodeInApp: true,
+      });
 
       router.push('/verify-email');
     } catch (err: any) {
@@ -196,6 +201,20 @@ export default function Page() {
 
   const imageScale =
     1 - (1 - MIN_SCALE) * progress * SCALE_MULTIPLIER;
+
+
+  const handleSendReset = async () => {
+    try {
+      await sendPasswordResetEmail(auth, resetEmail, {
+        url: 'https://sickshotsnz.app/',
+        handleCodeInApp: true,
+      });
+      notify('success', 'Password reset email sent');
+      setShowResetPopup(false);
+    } catch (err: any) {
+      notify('error', 'Failed to send reset email: ' + err.message);
+    }
+  };
 
   return (
     <section className="fixed inset-0 overflow-hidden">
@@ -431,6 +450,15 @@ export default function Page() {
             onChange={(e) => setPassword(e.target.value)}
             className="w-full border p-2 rounded border-black text-black"
           />
+          <div className="w-full text-right -mt-2">
+            <button
+              type="button"
+              onClick={() => setShowResetPopup(true)}
+              className="text-blue-600 underline text-xs"
+            >
+              Forgot password
+            </button>
+          </div>
 
           <button type="submit" className="w-full px-3 py-2 mt-3 rounded-lg bg-black text-white hover:bg-gray-700 transition-colors text-sm">
             Login
@@ -453,6 +481,44 @@ export default function Page() {
           </button>
         </form>
       </div>
+
+      {showResetPopup && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm mx-2">
+            <h2 className="text-lg font-semibold mb-3 text-black">
+              Reset password
+            </h2>
+
+            <p className="text-sm text-gray-600 mb-3">
+              Please enter your email to reset password
+            </p>
+
+            <input
+              type="email"
+              placeholder="Email"
+              value={resetEmail}
+              onChange={(e) => setResetEmail(e.target.value)}
+              className="w-full border p-2 rounded border-black text-black mb-4"
+            />
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowResetPopup(false)}
+                className="px-4 py-2 rounded-lg bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 transition"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={handleSendReset}
+                className="px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-medium hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-cyan-300 transition"
+              >
+                Send
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
