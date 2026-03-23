@@ -321,7 +321,7 @@ export default function UploadImageStep() {
       await deleteObject(imageRef);
 
       // Optional: remove from local state if needed
-      // setUserImages(prev => prev.filter(img => img.thumbUrl !== imageUrl));
+      setUserImages(prev => prev.filter(img => img.thumbUrl !== imageUrl));
 
     } catch (error) {
       console.error("Error deleting image:", error);
