@@ -72,16 +72,13 @@ export default function Page() {
 
     setLoading(true)
     try {
-      await createUserWithEmailAndPassword(auth, email, password)
       const userCred = await createUserWithEmailAndPassword(auth, email, password);
       await sendEmailVerification(userCred.user);
 
       router.push('/verify-email');
-      //router.push('/account/dashboard?signup=true')
     } catch (err: any) {
-      //alert(err.message || 'Signup failed.')
-      setLoading(false)
-      notify('error', 'Signup failed : ' + err.message)
+      setLoading(false);
+      notify('error', 'Signup failed : ' + err.message);
     }
   }
 
