@@ -141,6 +141,9 @@ export default function SelectTemplatePage() {
         ? selectedTemplate?.previewHexReverseUrl
         : selectedTemplate?.previewHexUrl;
 
+    const previewHexAccentUrl = isReversed
+        ? selectedTemplate?.previewHexAccentReverseUrl
+        : selectedTemplate?.previewHexAccentUrl;
 
 
 
@@ -263,7 +266,7 @@ export default function SelectTemplatePage() {
 
     async function applyAccentHexFillToOverlay(hex: string) {
         const canvas = accentOverlayCanvasRef.current;
-        if (!canvas || !selectedTemplate?.previewHexAccentUrl) return;
+        if (!canvas || !previewHexAccentUrl) return;
 
         const baseImg = baseImgRef.current;
         if (!baseImg?.naturalWidth) return;
@@ -278,7 +281,7 @@ export default function SelectTemplatePage() {
 
         const img = new Image();
         img.crossOrigin = "anonymous";
-        img.src = selectedTemplate.previewHexAccentUrl;
+        img.src = previewHexAccentUrl;
 
         await new Promise<void>((resolve, reject) => {
             img.onload = () => resolve();
@@ -337,7 +340,7 @@ export default function SelectTemplatePage() {
     useEffect(() => {
         const canvas = accentOverlayCanvasRef.current;
         const baseImg = baseImgRef.current;
-        const overlayUrl = selectedTemplate?.previewHexAccentUrl;
+        const overlayUrl = previewHexAccentUrl;
         if (!canvas || !baseImg || !overlayUrl || accentHexValue == null) return;
 
         const drawAccentOverlay = async () => {
@@ -371,7 +374,7 @@ export default function SelectTemplatePage() {
         } else {
             drawAccentOverlay();
         }
-    }, [accentHexValue, selectedTemplate?.previewHexAccentUrl]);
+    }, [accentHexValue, previewHexAccentUrl]);
 
 
 
@@ -396,10 +399,10 @@ export default function SelectTemplatePage() {
     }, [hexValue, previewHexUrl]);
 
     useEffect(() => {
-        if (accentHexValue != null && selectedTemplate?.previewHexAccentUrl) {
+        if (accentHexValue != null && previewHexAccentUrl) {
             applyAccentHexFillToOverlay(accentHexValue);
         }
-    }, [accentHexValue, selectedTemplate?.previewHexAccentUrl]);
+    }, [accentHexValue, previewHexAccentUrl]);
 
     useEffect(() => {
         function handleClickOutside(e: MouseEvent | TouchEvent) {
@@ -1087,7 +1090,7 @@ export default function SelectTemplatePage() {
                                 />
                             )}
 
-                            {selectedTemplate?.previewHexAccentUrl && accentHexValue !== null && (
+                            {previewHexAccentUrl && accentHexValue !== null && (
                                 <motion.canvas
                                     ref={accentOverlayCanvasRef}
                                     className="absolute inset-0 w-full h-full pointer-events-none z-30"

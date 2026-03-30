@@ -12,6 +12,7 @@ export type Template = {
   previewHexUrl: string
   accentColourSelect?: boolean
   previewHexAccentUrl?: string
+  previewHexAccentReverseUrl?: string
   accentHexElements?: string[]
   alignSelect?: boolean
   alignDefault?: 'left' | 'right'
