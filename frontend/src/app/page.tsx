@@ -269,14 +269,14 @@ export default function Page() {
 
                 {/* Base image */}
                 <img
-                  src="https://res.cloudinary.com/dauhchstc/image/upload/v1766388928/fullimg_pi4f76.png"
+                  src="/fullimg.png"
                   className="absolute inset-0 h-full w-full object-contain"
                   alt=""
                 />
 
                 {/* Overlay image */}
                 <img
-                  src="https://res.cloudinary.com/dauhchstc/image/upload/v1768166789/fullimg2_wom5al.png"
+                  src="/fullimg2.png"
                   className="absolute inset-0 h-full w-full object-contain"
                   style={{ opacity: progress }}
                   alt=""
