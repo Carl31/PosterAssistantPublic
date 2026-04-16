@@ -175,6 +175,7 @@ export default function SelectTemplatePage() {
             },
 
             onPointerDown: ({ event }) => {
+                // console.log(selectedTemplate);
                 if (colorOpen) return;
 
                 const pointerEvent = event as PointerEvent;
@@ -844,6 +845,7 @@ export default function SelectTemplatePage() {
             const snapshot = await getDocs(query(collection(db, 'templates'), where('isActive', '==', true)));
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Template))
             setTemplates(data)
+            console.log(data);
             setLoading(false)
         }
         fetchTemplates()
