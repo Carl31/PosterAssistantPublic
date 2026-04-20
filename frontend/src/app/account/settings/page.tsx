@@ -171,6 +171,26 @@ export default function AccountSettingsPage() {
     }
 
     /* ---------------------------------------------------------------------
+      Helpers
+   --------------------------------------------------------------------- */
+
+    function isValidInstagram(handle: string): boolean {
+        if (handle.length < 1 || handle.length > 30) return false
+        if (!/^[a-zA-Z0-9._]+$/.test(handle)) return false
+        if (handle.startsWith('.') || handle.endsWith('.')) return false
+        if (/\.\./.test(handle)) return false
+        return true
+    }
+
+    function getInstagramError(handle: string): string {
+        if (handle.length > 30) return 'Handle must be 30 characters or fewer.'
+        if (handle.startsWith('.') || handle.endsWith('.')) return 'Handle cannot start or end with a period.'
+        if (/\.\./.test(handle)) return 'Handle cannot contain consecutive periods.'
+        if (!/^[a-zA-Z0-9._]+$/.test(handle)) return 'Handle can only contain letters, numbers, periods and underscores.'
+        return ''
+    }
+
+    /* ---------------------------------------------------------------------
        Navigation + session
     --------------------------------------------------------------------- */
     const handleBack = () => {
@@ -235,10 +255,34 @@ export default function AccountSettingsPage() {
                             <input
                                 type="text"
                                 value={instagramHandle}
-                                onChange={(e) => setInstagramHandle(e.target.value)}
-                                className="w-full mt-1 p-2 pl-8 rounded-md bg-gray-100 text-black border-2 border-gray-700 focus:ring-2 focus:ring-black"
+                                onChange={(e) => {
+                                    const val = e.target.value
+                                    // Strip any character that Instagram never allows, as they type
+                                    const sanitised = val.replace(/[^a-zA-Z0-9._]/g, '')
+                                    setInstagramHandle(sanitised)
+                                }}
+                                maxLength={30}
+                                placeholder="username"
+                                className={`w-full mt-1 p-2 pl-8 rounded-md bg-gray-100 text-black border-2 focus:ring-2 focus:ring-black transition-colors ${instagramHandle.length > 0 && !isValidInstagram(instagramHandle)
+                                        ? 'border-red-500'
+                                        : 'border-gray-700'
+                                    }`}
                             />
                         </div>
+
+                        {/* Validation message */}
+                        {instagramHandle.length > 0 && !isValidInstagram(instagramHandle) && (
+                            <p className="text-xs text-red-500 mt-1">
+                                {getInstagramError(instagramHandle)}
+                            </p>
+                        )}
+
+                        {/* Character count */}
+                        {/* {instagramHandle.length > 0 && (
+                            <p className="text-xs text-gray-400 mt-1 text-right">
+                                {instagramHandle.length}/30
+                            </p>
+                        )} */}
                     </div>
 
                     {/* Email display */}
@@ -252,7 +296,7 @@ export default function AccountSettingsPage() {
                         <button
                             type="button"
                             onClick={() => setShowSecurityDropdown((v) => !v)}
-                            className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition"
+                            className="flex items-center gap-2 text-sm text-gray-900 hover:text-gray-700 transition"
                         >
                             <motion.span
                                 animate={{ rotate: showSecurityDropdown ? 90 : 0 }}
@@ -288,7 +332,7 @@ export default function AccountSettingsPage() {
                         <button
                             type="button"
                             onClick={() => setShowCreditsDropdown((v) => !v)}
-                            className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition"
+                            className="flex items-center gap-2 text-sm text-gray-900 hover:text-gray-700 transition"
                         >
                             <motion.span
                                 animate={{ rotate: showCreditsDropdown ? 90 : 0 }}
@@ -313,7 +357,7 @@ export default function AccountSettingsPage() {
                         <button
                             type="button"
                             onClick={() => setShowDisplaySettings((v) => !v)}
-                            className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition"
+                            className="flex items-center gap-2 text-sm text-gray-900 hover:text-gray-700 transition"
                         >
                             <motion.span
                                 animate={{ rotate: showDisplaySettings ? 90 : 0 }}
@@ -328,7 +372,7 @@ export default function AccountSettingsPage() {
                             <div className="mt-3">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
-                                        <p className="text-sm text-black"><b>Show Instagram button</b></p>
+                                        <p className="text-sm text-gray-700"><b>Show Instagram button</b></p>
 
                                         <div className="relative">
                                             <button
@@ -377,8 +421,8 @@ export default function AccountSettingsPage() {
                         onClick={handleSaveChanges}
                         disabled={!canSave}
                         className={`w-full mt-4 py-2 rounded-md text-sm font-medium transition-all ${canSave
-                                ? 'bg-green-500 hover:bg-green-700 text-white'
-                                : 'bg-green-900/40 text-green-300 cursor-not-allowed'
+                            ? 'bg-green-500 hover:bg-green-700 text-white'
+                            : 'bg-green-900/40 text-green-300 cursor-not-allowed'
                             }`}
                     >
                         Save changes
