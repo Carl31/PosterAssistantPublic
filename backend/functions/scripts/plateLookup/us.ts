@@ -18,7 +18,7 @@ export async function lookupUS(
   for (let attempt = 1; attempt <= 3; attempt++) {
     const res = await fetch(url, {
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
     });
@@ -27,9 +27,9 @@ export async function lookupUS(
       const data = await res.json();
       if (data?.make) {
         return {
-          make:  data.make        ?? "",
-          model: data.model       ?? "",
-          year:  String(data.year ?? ""),
+          make: data.make ?? "",
+          model: data.model ?? "",
+          year: String(data.year ?? ""),
         };
       }
     }

@@ -229,4 +229,4 @@ export {generateCarDescriptionWithGemini} from '../scripts/carDescriptor';
 export {detectCarPlate} from "../scripts/plateAnalyzer";
 export {generatePosterOnJobCreate} from "../scripts/generatePoster";
 export {fetchPlateWithCarJam} from "../scripts/carJam";
-export { fetchPlateByRegion }   from "../scripts/fetchPlateByRegion"
+export {fetchPlateByRegion} from "../scripts/fetchPlateByRegion";

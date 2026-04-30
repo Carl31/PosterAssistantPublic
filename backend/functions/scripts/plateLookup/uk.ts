@@ -14,10 +14,10 @@ export async function lookupUK(
         {
           method: "POST",
           headers: {
-            "x-api-key":    apiKey,
+            "x-api-key": apiKey,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ registrationNumber: cleanPlate }),
+          body: JSON.stringify({registrationNumber: cleanPlate}),
         }
       );
     } catch (err) {
@@ -39,18 +39,18 @@ export async function lookupUK(
     }
 
     const data = await res.json() as {
-      make?:                     string;
-      yearOfManufacture?:        string;
+      make?: string;
+      yearOfManufacture?: string;
       monthOfFirstRegistration?: string;
     };
 
     if (data?.make) {
       return {
-        make:  data.make ?? "",
-        model: "",  // DVLA VES does not return model — user will enter manually
-        year:  data.yearOfManufacture
-                 ? String(data.yearOfManufacture)
-                 : (data.monthOfFirstRegistration?.slice(0, 4) ?? ""),
+        make: data.make ?? "",
+        model: "", // DVLA VES does not return model — user will enter manually
+        year: data.yearOfManufacture ?
+          String(data.yearOfManufacture) :
+          (data.monthOfFirstRegistration?.slice(0, 4) ?? ""),
       };
     }
 

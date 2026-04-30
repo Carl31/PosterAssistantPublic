@@ -18,9 +18,9 @@ export async function lookupAU(
       const data = await res.json();
       if (data?.make) {
         return {
-          make:  data.make                ?? "",
-          model: data.model               ?? "",
-          year:  data.year_of_manufacture ?? "",
+          make: data.make ?? "",
+          model: data.model ?? "",
+          year: data.year_of_manufacture ?? "",
         };
       }
     }
