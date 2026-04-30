@@ -18,6 +18,8 @@ import { doc, getFirestore, updateDoc, onSnapshot } from 'firebase/firestore'
 import { Credit } from '@/types/credit'
 import { motion } from 'framer-motion'
 import { notify } from '@/utils/notify'
+// Add to imports at the top
+import { usePlateRegion, REGION_OPTIONS, AU_STATES, US_STATES, type PlateRegion } from "@/app/hooks/usePlateRegion";
 
 export default function AccountSettingsPage() {
     const searchParams = useSearchParams()
@@ -69,6 +71,17 @@ export default function AccountSettingsPage() {
     const [newEmail, setNewEmail] = useState('')
 
     /* ---------------------------------------------------------------------
+       User region detection for plate lookup (CarJam vs alternatives)
+    --------------------------------------------------------------------- */
+    const { region: detectedRegion, plateState: detectedPlateState, saveRegion, savePlateState } = usePlateRegion(auth.currentUser?.uid);
+    const [plateRegion, setPlateRegion] = useState<PlateRegion>(null);
+    const [originalPlateRegion, setOriginalPlateRegion] = useState<PlateRegion>(null);
+    // Add these alongside the existing plateRegion state declarations
+    const [plateState, setPlateState] = useState<string>("");
+    const [originalPlateState, setOriginalPlateState] = useState<string>("");
+    const [showRegionDropdown, setShowRegionDropdown] = useState(false);
+
+    /* ---------------------------------------------------------------------
        Load user data (auth + Firestore sync)
     --------------------------------------------------------------------- */
     useEffect(() => {
@@ -105,21 +118,36 @@ export default function AccountSettingsPage() {
         return () => unsubAuth()
     }, [])
 
+    useEffect(() => {
+        if (detectedRegion !== null && plateRegion === null) {
+            setPlateRegion(detectedRegion);
+            setOriginalPlateRegion(detectedRegion);
+        }
+        if (detectedPlateState && plateState === "") {
+            setPlateState(detectedPlateState);
+            setOriginalPlateState(detectedPlateState);
+        }
+    }, [detectedRegion, detectedPlateState]);
+
     /* ---------------------------------------------------------------------
        Derived state
     --------------------------------------------------------------------- */
     const hasChanges =
         name !== originalName ||
         instagramHandle !== originalInstagram ||
-        removeIgButton !== originalRemoveIgButton
+        removeIgButton !== originalRemoveIgButton ||
+        plateRegion !== originalPlateRegion ||
+        plateState !== originalPlateState;
 
     const isProfileComplete =
-        name.trim() !== '' && instagramHandle.trim() !== ''
+        name.trim() !== '' && instagramHandle.trim() !== '' && plateRegion !== null
 
     const isProfileSaved =
         originalName.trim() !== '' && originalInstagram.trim() !== ''
 
-    const canSave = hasChanges && isProfileComplete
+    const canSave = hasChanges && isProfileComplete &&
+        // Must have state selected if region requires it
+        ((plateRegion !== "US" && plateRegion !== "AU") || plateState !== "");  // ← new
 
     /* ---------------------------------------------------------------------
        Actions: profile
@@ -133,6 +161,8 @@ export default function AccountSettingsPage() {
             displayName: name,
             instagramHandle: instagramHandle,
             'settings.removeIgButton': removeIgButton,
+            "settings.plateRegion": plateRegion,
+            "settings.plateState": plateState,
         })
 
         if (auth.currentUser.displayName !== name) {
@@ -142,6 +172,8 @@ export default function AccountSettingsPage() {
         setOriginalName(name)
         setOriginalInstagram(instagramHandle)
         setOriginalRemoveIgButton(removeIgButton)
+        setOriginalPlateRegion(plateRegion);
+        setOriginalPlateState(plateState);
     }
 
     /* ---------------------------------------------------------------------
@@ -264,8 +296,8 @@ export default function AccountSettingsPage() {
                                 maxLength={30}
                                 placeholder="username"
                                 className={`w-full mt-1 p-2 pl-8 rounded-md bg-gray-100 text-black border-2 focus:ring-2 focus:ring-black transition-colors ${instagramHandle.length > 0 && !isValidInstagram(instagramHandle)
-                                        ? 'border-red-500'
-                                        : 'border-gray-700'
+                                    ? 'border-red-500'
+                                    : 'border-gray-700'
                                     }`}
                             />
                         </div>
@@ -283,12 +315,6 @@ export default function AccountSettingsPage() {
                                 {instagramHandle.length}/30
                             </p>
                         )} */}
-                    </div>
-
-                    {/* Email display */}
-                    <div>
-                        <p className="text-sm text-black"><b>Email</b></p>
-                        <p className="text-base font-medium text-black">{email || '—'}</p>
                     </div>
 
                     {/* Account Security Dropdown */}
@@ -309,6 +335,11 @@ export default function AccountSettingsPage() {
 
                         {showSecurityDropdown && (
                             <div className="mt-3 space-y-2">
+                                {/* Email display */}
+                                <div>
+                                    <p className="text-sm text-black"><b>Email</b></p>
+                                    <p className="text-base font-medium text-black">{email || '—'}</p>
+                                </div>
                                 <button
                                     onClick={() => setShowEmailModal(true)}
                                     className="w-full py-2 rounded-md text-sm font-medium bg-blue-500 hover:bg-blue-600 text-white transition"
@@ -352,6 +383,84 @@ export default function AccountSettingsPage() {
                         )}
                     </div>
 
+                    {/* Plate Lookup Region */}
+                    {/* Plate Lookup Region — replace the entire existing block */}
+                    <div>
+                        <button
+                            type="button"
+                            onClick={() => setShowRegionDropdown((v) => !v)}
+                            className="flex items-center gap-2 text-sm text-gray-900 hover:text-gray-700 transition"
+                        >
+                            <motion.span
+                                animate={{ rotate: showRegionDropdown ? 90 : 0 }}
+                                transition={{ duration: 0.15, ease: "linear" }}
+                            >
+                                ▶
+                            </motion.span>
+                            <span className="font-medium">Plate lookup region</span>
+                        </button>
+
+
+                        {showRegionDropdown && (
+                            <div className="mt-2 space-y-2">
+
+                                {plateRegion === "unsupported" ? (
+                                    <p className="text-sm text-gray-500 italic">
+                                        Plate lookup is not available in your region.
+                                    </p>
+                                ) : (
+                                    <p className="text-sm text-gray-500">
+                                        Allows for accurate plate lookup based on your region.
+                                    </p>
+                                )}
+
+                                {/* Region selector */}
+                                <select
+                                    value={plateRegion ?? ""}
+                                    onChange={(e) => {
+                                        setPlateRegion(e.target.value as PlateRegion)
+                                        setPlateState("") // clear state when region changes
+                                    }}
+                                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-cyan-300"
+                                >
+                                    <option value="" disabled>Select your region…</option>
+                                    {REGION_OPTIONS.map((opt) => (
+                                        <option key={opt.value} value={opt.value ?? ""}>
+                                            {opt.flag} {opt.label}
+                                        </option>
+                                    ))}
+                                </select>
+
+                                {/* State / territory selector for US and AU */}
+                                {(plateRegion === "US" || plateRegion === "AU") && (
+                                    <>
+                                        <p className="text-sm text-gray-500">
+                                            {plateRegion === "US" ? "Select your state" : "Select your state or territory"}
+                                        </p>
+                                        <select
+                                            value={plateState}
+                                            onChange={(e) => setPlateState(e.target.value)}
+                                            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-cyan-300"
+                                        >
+                                            <option value="" disabled>
+                                                {plateRegion === "US" ? "Select state…" : "Select state / territory…"}
+                                            </option>
+                                            {(plateRegion === "US" ? US_STATES : AU_STATES).map(({ code, name }) => (
+                                                <option key={code} value={code}>{name}</option>
+                                            ))}
+                                        </select>
+                                    </>
+                                )}
+
+                                {plateRegion === "unsupported" && (
+                                    <p className="text-xs text-amber-600">
+                                        ⚠️ Plate lookup is currently supported in NZ, AU, UK/EU, and the US only.
+                                    </p>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
                     {/* Display Settings */}
                     <div className="">
                         <button
@@ -377,7 +486,7 @@ export default function AccountSettingsPage() {
                                         <div className="relative">
                                             <button
                                                 onClick={() => setShowTooltip((v) => !v)}
-                                                className="w-4 h-4 rounded-full bg-gray-300 text-[10px] flex items-center justify-center text-gray-700"
+                                                className="w-4 h-4 mx-2 rounded-full bg-gray-300 text-[10px] flex items-center justify-center text-gray-700"
                                             >
                                                 ?
                                             </button>

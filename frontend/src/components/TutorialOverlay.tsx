@@ -22,7 +22,7 @@ interface TutorialPage {
 const pages: TutorialPage[] = [
     { title: 'Welcome', subtitle: '', image: '/svg/house.svg', text: 'Your dashboard is your central workspace. From here you can create posters, manage your portfolio, and control your account.', video:"/mp4/app1.mp4" },
     { title: 'Start with a design', subtitle: 'After uploading an image, choose from several magazine-style templates.', image: '/svg/layers.svg', text: 'You can adjust the primary colour of each template to suit the car and image.', video:"/mp4/app2.mp4" },
-    { title: 'Smart recognition', subtitle: 'Enter the car model yourself or let AI detect it automatically from the photo.', image: '/svg/chat-ai.svg', text: 'New Zealand users can also enable CarJam plate detection.', video:"/mp4/app3.mp4" },
+    { title: 'Smart recognition', subtitle: 'Enter the car model yourself or let AI detect it automatically from the photo.', image: '/svg/chat-ai.svg', text: 'You can also use a regional car database to get car details from the plate.', video:"/mp4/app3.mp4" },
     { title: 'Showcase your work', subtitle: 'Every poster gets its own clean showcase page, complete with a scannable QR code.', image: '/svg/qr-code.svg', text: 'Viewers can scan, see the poster and view your Instagram - add your handle to make this seamless.', video:"/mp4/app4.mp4" },
 ];
 

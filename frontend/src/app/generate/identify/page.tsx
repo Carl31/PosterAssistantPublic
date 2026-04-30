@@ -18,6 +18,11 @@ import Notification from '@/components/Notification'
 import { notify } from '@/utils/notify'
 import { carData, modelExists } from '@/utils/carData'
 import { Credit } from '@/types/credit'
+import {
+  usePlateRegion,
+  REGION_SERVICE_NAME,
+  type PlateRegion,
+} from "@/app/hooks/usePlateRegion";
 
 const archivoBlack = Archivo_Black({
   weight: '400',
@@ -53,6 +58,8 @@ export default function IdentifyVehicleStep() {
   const [showPlatePopup, setShowPlatePopup] = useState(false)
   const [plateLoading, setPlateLoading] = useState(false)
   const [detectedPlate, setDetectedPlate] = useState('')
+const { region: plateRegion, plateState, isDetecting: regionDetecting } = usePlateRegion(user?.uid);
+
 
   const [geminiLoading, setGeminiLoading] = useState(false)
 
@@ -99,7 +106,7 @@ export default function IdentifyVehicleStep() {
 
   const handleUseCarJam = async () => {
     if (carJamClicked) {
-      notify('info', 'CarJam already detected the car.');
+      notify('info', 'Already detected the car.');
       setShowOptionsPopup(false)
       setCarDetails(detailsFromCarJam);
       return
@@ -108,7 +115,7 @@ export default function IdentifyVehicleStep() {
     setShowOptionsPopup(false)
 
     if (credits.carJam <= 0) {
-      notify('error', 'You have no CarJam credits left.')
+      notify('error', 'You have no Lookup credits left.')
       return
     } else {
       setCredits(prev => ({ ...prev, carJam: prev.carJam - 1 } as Credit)); // no reason to do this, as this only updates state. Not firestore.
@@ -118,7 +125,7 @@ export default function IdentifyVehicleStep() {
     setPlateLoading(true)
     setShowPlatePopup(true)
 
-    console.log('Using CarJam for plate detection.')
+    console.log('Using Lookup for plate detection.')
 
     try {
       const token = await user!.getIdToken();
@@ -180,61 +187,80 @@ export default function IdentifyVehicleStep() {
     setDetailsFromAI(capitalized)
   }
 
-  const handleConfirmCarJam = async () => {
+  const handleConfirmPlate = async () => {
+    console.log("Confirming plate lookup…");
+    console.log("Detected plate:", detectedPlate);
+    console.log("Region:", plateRegion);
+    console.log("State:", plateState);
 
-    console.log('Confirming CarJam...')
-    console.log('Detected plate:', detectedPlate)
     if (!detectedPlate) {
-      notify('error', 'Please enter a valid plate number.')
-      return
+      notify("error", "Please enter a valid plate number.");
+      return;
     }
-    setPlateLoading(true)
 
+    if (!plateRegion || plateRegion === "unsupported") {
+      notify("error", "Plate lookup is not supported in your region.");
+      return;
+    }
+
+    setPlateLoading(true);
     try {
-      const token = await user!.getIdToken()
+      const token = await user!.getIdToken();
       const response = await fetch(
-        'https://us-central1-posterassistant-aebf0.cloudfunctions.net/fetchPlateWithCarJam',
+        "https://us-central1-posterassistant-aebf0.cloudfunctions.net/fetchPlateByRegion",
         {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ plate: detectedPlate }),
+          body: JSON.stringify({ plate: detectedPlate, region: plateRegion, state: plateState }),
         }
-      )
+      );
 
       if (!response.ok) {
-        const text = await response.text()
-        console.error('CarJam failed:', text)
-        notify('error', 'Failed to fetch details from CarJam.')
-        return
+        const text = await response.text();
+        console.error("Plate lookup failed:", text);
+        notify("error", "Failed to fetch plate details.");
+        return;
       }
 
-      const data = await response.json()
-      console.log('CarJam response:', data)
+      const data = await response.json();
+      console.log("Plate lookup response:", data);
 
-      if (data.status === 'plate_not_found_in_carjam') {
-        notify('info', `Plate ${detectedPlate} not found in CarJam. Please enter details manually.`);
-      } else if (data.status === 'no_credits_left') {
-        notify('error', `No credits left for CarJam API.`);
-      } else if (data.status === 'no_plate_provided') {
-        notify('error', `Plate ${detectedPlate} not provided.`);
-      } else {
-        updateCarDetailsFromApiResponse(data)
-        updateCarJamData(data)
-        setGeminiChecked(true)
-        setCarJamClicked(true)
-        setShowPlatePopup(false)
+      const serviceName = REGION_SERVICE_NAME[plateRegion] ?? "plate lookup";
+
+      switch (data.status) {
+        case "plate_not_found":
+          notify("info", `Plate ${detectedPlate} was not found. Please enter details manually.`);
+          break;
+        case "no_credits_left":
+          notify("error", "No credits remaining for plate lookup.");
+          break;
+        case "no_plate_provided":
+          notify("error", "No plate number was provided.");
+          break;
+        case "no_region_provided":
+          notify("error", "Region could not be determined. Please set it in Settings.");
+          break;
+        case "unsupported_region":
+          notify("error", `Plate lookup is not available for your region.`);
+          break;
+        default:
+          // Success — data is { make, model, year }
+          updateCarDetailsFromApiResponse(data);
+          updateCarJamData(data);
+          setGeminiChecked(true);
+          setCarJamClicked(true);
+          setShowPlatePopup(false);
       }
-
     } catch (err) {
-      console.error('Error calling CarJam:', err)
-      notify('error', 'CarJam request failed.')
+      console.error("Error calling plate lookup:", err);
+      notify("error", "Plate lookup request failed.");
     } finally {
-      setPlateLoading(false)
+      setPlateLoading(false);
     }
-  }
+  };
 
   const handleCancelCarJam = () => setShowPlatePopup(false)
 
@@ -526,7 +552,7 @@ export default function IdentifyVehicleStep() {
                 onClick={handleUseCarJam}
                 className="flex-1 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 py-2 text-white font-medium hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-cyan-300"
               >
-                Use CarJam
+                Use plate lookup
               </button>
             </div>
 
@@ -557,20 +583,35 @@ export default function IdentifyVehicleStep() {
     PLATE CONFIRM POPUP (LIGHT)
    ========================= */}
         {showPlatePopup && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/40 backdrop-blur-md">
+          <div className="fixed inset-0 z-49 flex items-center justify-center bg-white/40 backdrop-blur-md">
             <div className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-[0_10px_40px_rgba(0,0,0,0.15)]">
-              {plateLoading ? (
+              {plateLoading || regionDetecting ? (
                 <>
                   <Spinner />
                   <p className="mt-4 text-gray-700 font-medium">
-                    {detectedPlate ? "Fetching CarJam data…" : "Detecting plate…"}
+                    {regionDetecting
+                      ? "Detecting your region…"
+                      : detectedPlate
+                        ? `Fetching ${plateRegion ? REGION_SERVICE_NAME[plateRegion] : ""} data…`
+                        : "Detecting plate…"}
                   </p>
                 </>
               ) : (
                 <>
-                  <p className="mb-4 text-gray-800 font-semibold">
-                    Confirm plate number
-                  </p>
+                  <p className="mb-1 text-gray-800 font-semibold">Confirm plate number</p>
+
+                  {/* Show which service will be used */}
+                  {plateRegion && plateRegion !== "unsupported" && (
+                    <p className="mb-3 text-xs text-gray-400">
+                      Lookup via {REGION_SERVICE_NAME[plateRegion]}
+                    </p>
+                  )}
+
+                  {plateRegion === "unsupported" && (
+                    <p className="mb-3 text-xs text-amber-500">
+                      ⚠️ Plate lookup isn't available in your region. You can still enter details manually.
+                    </p>
+                  )}
 
                   <input
                     value={detectedPlate}
@@ -579,7 +620,6 @@ export default function IdentifyVehicleStep() {
                   />
 
                   <div className="mt-4 flex gap-4">
-
                     <button
                       onClick={handleCancelCarJam}
                       className="flex-1 rounded-lg border border-gray-300 bg-white py-2 text-gray-700 hover:bg-gray-100"
@@ -587,8 +627,9 @@ export default function IdentifyVehicleStep() {
                       Cancel
                     </button>
                     <button
-                      onClick={handleConfirmCarJam}
-                      className="flex-1 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 py-2 text-white font-medium hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-cyan-300"
+                      onClick={handleConfirmPlate}
+                      disabled={!plateRegion || plateRegion === "unsupported"}
+                      className="flex-1 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 py-2 text-white font-medium hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-cyan-300 disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       Confirm
                     </button>

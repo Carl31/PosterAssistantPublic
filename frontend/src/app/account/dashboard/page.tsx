@@ -321,7 +321,7 @@ export default function DashboardPage() {
               src="/svg/coins.svg"
               alt="credits"
             />
-            <span>Buy credits</span>
+            <span>Get credits</span>
           </button>
 
 

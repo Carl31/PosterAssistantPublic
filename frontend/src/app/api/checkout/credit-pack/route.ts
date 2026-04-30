@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import admin from 'firebase-admin'
 
-console.log('ADMIN KEY EXISTS:', !!process.env.FIREBASE_ADMIN_KEY)
+//console.log('ADMIN KEY EXISTS:', !!process.env.FIREBASE_ADMIN_KEY)
 
 if (!admin.apps.length) {
   admin.initializeApp({
@@ -26,13 +26,13 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 // 15 and 10 usd
 const PRICE_IDS = {
-  small: 'price_1Svq8MJbxz2eE8bRfIMM1AJ8',
-  large: 'price_1Svq7SJbxz2eE8bRhjzZuEPQ',
+  small: 'price_1TQgUvJbxz2eE8bR5oP12nsj',
+  large: 'price_1TQgTZJbxz2eE8bRVynAP5TG',
 }
 
 const SUPPORTER_PRICE_IDS = {
-  small: 'price_1Sv8cUJbxz2eE8bRtnzEQgIU',
-  large: 'price_1Sv8bQJbxz2eE8bRLKKLL1Zc',
+  small: 'price_1TQgV7Jbxz2eE8bRAebVbxav',
+  large: 'price_1TQgU9Jbxz2eE8bRR61VWvjJ',
 } as const
 
 // Stripe test mode IDs:

@@ -25,10 +25,11 @@ export default function GenerateLayout({ children }: { children: React.ReactNode
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.3 }}
+      className="w-full"
     >
-      <div className="px-4 bg-white h-full min-h-screen">
-        <div className="flex flex-col items-center">
-          <div className="">
+      <div className="px-4 bg-white h-full min-h-screen w-full">
+        <div className="flex flex-col w-full">
+          <div className="w-full">
             {children}
           </div>
         </div>

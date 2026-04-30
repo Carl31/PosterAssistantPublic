@@ -18,7 +18,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-12-15.clover',
 })
 
-const SUPPORTER_PRICE_ID = 'price_1StYpiJbxz2eE8bR9xOyIYRm';
+const SUPPORTER_PRICE_ID = 'price_1TQgYuJbxz2eE8bRAayJkPpQ';
 
 // Stripe test mode:
 // const SUPPORTER_PRICE_ID = 'price_1SunOvJbxz2eE8bRlXAq5TSD';
