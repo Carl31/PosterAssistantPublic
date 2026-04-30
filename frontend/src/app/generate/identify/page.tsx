@@ -609,7 +609,7 @@ const { region: plateRegion, plateState, isDetecting: regionDetecting } = usePla
 
                   {plateRegion === "unsupported" && (
                     <p className="mb-3 text-xs text-amber-500">
-                      ⚠️ Plate lookup isn't available in your region. You can still enter details manually.
+                      ⚠️ Plate lookup isn&apos;t available in your region. You can still enter details manually.
                     </p>
                   )}
 

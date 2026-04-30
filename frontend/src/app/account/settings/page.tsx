@@ -73,7 +73,7 @@ export default function AccountSettingsPage() {
     /* ---------------------------------------------------------------------
        User region detection for plate lookup (CarJam vs alternatives)
     --------------------------------------------------------------------- */
-    const { region: detectedRegion, plateState: detectedPlateState, saveRegion, savePlateState } = usePlateRegion(auth.currentUser?.uid);
+    const { region: detectedRegion, plateState: detectedPlateState } = usePlateRegion(auth.currentUser?.uid);
     const [plateRegion, setPlateRegion] = useState<PlateRegion>(null);
     const [originalPlateRegion, setOriginalPlateRegion] = useState<PlateRegion>(null);
     // Add these alongside the existing plateRegion state declarations
