@@ -94,91 +94,91 @@ function formatExpiry(expiry: { seconds: number } | Date | undefined) {
  * Credit Pack Card Component
  * Displays a purchasable credit pack with pricing and feature breakdown
  */
-interface CreditPackCardProps {
-    pack: CreditPackConfig
-    isSupporter: boolean
-    onPurchase: (stripeLink: string) => void
-}
+// interface CreditPackCardProps {
+//     pack: CreditPackConfig
+//     isSupporter: boolean
+//     onPurchase: (stripeLink: string) => void
+// }
 
-const CreditPackCard = ({ pack, isSupporter, onPurchase }: CreditPackCardProps) => {
-    const displayPrice = isSupporter ? pack.supporterPrice : pack.price
+// const CreditPackCard = ({ pack, isSupporter, onPurchase }: CreditPackCardProps) => {
+//     const displayPrice = isSupporter ? pack.supporterPrice : pack.price
 
-    return (
-        <div className="group relative overflow-hidden rounded-2xl border border-blue-200 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg">
-            {/* Top gradient accent */}
-            <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500 opacity-60" />
+//     return (
+//         <div className="group relative overflow-hidden rounded-2xl border border-blue-200 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg">
+//             {/* Top gradient accent */}
+//             <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500 opacity-60" />
 
-            {/* Header section with icon and title */}
-            <div className="mb-5 flex items-start gap-4">
-                <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 via-white to-cyan-50 shadow-sm">
-                    <div className="absolute inset-0 opacity-70 [background-image:radial-gradient(circle_at_30%_20%,rgba(59,130,246,0.25),transparent_55%),radial-gradient(circle_at_70%_80%,rgba(34,211,238,0.25),transparent_55%)]" />
-                    <div className="relative flex h-full w-full items-center justify-center">
-                        <img className="h-7 w-7" src={pack.iconSrc} alt={pack.iconAlt} />
-                    </div>
-                </div>
+//             {/* Header section with icon and title */}
+//             <div className="mb-5 flex items-start gap-4">
+//                 <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 via-white to-cyan-50 shadow-sm">
+//                     <div className="absolute inset-0 opacity-70 [background-image:radial-gradient(circle_at_30%_20%,rgba(59,130,246,0.25),transparent_55%),radial-gradient(circle_at_70%_80%,rgba(34,211,238,0.25),transparent_55%)]" />
+//                     <div className="relative flex h-full w-full items-center justify-center">
+//                         <img className="h-7 w-7" src={pack.iconSrc} alt={pack.iconAlt} />
+//                     </div>
+//                 </div>
 
-                <div className="min-w-0 flex-1">
-                    <div className="flex flex-col gap-1">
-                        <h3 className="text-xl font-black tracking-tight text-gray-900">
-                            {pack.title}
-                        </h3>
-                        <p className="text-sm text-gray-600">{pack.description}</p>
-                    </div>
+//                 <div className="min-w-0 flex-1">
+//                     <div className="flex flex-col gap-1">
+//                         <h3 className="text-xl font-black tracking-tight text-gray-900">
+//                             {pack.title}
+//                         </h3>
+//                         <p className="text-sm text-gray-600">{pack.description}</p>
+//                     </div>
 
-                    {/* Pricing display */}
-                    <div className="mt-3 flex flex-wrap items-end gap-x-2 gap-y-1">
-                        {isSupporter ? (
-                            <>
-                                <span className="text-sm font-semibold text-gray-400 line-through">
-                                    ${pack.price}
-                                </span>
-                                <span className="text-2xl font-black tracking-tight text-blue-600">
-                                    ${pack.supporterPrice}
-                                </span>
-                                <span className="text-xs font-medium text-blue-600/80">
-                                    Supporter half-price
-                                </span>
-                            </>
-                        ) : (
-                            <>
-                                <span className="text-2xl font-black tracking-tight text-blue-600">
-                                    ${pack.price}
-                                </span>
-                                <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                                    one-time
-                                </span>
-                            </>
-                        )}
-                    </div>
-                </div>
-            </div>
+//                     {/* Pricing display */}
+//                     <div className="mt-3 flex flex-wrap items-end gap-x-2 gap-y-1">
+//                         {isSupporter ? (
+//                             <>
+//                                 <span className="text-sm font-semibold text-gray-400 line-through">
+//                                     ${pack.price}
+//                                 </span>
+//                                 <span className="text-2xl font-black tracking-tight text-blue-600">
+//                                     ${pack.supporterPrice}
+//                                 </span>
+//                                 <span className="text-xs font-medium text-blue-600/80">
+//                                     Supporter half-price
+//                                 </span>
+//                             </>
+//                         ) : (
+//                             <>
+//                                 <span className="text-2xl font-black tracking-tight text-blue-600">
+//                                     ${pack.price}
+//                                 </span>
+//                                 <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+//                                     one-time
+//                                 </span>
+//                             </>
+//                         )}
+//                     </div>
+//                 </div>
+//             </div>
 
-            {/* Credit breakdown grid */}
-            <div className="mb-5 grid grid-cols-2 gap-2 text-xs font-semibold text-gray-700 sm:grid-cols-3">
-                <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
-                    <span className="text-gray-500">Poster</span>
-                    <div className="mt-0.5 text-sm font-black text-gray-900">+{pack.credits.poster}</div>
-                </div>
-                <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
-                    <span className="text-gray-500">AI</span>
-                    <div className="mt-0.5 text-sm font-black text-gray-900">+{pack.credits.ai}</div>
-                </div>
-                <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
-                    <span className="text-gray-500">Lookup</span>
-                    <div className="mt-0.5 text-sm font-black text-gray-900">+{pack.credits.lookup}</div>
-                </div>
-            </div>
+//             {/* Credit breakdown grid */}
+//             <div className="mb-5 grid grid-cols-2 gap-2 text-xs font-semibold text-gray-700 sm:grid-cols-3">
+//                 <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
+//                     <span className="text-gray-500">Poster</span>
+//                     <div className="mt-0.5 text-sm font-black text-gray-900">+{pack.credits.poster}</div>
+//                 </div>
+//                 <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
+//                     <span className="text-gray-500">AI</span>
+//                     <div className="mt-0.5 text-sm font-black text-gray-900">+{pack.credits.ai}</div>
+//                 </div>
+//                 <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
+//                     <span className="text-gray-500">Lookup</span>
+//                     <div className="mt-0.5 text-sm font-black text-gray-900">+{pack.credits.lookup}</div>
+//                 </div>
+//             </div>
 
-            {/* Purchase button */}
-            <button
-                className="w-full rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 py-3 text-sm font-semibold text-white shadow-md transition-all hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-cyan-300"
-                onClick={() => onPurchase(pack.stripeLink)}
-            >
-                Buy Pack
-            </button>
-        </div>
-    )
-}
+//             {/* Purchase button */}
+//             <button
+//                 className="w-full rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 py-3 text-sm font-semibold text-white shadow-md transition-all hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-cyan-300"
+//                 onClick={() => onPurchase(pack.stripeLink)}
+//             >
+//                 Buy Pack
+//             </button>
+//         </div>
+//     )
+// }
 
 /**
  * Modal Component
@@ -209,22 +209,22 @@ const Modal = ({ isOpen, onClose, children }: ModalProps) => {
  * Feature List Item Component
  * Used in supporter benefits section
  */
-interface FeatureItemProps {
-    iconSrc: string
-    iconAlt: string
-    children: React.ReactNode
-}
+// interface FeatureItemProps {
+//     iconSrc: string
+//     iconAlt: string
+//     children: React.ReactNode
+// }
 
-const FeatureItem = ({ iconSrc, iconAlt, children }: FeatureItemProps) => (
-    <li className="flex items-center gap-2 -ml-5">
-        <img
-            className="w-6 h-6 sm:w-9 sm:h-9 flex-shrink-0"
-            src={iconSrc}
-            alt={iconAlt}
-        />
-        <span>{children}</span>
-    </li>
-)
+// const FeatureItem = ({ iconSrc, iconAlt, children }: FeatureItemProps) => (
+//     <li className="flex items-center gap-2 -ml-5">
+//         <img
+//             className="w-6 h-6 sm:w-9 sm:h-9 flex-shrink-0"
+//             src={iconSrc}
+//             alt={iconAlt}
+//         />
+//         <span>{children}</span>
+//     </li>
+// )
 
 /* ============================================================================
  * MAIN COMPONENT
@@ -460,7 +460,7 @@ export default function StorePage() {
             {loading ? (
                 <LoadingPage />
             ) : (
-                <div className="flex min-h-screen flex-col items-center bg-gradient-to-br from-gray-50 via-blue-50/30 to-cyan-50/30 px-4 py-8">
+                <div className="flex min-h-screen flex-col items-center bg-gradient-to-br from-gray-50 via-blue-50/30 to-cyan-50/30 px-1 py-8">
                     {/* Page Header */}
 
                     <div className="p-[4px] rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-500 mb-3">
